@@ -6,6 +6,7 @@ use rand::prelude::{
     Rng,
 };
 use cglinalg::{
+    Matrix4x4,
     Vector3,
     Magnitude,
 };
@@ -23,8 +24,8 @@ use std::fs::{
 };
 
 
-const SCREEN_WIDTH: usize = 1280;
-const SCREEN_HEIGHT: usize = 720;
+const SCREEN_WIDTH: usize = 640;
+const SCREEN_HEIGHT: usize = 480;
 
 
 fn intersect(triangle: &Triangle, ray: &Ray) -> Ray {
@@ -139,9 +140,107 @@ mod gl {
 }
 
 use glfw::{Action, Context, Key};
-use gl::types::{GLfloat};
+use gl::types::{GLuint, GLfloat};
+use std::ffi::{CStr, CString, c_void};
+use std::ptr;
+use std::mem;
+use std::fmt;
 
-fn main() {
+// OpenGL extension constants.
+const GL_TEXTURE_MAX_ANISOTROPY_EXT: u32 = 0x84FE;
+const GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT: u32 = 0x84FF;
+
+fn gl_str(st: &str) -> CString {
+    CString::new(st).unwrap()
+}
+
+/// A record containing all the relevant compilation log information for a
+/// given GLSL shader program compiled at run time.
+pub struct ShaderProgramLog {
+    index: GLuint,
+    log: String,
+}
+
+impl fmt::Display for ShaderProgramLog {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(formatter, "Program info log for GL index {}:", self.index).unwrap();
+        writeln!(formatter, "{}", self.log)
+    }
+}
+
+/// Query the shader program information log generated during shader compilation
+/// from OpenGL.
+pub fn program_info_log(index: GLuint) -> ShaderProgramLog {
+    let mut actual_length = 0;
+    unsafe {
+        gl::GetProgramiv(index, gl::INFO_LOG_LENGTH, &mut actual_length);
+    }
+    let mut raw_log = vec![0 as i8; actual_length as usize];
+    unsafe {
+        gl::GetProgramInfoLog(index, raw_log.len() as i32, &mut actual_length, &mut raw_log[0]);
+    }
+
+    let mut log = String::new();
+    for i in 0..actual_length as usize {
+        log.push(raw_log[i] as u8 as char);
+    }
+
+    ShaderProgramLog { index: index, log: log }
+}
+
+/// Validate that the shader program `sp` can execute with the current OpenGL program state.
+/// Use this for information purposes in application development. Return `true` if the program and
+/// OpenGL state contain no errors.
+pub fn validate_shader_program(sp: GLuint) -> bool {
+    let mut params = -1;
+    unsafe {
+        gl::ValidateProgram(sp);
+        gl::GetProgramiv(sp, gl::VALIDATE_STATUS, &mut params);
+    }
+
+    if params != gl::TRUE as i32 {
+        println!("Program {} GL_VALIDATE_STATUS = GL_FALSE\n", sp);
+        println!("{}", program_info_log(sp));
+        
+        return false;
+    }
+
+    println!("Program {} GL_VALIDATE_STATUS = {}\n", sp, params);
+    
+    true
+}
+
+/// Load texture image into the GPU.
+fn send_to_gpu_texture(canvas: &Canvas, wrapping_mode: GLuint) -> Result<GLuint, String> {
+    let mut tex = 0;
+    unsafe {
+        gl::GenTextures(1, &mut tex);
+        gl::ActiveTexture(gl::TEXTURE0);
+        gl::BindTexture(gl::TEXTURE_2D, tex);
+        gl::TexImage2D(
+            gl::TEXTURE_2D, 0, gl::RGBA as i32, canvas.width as i32, canvas.height as i32, 0,
+            gl::RGBA, gl::UNSIGNED_BYTE,
+            canvas.as_ptr() as *const c_void
+        );
+        gl::GenerateMipmap(gl::TEXTURE_2D);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, wrapping_mode as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, wrapping_mode as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_LINEAR as i32);
+    }
+    debug_assert!(tex > 0);
+
+    let mut max_aniso = 0.0;
+    unsafe {
+        gl::GetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &mut max_aniso);
+        // Set the maximum!
+        gl::TexParameterf(gl::TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, max_aniso);
+    }
+
+    Ok(tex)
+}
+
+fn main() -> io::Result<()> {
    let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 
    // We must place the window hints before creating the window because
@@ -173,12 +272,105 @@ fn main() {
 
     // Load the OpenGl function pointers.
     gl::load_with(|symbol| { window.get_proc_address(symbol) as *const _ });
+    /*
+    let vertices: Vec<[[f32; 2]; 2]> = vec![
+        [[1.0, 1.0], [1.0, 1.0]], [[-1.0, -1.0], [0.0, 0.0]], [[ 1.0, -1.0], [1.0, 0.0]],
+        [[1.0, 1.0], [1.0, 1.0]], [[-1.0,  1.0], [0.0, 1.0]], [[-1.0, -1.0], [0.0, 0.0]],
+    ];
+    */
+    let vertices: Vec<[f32; 2]> = vec![
+        [1.0, 1.0], [-1.0, -1.0], [ 1.0, -1.0], 
+        [1.0, 1.0], [-1.0,  1.0], [-1.0, -1.0],
+    ];
+    let tex_coords: Vec<[f32; 2]> = vec![
+        [1.0, 1.0], [0.0, 0.0], [1.0, 0.0],
+        [1.0, 1.0], [0.0, 1.0], [0.0, 0.0],
+    ];
+
+    let trans_mat = Matrix4x4::identity();
+    let mut gui_scale_mat = Matrix4x4::identity();
+
+    let shader_program = unsafe {
+        let vertex_shader_source = include_bytes!("shaders.vert.glsl");
+        let p = vertex_shader_source.as_ptr() as *const i8;
+        let length = vertex_shader_source.len() as i32;
+        let vertex_shader = gl::CreateShader(gl::VERTEX_SHADER);
+        gl::ShaderSource(vertex_shader, 1, &p, [length].as_ptr());
+        gl::CompileShader(vertex_shader);
+
+        let fragment_shader_source = include_bytes!("shaders.frag.glsl");
+        let p = fragment_shader_source.as_ptr() as *const i8;
+        let length = fragment_shader_source.len() as i32;
+        let fragment_shader = gl::CreateShader(gl::FRAGMENT_SHADER);
+        gl::ShaderSource(fragment_shader, 1, &p, [length].as_ptr());
+        gl::CompileShader(fragment_shader);
+       
+        let shader_program = gl::CreateProgram();
+        gl::AttachShader(shader_program, vertex_shader);
+        gl::AttachShader(shader_program, fragment_shader);
+        gl::LinkProgram(shader_program);
+
+        shader_program
+    };
+   
+    let vao = unsafe {
+        gl::UseProgram(shader_program);
+
+        let m_trans_location = gl::GetUniformLocation(shader_program, gl_str("m_trans").as_ptr());
+        debug_assert!(m_trans_location > -1);
+        let m_gui_scale_location = gl::GetUniformLocation(shader_program, gl_str("m_gui_scale").as_ptr());
+        debug_assert!(m_gui_scale_location > -1);
+
+        gl::UniformMatrix4fv(m_trans_location, 1, gl::FALSE, trans_mat.as_ptr());
+        gl::UniformMatrix4fv(m_gui_scale_location, 1, gl::FALSE, gui_scale_mat.as_ptr());
+
+        let vertices_len_bytes = (vertices.len() * mem::size_of::<[f32; 2]>()) as isize;
+        let tex_coords_len_bytes = (tex_coords.len() * mem::size_of::<[f32; 2]>()) as isize;
+        let v_pos_location = gl::GetAttribLocation(shader_program, gl_str("v_pos").as_ptr());
+        debug_assert!(v_pos_location > -1);
+        let v_pos_location = v_pos_location as u32;
+        let v_tex_location = gl::GetAttribLocation(shader_program, gl_str("v_tex").as_ptr());
+        debug_assert!(v_tex_location > -1);
+        let v_tex_location = v_tex_location as u32;
+
+        let mut vertex_vbo = 0;
+        gl::GenBuffers(1, &mut vertex_vbo);
+        debug_assert!(vertex_vbo > 0);
+        gl::BindBuffer(gl::ARRAY_BUFFER, vertex_vbo);
+        gl::BufferData(gl::ARRAY_BUFFER, vertices_len_bytes, vertices.as_ptr() as *const c_void, gl::STATIC_DRAW);
+
+        let mut tex_coords_vbo = 0;
+        gl::GenBuffers(1, &mut tex_coords_vbo);
+        debug_assert!(tex_coords_vbo > 0);
+        gl::BindBuffer(gl::ARRAY_BUFFER, tex_coords_vbo);
+        gl::BufferData(gl::ARRAY_BUFFER, tex_coords_len_bytes, tex_coords.as_ptr() as *const c_void, gl::STATIC_DRAW);
+
+        let mut vao = 0;
+        gl::GenVertexArrays(1, &mut vao);
+        debug_assert!(vao > 0);
+
+        gl::BindVertexArray(vao);
+        gl::BindBuffer(gl::ARRAY_BUFFER, vertex_vbo);
+        gl::VertexAttribPointer(v_pos_location, 2, gl::FLOAT, gl::FALSE, 0, ptr::null());
+        gl::VertexAttribPointer(v_tex_location, 2, gl::FLOAT, gl::FALSE, 0, ptr::null());
+        gl::EnableVertexAttribArray(v_pos_location);
+        gl::EnableVertexAttribArray(v_tex_location);
+
+        debug_assert!(validate_shader_program(shader_program));
+
+        vao
+    };
+    let mut canvas = Canvas::new(2, 2);
+    canvas[0][0] = Rgba::new(255, 0, 0, 255); canvas[0][1] = Rgba::new(0, 0, 255, 255);
+    canvas[1][0] = Rgba::new(255, 0, 0, 255); canvas[1][1] = Rgba::new(0, 255, 0, 255);
+    let tex = send_to_gpu_texture(&canvas, gl::REPEAT).unwrap();
 
     // Loop until the user closes the window
     while !window.should_close() {
         let (width, height) = window.get_framebuffer_size();
         let time_elapsed = glfw.get_time();
-        println!("{}", time_elapsed);
+        let (scale_x, scale_y) = window.get_content_scale();
+        gui_scale_mat = Matrix4x4::from_affine_nonuniform_scale(scale_x, scale_y, 1_f32);
 
         // Poll for and process events
         glfw.poll_events();
@@ -190,12 +382,29 @@ fn main() {
                 _ => {},
             }
         }
+       
         unsafe {
+            let m_trans_location = gl::GetUniformLocation(shader_program, gl_str("m_trans").as_ptr());
+            debug_assert!(m_trans_location > -1);
+            let m_gui_scale_location = gl::GetUniformLocation(shader_program, gl_str("m_gui_scale").as_ptr());
+            debug_assert!(m_gui_scale_location > -1);
+    
+            gl::UniformMatrix4fv(m_trans_location, 1, gl::FALSE, trans_mat.as_ptr());
+            gl::UniformMatrix4fv(m_gui_scale_location, 1, gl::FALSE, gui_scale_mat.as_ptr());
+    
             gl::Viewport(0, 0, width, height);
             gl::ClearBufferfv(gl::COLOR, 0, &[0.2_f32, 0.2_f32, 0.2_f32, 1.0_f32] as *const GLfloat);
+            gl::UseProgram(shader_program);
+            gl::ActiveTexture(gl::TEXTURE0);
+            gl::BindTexture(gl::TEXTURE_2D, tex);
+            gl::BindVertexArray(vao);
+            gl::DrawArrays(gl::TRIANGLES, 0, 6);
         }
 
         // Swap front and back buffers
         window.swap_buffers();
     }
+
+    Ok(())
 }
+

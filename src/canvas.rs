@@ -42,6 +42,10 @@ impl Canvas {
             *pixel = zero;
         }
     }
+
+    pub fn as_ptr(&self) -> *const Rgba {
+        self.data.as_ptr()
+    }
 }
 
 impl ops::Index<usize> for Canvas {
