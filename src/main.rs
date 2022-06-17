@@ -93,7 +93,7 @@ fn write_image_to_file(canvas: &Canvas, file: &mut File) -> io::Result<()> {
     Ok(())
 }
 
-fn main() -> io::Result<()> {
+fn render() -> io::Result<()> {
     let triangle_count = 64;
     let scene = initialize_scene(triangle_count);
     let mut canvas = Canvas::new(SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -126,4 +126,76 @@ fn main() -> io::Result<()> {
     println!("writing image to file.");
     let mut file = File::create("output.ppm").unwrap();
     write_image_to_file(&canvas, &mut file)
+}
+/*
+fn main() -> io::Result<()> {
+    render()
+}
+*/
+extern crate glfw;
+
+mod gl {
+    include!(concat!(env!("OUT_DIR"), "/gl_bindings.rs"));
+}
+
+use glfw::{Action, Context, Key};
+use gl::types::{GLfloat};
+
+fn main() {
+   let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
+
+   // We must place the window hints before creating the window because
+   // glfw cannot change the properties of a window after it has been created.
+   glfw.window_hint(glfw::WindowHint::Resizable(false));
+   glfw.window_hint(glfw::WindowHint::Samples(Some(4)));
+   glfw.window_hint(glfw::WindowHint::ContextVersionMajor(3));
+   glfw.window_hint(glfw::WindowHint::ContextVersionMinor(3));
+   glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
+   glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
+   glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
+
+    // Create a windowed mode window and its OpenGL context
+    let (mut window, events) = glfw.create_window(
+            SCREEN_WIDTH as u32, 
+            SCREEN_HEIGHT as u32, 
+            "GLFW Window", 
+            glfw::WindowMode::Windowed
+        )
+        .expect("Failed to create GLFW window.");
+
+    // Make the window's context current
+    window.make_current();
+    window.set_key_polling(true);
+    window.set_size_polling(true);
+    window.set_refresh_polling(true);
+    window.set_size_polling(true);
+    window.set_sticky_keys(true);
+
+    // Load the OpenGl function pointers.
+    gl::load_with(|symbol| { window.get_proc_address(symbol) as *const _ });
+
+    // Loop until the user closes the window
+    while !window.should_close() {
+        let (width, height) = window.get_framebuffer_size();
+        let time_elapsed = glfw.get_time();
+        println!("{}", time_elapsed);
+
+        // Poll for and process events
+        glfw.poll_events();
+        for (_, event) in glfw::flush_messages(&events) {
+            match event {
+                glfw::WindowEvent::Key(Key::Escape, _, Action::Press, _) => {
+                    window.set_should_close(true)
+                },
+                _ => {},
+            }
+        }
+        unsafe {
+            gl::Viewport(0, 0, width, height);
+            gl::ClearBufferfv(gl::COLOR, 0, &[0.2_f32, 0.2_f32, 0.2_f32, 1.0_f32] as *const GLfloat);
+        }
+
+        // Swap front and back buffers
+        window.swap_buffers();
+    }
 }

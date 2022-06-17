@@ -2,9 +2,13 @@
 name = "bvhtracer"
 version = "0.1.0"
 edition = "2021"
+build = "build.rs"
 
 [dependencies]
 cglinalg = { git = "https://github.com/lambdaxymox/cglinalg/", version = "0.15.6" }
 rand = "0.8.5"
 rand_isaac = "0.3.0"
+glfw = "0.45.0"
 
+[build-dependencies]
+gl_generator = "0.14.0"
