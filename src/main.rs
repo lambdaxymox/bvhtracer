@@ -24,8 +24,8 @@ use std::fs::{
 };
 
 
-const SCREEN_WIDTH: usize = 640;
-const SCREEN_HEIGHT: usize = 480;
+const SCREEN_WIDTH: usize = 1280;
+const SCREEN_HEIGHT: usize = 720;
 
 
 fn intersect(triangle: &Triangle, ray: &Ray) -> Ray {
@@ -94,7 +94,7 @@ fn write_image_to_file(canvas: &Canvas, file: &mut File) -> io::Result<()> {
     Ok(())
 }
 
-fn render() -> io::Result<()> {
+fn render() -> Canvas {
     let triangle_count = 64;
     let scene = initialize_scene(triangle_count);
     let mut canvas = Canvas::new(SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -124,9 +124,12 @@ fn render() -> io::Result<()> {
         }
     }
 
+    /*
     println!("writing image to file.");
     let mut file = File::create("output.ppm").unwrap();
     write_image_to_file(&canvas, &mut file)
+    */
+    canvas
 }
 /*
 fn main() -> io::Result<()> {
@@ -241,17 +244,18 @@ fn send_to_gpu_texture(canvas: &Canvas, wrapping_mode: GLuint) -> Result<GLuint,
 }
 
 fn main() -> io::Result<()> {
-   let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
+    let canvas = render();
+    let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 
-   // We must place the window hints before creating the window because
-   // glfw cannot change the properties of a window after it has been created.
-   glfw.window_hint(glfw::WindowHint::Resizable(false));
-   glfw.window_hint(glfw::WindowHint::Samples(Some(4)));
-   glfw.window_hint(glfw::WindowHint::ContextVersionMajor(3));
-   glfw.window_hint(glfw::WindowHint::ContextVersionMinor(3));
-   glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
-   glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
-   glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
+    // We must place the window hints before creating the window because
+    // glfw cannot change the properties of a window after it has been created.
+    glfw.window_hint(glfw::WindowHint::Resizable(false));
+    glfw.window_hint(glfw::WindowHint::Samples(Some(4)));
+    glfw.window_hint(glfw::WindowHint::ContextVersionMajor(3));
+    glfw.window_hint(glfw::WindowHint::ContextVersionMinor(3));
+    glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
+    glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
+    glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
 
     // Create a windowed mode window and its OpenGL context
     let (mut window, events) = glfw.create_window(
@@ -272,12 +276,7 @@ fn main() -> io::Result<()> {
 
     // Load the OpenGl function pointers.
     gl::load_with(|symbol| { window.get_proc_address(symbol) as *const _ });
-    /*
-    let vertices: Vec<[[f32; 2]; 2]> = vec![
-        [[1.0, 1.0], [1.0, 1.0]], [[-1.0, -1.0], [0.0, 0.0]], [[ 1.0, -1.0], [1.0, 0.0]],
-        [[1.0, 1.0], [1.0, 1.0]], [[-1.0,  1.0], [0.0, 1.0]], [[-1.0, -1.0], [0.0, 0.0]],
-    ];
-    */
+
     let vertices: Vec<[f32; 2]> = vec![
         [1.0, 1.0], [-1.0, -1.0], [ 1.0, -1.0], 
         [1.0, 1.0], [-1.0,  1.0], [-1.0, -1.0],
@@ -360,9 +359,7 @@ fn main() -> io::Result<()> {
 
         vao
     };
-    let mut canvas = Canvas::new(2, 2);
-    canvas[0][0] = Rgba::new(255, 0, 0, 255); canvas[0][1] = Rgba::new(0, 0, 255, 255);
-    canvas[1][0] = Rgba::new(255, 0, 0, 255); canvas[1][1] = Rgba::new(0, 255, 0, 255);
+
     let tex = send_to_gpu_texture(&canvas, gl::REPEAT).unwrap();
 
     // Loop until the user closes the window
