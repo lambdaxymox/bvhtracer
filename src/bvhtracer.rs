@@ -28,5 +28,9 @@ impl Ray {
     pub fn new(origin: Vector3<f32>, direction: Vector3<f32>, t: f32) -> Self {
         Self { origin, direction, t, }
     }
+
+    pub fn from_origin_dir(origin: Vector3<f32>, direction: Vector3<f32>) -> Self {
+        Self::new(origin, direction, f32::MAX)
+    }
 }
 
