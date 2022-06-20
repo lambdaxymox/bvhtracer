@@ -23,6 +23,44 @@ fn intersect_aabb(ray: &Ray, aabb_min: &Vector3<f32>, aabb_max: &Vector3<f32>) -
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
+struct Aabb {
+    b_min: Vector3<f32>,
+    b_max: Vector3<f32>,
+}
+
+impl Aabb {
+    fn grow(&mut self, position: &Vector3<f32>) {
+        #[inline]
+        fn min(vector1: &Vector3<f32>, vector2: &Vector3<f32>) -> Vector3<f32> {
+            Vector3::new(
+                f32::min(vector1.x, vector2.x),
+                f32::min(vector1.y, vector2.y),
+                f32::min(vector1.z, vector2.z),
+            )
+        }
+
+        #[inline]
+        fn max(vector1: &Vector3<f32>, vector2: &Vector3<f32>) -> Vector3<f32> {
+            Vector3::new(
+                f32::max(vector1.x, vector2.x),
+                f32::max(vector1.y, vector2.y),
+                f32::max(vector1.z, vector2.z),
+            )
+        }
+
+        self.b_min = min(&self.b_min, position);
+        self.b_max = max(&self.b_max, position);
+    }
+
+    fn area(&self) -> f32 {
+        let extent = self.b_max - self.b_min;
+
+        extent.x * extent.y + extent.y * extent.z + extent.z * extent.x
+    }
+}
+
+
+#[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub struct BvhNode {
     aabb_min: Vector3<f32>,
     aabb_max: Vector3<f32>,
@@ -129,14 +167,42 @@ impl BvhBuilder {
         }
     }
 
+    fn evaluate_sah(&self, objects: &[Triangle], node: &BvhNode, axis: usize, position: f32) -> f32 {
+        let mut left_box = Aabb::default();
+        let mut right_box = Aabb::default();
+        let mut left_count = 0;
+        let mut right_count = 0;
+        for i in 0..node.primitive_count {
+            let primitive_idx = self.partial_bvh.node_indices[node.first_primitive_idx + i];
+            let primitive = &objects[primitive_idx];
+            if primitive.centroid[axis] < position {
+                left_count += 1;
+                left_box.grow(&primitive.vertex0);
+                left_box.grow(&primitive.vertex1);
+                left_box.grow(&primitive.vertex2);
+            } else {
+                right_count += 1;
+                right_box.grow(&primitive.vertex0);
+                right_box.grow(&primitive.vertex1);
+                right_box.grow(&primitive.vertex2);
+            }
+        }
+        let cost = (left_count as f32) * left_box.area() + (right_count as f32) * right_box.area();
+        
+        if cost > 0_f32 { cost } else { f32::MAX }
+    }
+
     fn subdivide(&mut self, objects: &mut [Triangle], node_idx: usize) {
+        println!("Subdividing node_idx = {}", node_idx);
         // Terminate recursion.
-        let (left_count, i) = {
-            let node = &mut self.partial_bvh.nodes[node_idx];
+        let (best_axis, best_position, best_cost) = {
+            // let node = &mut self.partial_bvh.nodes[node_idx];
+            // Determine the split axis using the midpoint of the boundary volume
+            /*
             if node.primitive_count <= 2 {
                 return;
             }
-            // Determine the split axis and position.
+            // Determine the split axis and position using the bounding volume's midpoint.
             let extent = node.aabb_max - node.aabb_min;
             let mut axis = 0;
             if extent.y > extent.x {
@@ -146,11 +212,44 @@ impl BvhBuilder {
                 axis = 2;
             }
             let split_pos = node.aabb_min[axis] + extent[axis] * (1_f32 / 2_f32);
+            */
+            // Determine the split axis using the surface area heuristic (SAH).
+            let node = self.partial_bvh.nodes[node_idx];
+            let mut best_axis = -1;
+            let mut best_position = 0_f32;
+            let mut best_cost = f32::MAX;
+            for axis in 0..3 {
+                for i in 0..node.primitive_count {
+                    let primitive_idx = self.partial_bvh.node_indices[node.first_primitive_idx + i];
+                    let primitive = &objects[primitive_idx];
+                    let candidate_position = primitive.centroid[axis as usize];
+                    let cost = self.evaluate_sah(objects, &node, axis, candidate_position);
+                    if cost < best_cost {
+                        best_position = candidate_position;
+                        best_axis = axis as isize;
+                        best_cost = cost;
+                    }
+                }
+            }
+
+            (best_axis,best_position, best_cost)
+        };
+        let (left_count, i) = {
+            let node = &mut self.partial_bvh.nodes[node_idx];
+            let axis = best_axis as usize;
+            let split_position = best_position;
+            let extent = node.aabb_max - node.aabb_min;
+            let parent_area = extent.x * extent.y + extent.y * extent.z + extent.z * extent.x;
+            let parent_cost = (node.primitive_count as f32) * parent_area;
+            if best_cost >= parent_cost {
+                return;
+            }
+
             // In-place partition.
             let mut i = node.first_primitive_idx;
             let mut j = i + node.primitive_count - 1;
             while i <= j {
-                if objects[i].centroid[axis] < split_pos {
+                if objects[i].centroid[axis] < split_position {
                     i += 1;
                 } else {
                     objects.swap(i, j);
