@@ -390,33 +390,7 @@ fn main() -> io::Result<()> {
     let mut file = File::create("output.ppm").unwrap();
     write_image_to_file(&canvas, &mut file);
 
-    /*
-    let scene = test_scene2();
-    let mut canvas = render_test_scene2(&scene);
-    let mut file = File::create("output.ppm").unwrap();
-    write_image_to_file(&canvas, &mut file)?;
-    */
-    /*
-    let mut canvas = Canvas::new(2, 2);
-    canvas[0][0] = Rgba::new(255, 0, 0, 255);
-    canvas[0][1] = Rgba::new(0, 255, 0, 255);
-    canvas[1][0] = Rgba::new(0, 0, 255, 255);
-    canvas[1][1] = Rgba::new(255, 255, 0, 255);
-    let mut file = File::create("output.ppm").unwrap();
-    write_image_to_file(&canvas, &mut file)?;
-    */
-    /*
-    let mut canvas = Canvas::new(2, 2);
-    canvas[1][1] = Rgba::new(255, 0, 0, 255);
-    canvas[1][0] = Rgba::new(0, 255, 0, 255);
-    canvas[0][1] = Rgba::new(0, 0, 255, 255);
-    canvas[0][0] = Rgba::new(255, 255, 0, 255);
-    let mut file = File::create("output.ppm").unwrap();
-    write_image_to_file(&canvas, &mut file)?;
-    */
-
     let height = canvas.height;
-    // let width_in_bytes = 3 * canvas.width;
     let width = canvas.width;
     let half_height = canvas.height / 2;
     for row in 0..half_height {
@@ -547,7 +521,6 @@ fn main() -> io::Result<()> {
     };
 
     let tex = send_to_gpu_texture(&canvas, gl::REPEAT).unwrap();
-    // let tex = send_to_gpu_texture_stb(&canvas, gl::CLAMP_TO_EDGE).unwrap();
 
     // Loop until the user closes the window
     while !window.should_close() {
