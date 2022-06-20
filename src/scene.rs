@@ -204,6 +204,8 @@ impl BvhBuilder {
         self.partial_bvh.nodes = vec![BvhNode::default(); 2 * objects.len()];
         
         for object in objects.iter_mut() {
+            // TODO: construct centroid when constructing triangle object instead of doing it 
+            // directly in the builder.
             let one_third = 1_f32 / 3_f32;
             object.centroid = (object.vertex0 + object.vertex1 + object.vertex2) * one_third;
         }

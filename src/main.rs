@@ -1,7 +1,9 @@
 extern crate cglinalg;
 extern crate rand;
 extern crate rand_isaac;
+extern crate stb_image;
 
+use rand::prelude::IteratorRandom;
 use rand::prelude::{
     Rng,
 };
@@ -20,15 +22,26 @@ use crate::bvhtracer::*;
 use crate::canvas::*;
 use crate::scene::*;
 use std::io;
-use std::io::Write;
+use std::io::{
+    BufReader,
+    Read,
+    Write,
+};
 use std::fs::{
     File,
 };
 use std::ops;
+use std::num::{
+    ParseFloatError,
+};
+use std::path::{
+    Path,
+};
+use stb_image::image;
 
 
-const SCREEN_WIDTH: usize = 1280;
-const SCREEN_HEIGHT: usize = 720;
+const SCREEN_WIDTH: usize = 640;
+const SCREEN_HEIGHT: usize = 640;
 
 
 fn initialize_scene(triangle_count: usize) -> Scene {
@@ -116,6 +129,148 @@ fn render() -> Canvas {
             if let Some(intersected_ray) = scene.intersect(&ray) {
                 if intersected_ray.t < f32::MAX {
                     canvas[row][col] = Rgba::new(255, 255, 255, 255);
+                }
+            }
+        }
+    }
+
+    canvas
+}
+
+fn test_scene() -> Scene {
+    let triangle = Triangle::new(
+        Vector3::new(0_f32, 1_f32 / 2_f32, 0_f32),
+        Vector3::new(-1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
+        Vector3::new(1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
+        Vector3::zero()
+    );
+    let triangles = vec![triangle];
+    let builder = SceneBuilder::new();
+    
+    builder.with_objects(triangles).build()
+}
+
+fn render_test_scene(scene: &Scene) -> Canvas {
+    // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
+    let mut canvas = Canvas::new(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    // Set up camera.
+    let camera_position = Vector3::new(0_f32, 0_f32, 2_f32);
+    let p0 = Vector3::new(-1_f32, 1_f32, 1_f32);
+    let p1 = Vector3::new(1_f32, 1_f32, 1_f32);
+    let p2 = Vector3::new(-1_f32, -1_f32, 1_f32);
+
+    println!("rendering scene.");
+    for row in 0..SCREEN_HEIGHT {
+        for col in 0..SCREEN_WIDTH {
+            let ray_origin = camera_position;
+            let pixel_position = p0 + 
+                (p1 - p0) * (col as f32 / SCREEN_WIDTH as f32) + 
+                (p2 - p0) * (row as f32 / SCREEN_HEIGHT as f32);
+            // let ray_origin = camera_position;
+            let ray_direction = (pixel_position - ray_origin).normalize();
+            let ray_t = 1e30_f32;
+            let ray = Ray::new(ray_origin, ray_direction, ray_t);
+            if let Some(intersected_ray) = scene.intersect(&ray) {
+                if intersected_ray.t < 1e30_f32 {
+                    let color = 500 - ((intersected_ray.t * 42_f32) as i32);
+                    let c = color * 0x010101;
+                    let r = ((c & 0x00FF0000) >> 16) as u8;
+                    let g = ((c & 0x0000FF00) >> 8) as u8;
+                    let b = (c & 0x000000FF) as u8;
+                    canvas[row][col] = Rgba::new(r, g, b, 255);
+                }
+            }
+        }
+    }
+
+    canvas
+}
+
+fn test_scene2() -> Scene {
+    let triangle1 = Triangle::new(
+        Vector3::new(0_f32, 1_f32 / 2_f32, 0_f32),
+        Vector3::new(-1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
+        Vector3::new(1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
+        Vector3::zero()
+    );
+    let triangle2 = Triangle::new(
+        Vector3::new(2_f32 / f32::sqrt(3_f32), 1_f32, -0.2_f32),
+        Vector3::new(-2_f32 / f32::sqrt(3_f32), 1_f32, -0.2_f32),
+        Vector3::new(0_f32, -1_f32, -0.2_f32),
+        Vector3::zero(),
+    );
+    let triangles = vec![triangle1, triangle2];
+    let builder = SceneBuilder::new();
+    
+    builder.with_objects(triangles).build()
+}
+
+fn render_test_scene2(scene: &Scene) -> Canvas {
+    // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
+    let mut canvas = Canvas::new(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    // Set up camera.
+    let camera_position = Vector3::new(0_f32, 0_f32, 2_f32);
+    let p0 = Vector3::new(-1_f32, 1_f32, 1_f32);
+    let p1 = Vector3::new(1_f32, 1_f32, 1_f32);
+    let p2 = Vector3::new(-1_f32, -1_f32, 1_f32);
+
+    println!("rendering scene.");
+    for row in 0..SCREEN_HEIGHT {
+        for col in 0..SCREEN_WIDTH {
+            let ray_origin = camera_position;
+            let pixel_position = p0 + 
+                (p1 - p0) * (col as f32 / SCREEN_WIDTH as f32) + 
+                (p2 - p0) * (row as f32 / SCREEN_HEIGHT as f32);
+            // let ray_origin = camera_position;
+            let ray_direction = (pixel_position - ray_origin).normalize();
+            let ray_t = 1e30_f32;
+            let ray = Ray::new(ray_origin, ray_direction, ray_t);
+            if let Some(intersected_ray) = scene.intersect(&ray) {
+                if intersected_ray.t < 1e30_f32 {
+                    let color = 500 - ((intersected_ray.t * 42_f32) as i32);
+                    let c = color * 0x010101;
+                    let r = ((c & 0x00FF0000) >> 16) as u8;
+                    let g = ((c & 0x0000FF00) >> 8) as u8;
+                    let b = (c & 0x000000FF) as u8;
+                    canvas[row][col] = Rgba::new(r, g, b, 255);
+                }
+            }
+        }
+    }
+
+    canvas
+}
+
+fn render_depth_unity(scene: &Scene) -> Canvas {
+    // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
+    let mut canvas = Canvas::new(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    // Set up camera.
+    let camera_position = Vector3::new(-1.5, -0.2, -2.5);
+    let p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
+    let p1 = Vector3::new(1_f32, 1_f32, 2_f32);
+    let p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
+
+    println!("rendering scene.");
+    for row in 0..SCREEN_HEIGHT {
+        for col in 0..SCREEN_WIDTH {
+            let pixel_position = camera_position + p0 + 
+                (p1 - p0) * (col as f32 / SCREEN_WIDTH as f32) + 
+                (p2 - p0) * (row as f32 / SCREEN_HEIGHT as f32);
+            let ray_origin = camera_position;
+            let ray_direction = (pixel_position - ray_origin).normalize();
+            let ray_t = 1e30_f32;
+            let ray = Ray::new(ray_origin, ray_direction, ray_t);
+            if let Some(intersected_ray) = scene.intersect(&ray) {
+                if intersected_ray.t < 1e30_f32 {
+                    let color = 500 - ((intersected_ray.t * 42_f32) as i32);
+                    let c = color * 0x010101;
+                    let r = ((c & 0x00FF0000) >> 16) as u8;
+                    let g = ((c & 0x0000FF00) >> 8) as u8;
+                    let b = (c & 0x000000FF) as u8;
+                    canvas[row][col] = Rgba::new(r, g, b, 255);
                 }
             }
         }
@@ -232,16 +387,84 @@ fn send_to_gpu_texture(canvas: &Canvas, wrapping_mode: GLuint) -> Result<GLuint,
     Ok(tex)
 }
 
+fn load_tri_file_model<P: AsRef<Path>>(path: P) -> Result<Vec<Triangle>, (usize, ParseFloatError)> {
+    let file = File::open(path).unwrap();
+    let mut buf_reader = BufReader::new(file);
+    let mut contents = String::new();
+    buf_reader.read_to_string(&mut contents).unwrap();
+    let mut triangles = vec![];
+    for line in contents.split('\n') {
+        let mut elements = [0_f32; 9];
+        for (i, element_i) in line.split(' ').enumerate() {
+            elements[i] = match element_i.parse::<f32>() {
+                Ok(value) => value,
+                Err(err) => return Err((i, err)),
+            };
+        }
+
+        let mut vertices = [Vector3::zero(); 3];
+        for (i, vertex_i) in elements
+            .chunks(3)
+            .map(|chunk| Vector3::new(chunk[0], chunk[1], chunk[2]))
+            .enumerate() 
+        {
+            vertices[i] = vertex_i;
+        }
+
+        let triangle = Triangle::new(vertices[0], vertices[1], vertices[2], Vector3::zero());
+
+        triangles.push(triangle);
+    }
+
+    Ok(triangles)
+}
+
 fn main() -> io::Result<()> {
-    use std::time;
-    let now = time::SystemTime::now();
-    let canvas = render_naive();
-    let elapsed_naive = now.elapsed().unwrap();
-    let now = time::SystemTime::now();
-    let canvas = render();
-    let elapsed_bvh = now.elapsed().unwrap();
-    println!("elapsed_naive = {}", elapsed_naive.as_micros());
-    println!("elapsed_bvh = {}", elapsed_bvh.as_micros());
+
+    let triangles = load_tri_file_model("assets/unity.tri").unwrap();
+    let builder = SceneBuilder::new();
+    let scene = builder.with_objects(triangles).build();
+    let mut canvas = render_depth_unity(&scene);
+    let mut file = File::create("output.ppm").unwrap();
+    write_image_to_file(&canvas, &mut file);
+
+    /*
+    let scene = test_scene2();
+    let mut canvas = render_test_scene2(&scene);
+    let mut file = File::create("output.ppm").unwrap();
+    write_image_to_file(&canvas, &mut file)?;
+    */
+    /*
+    let mut canvas = Canvas::new(2, 2);
+    canvas[0][0] = Rgba::new(255, 0, 0, 255);
+    canvas[0][1] = Rgba::new(0, 255, 0, 255);
+    canvas[1][0] = Rgba::new(0, 0, 255, 255);
+    canvas[1][1] = Rgba::new(255, 255, 0, 255);
+    let mut file = File::create("output.ppm").unwrap();
+    write_image_to_file(&canvas, &mut file)?;
+    */
+    /*
+    let mut canvas = Canvas::new(2, 2);
+    canvas[1][1] = Rgba::new(255, 0, 0, 255);
+    canvas[1][0] = Rgba::new(0, 255, 0, 255);
+    canvas[0][1] = Rgba::new(0, 0, 255, 255);
+    canvas[0][0] = Rgba::new(255, 255, 0, 255);
+    let mut file = File::create("output.ppm").unwrap();
+    write_image_to_file(&canvas, &mut file)?;
+    */
+
+    let height = canvas.height;
+    // let width_in_bytes = 3 * canvas.width;
+    let width = canvas.width;
+    let half_height = canvas.height / 2;
+    for row in 0..half_height {
+        for col in 0..width {
+            let temp = canvas.data[row * width + col];
+            canvas.data[row * width + col] = canvas.data[((height - row - 1) * width) + col];
+            canvas.data[((height - row - 1) * width) + col] = temp;
+        }
+    }
+
 
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 
@@ -276,12 +499,12 @@ fn main() -> io::Result<()> {
     gl::load_with(|symbol| { window.get_proc_address(symbol) as *const _ });
 
     let vertices: Vec<[f32; 2]> = vec![
-        [1.0, 1.0], [-1.0, -1.0], [ 1.0, -1.0], 
         [1.0, 1.0], [-1.0,  1.0], [-1.0, -1.0],
+        [1.0, 1.0], [-1.0, -1.0], [ 1.0, -1.0], 
     ];
     let tex_coords: Vec<[f32; 2]> = vec![
-        [1.0, 1.0], [0.0, 0.0], [1.0, 0.0],
         [1.0, 1.0], [0.0, 1.0], [0.0, 0.0],
+        [1.0, 1.0], [0.0, 0.0], [1.0, 0.0],
     ];
 
     let trans_mat = Matrix4x4::identity();
@@ -323,9 +546,11 @@ fn main() -> io::Result<()> {
 
         let vertices_len_bytes = (vertices.len() * mem::size_of::<[f32; 2]>()) as isize;
         let tex_coords_len_bytes = (tex_coords.len() * mem::size_of::<[f32; 2]>()) as isize;
+
         let v_pos_location = gl::GetAttribLocation(shader_program, gl_str("v_pos").as_ptr());
         debug_assert!(v_pos_location > -1);
         let v_pos_location = v_pos_location as u32;
+        
         let v_tex_location = gl::GetAttribLocation(shader_program, gl_str("v_tex").as_ptr());
         debug_assert!(v_tex_location > -1);
         let v_tex_location = v_tex_location as u32;
@@ -349,6 +574,7 @@ fn main() -> io::Result<()> {
         gl::BindVertexArray(vao);
         gl::BindBuffer(gl::ARRAY_BUFFER, vertex_vbo);
         gl::VertexAttribPointer(v_pos_location, 2, gl::FLOAT, gl::FALSE, 0, ptr::null());
+        gl::BindBuffer(gl::ARRAY_BUFFER, tex_coords_vbo);
         gl::VertexAttribPointer(v_tex_location, 2, gl::FLOAT, gl::FALSE, 0, ptr::null());
         gl::EnableVertexAttribArray(v_pos_location);
         gl::EnableVertexAttribArray(v_tex_location);
@@ -359,13 +585,14 @@ fn main() -> io::Result<()> {
     };
 
     let tex = send_to_gpu_texture(&canvas, gl::REPEAT).unwrap();
+    // let tex = send_to_gpu_texture_stb(&canvas, gl::CLAMP_TO_EDGE).unwrap();
 
     // Loop until the user closes the window
     while !window.should_close() {
         let (width, height) = window.get_framebuffer_size();
         // let time_elapsed = glfw.get_time();
-        let (scale_x, scale_y) = window.get_content_scale();
-        gui_scale_mat = Matrix4x4::from_affine_nonuniform_scale(scale_x, scale_y, 1_f32);
+        // let (scale_x, scale_y) = window.get_content_scale();
+        // gui_scale_mat = Matrix4x4::from_affine_nonuniform_scale(scale_x, scale_y, 1_f32);
 
         // Poll for and process events
         glfw.poll_events();
