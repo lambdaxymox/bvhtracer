@@ -54,8 +54,7 @@ fn initialize_scene(triangle_count: usize) -> Scene {
         let vertex0 = r0 * 9_f32 - Vector3::from_fill(5_f32);
         let vertex1 = vertex0 + r1;
         let vertex2 = vertex0 + r2;
-        let centroid = Vector3::zero();
-        objects[i] = Triangle::new(vertex0, vertex1, vertex2, centroid);
+        objects[i] = Triangle::new(vertex0, vertex1, vertex2);
     }
 
     let builder = SceneBuilder::new();
@@ -142,7 +141,6 @@ fn test_scene() -> Scene {
         Vector3::new(0_f32, 1_f32 / 2_f32, 0_f32),
         Vector3::new(-1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
         Vector3::new(1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
-        Vector3::zero()
     );
     let triangles = vec![triangle];
     let builder = SceneBuilder::new();
@@ -192,13 +190,11 @@ fn test_scene2() -> Scene {
         Vector3::new(0_f32, 1_f32 / 2_f32, 0_f32),
         Vector3::new(-1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
         Vector3::new(1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
-        Vector3::zero()
     );
     let triangle2 = Triangle::new(
         Vector3::new(2_f32 / f32::sqrt(3_f32), 1_f32, -0.2_f32),
         Vector3::new(-2_f32 / f32::sqrt(3_f32), 1_f32, -0.2_f32),
         Vector3::new(0_f32, -1_f32, -0.2_f32),
-        Vector3::zero(),
     );
     let triangles = vec![triangle1, triangle2];
     let builder = SceneBuilder::new();
@@ -411,7 +407,7 @@ fn load_tri_file_model<P: AsRef<Path>>(path: P) -> Result<Vec<Triangle>, (usize,
             vertices[i] = vertex_i;
         }
 
-        let triangle = Triangle::new(vertices[0], vertices[1], vertices[2], Vector3::zero());
+        let triangle = Triangle::new(vertices[0], vertices[1], vertices[2]);
 
         triangles.push(triangle);
     }

@@ -12,7 +12,10 @@ pub struct Triangle {
 }
 
 impl Triangle {
-    pub fn new(vertex0: Vector3<f32>, vertex1: Vector3<f32>, vertex2: Vector3<f32>, centroid: Vector3<f32>) -> Self {
+    pub fn new(vertex0: Vector3<f32>, vertex1: Vector3<f32>, vertex2: Vector3<f32>) -> Self {
+        let one_third = 1_f32 / 3_f32;
+        let centroid = (vertex0 + vertex1 + vertex2) * one_third;
+
         Self { vertex0, vertex1, vertex2, centroid, }
     }
 
