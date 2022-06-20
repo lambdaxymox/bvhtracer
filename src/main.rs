@@ -210,29 +210,34 @@ fn render_depth_unity(scene: &Scene) -> Canvas {
     let mut canvas = Canvas::new(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     // Set up camera.
-    let camera_position = Vector3::new(-1.5, -0.2, -2.5);
+    // let camera_position = Vector3::new(-1.5, -0.2, -2.5);
+    let camera_position = Vector3::new(-1.5, 0.0, -2.5);
     let p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
     let p1 = Vector3::new(1_f32, 1_f32, 2_f32);
     let p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
 
     println!("rendering scene.");
-    for row in 0..SCREEN_HEIGHT {
-        for col in 0..SCREEN_WIDTH {
-            let pixel_position = camera_position + p0 + 
-                (p1 - p0) * (col as f32 / SCREEN_WIDTH as f32) + 
-                (p2 - p0) * (row as f32 / SCREEN_HEIGHT as f32);
-            let ray_origin = camera_position;
-            let ray_direction = (pixel_position - ray_origin).normalize();
-            let ray_t = f32::MAX;
-            let ray = Ray::new(ray_origin, ray_direction, ray_t);
-            if let Some(intersected_ray) = scene.intersect(&ray) {
-                if intersected_ray.t < f32::MAX {
-                    let color = 500 - ((intersected_ray.t * 42_f32) as i32);
-                    let c = color * 0x010101;
-                    let r = ((c & 0x00FF0000) >> 16) as u8;
-                    let g = ((c & 0x0000FF00) >> 8) as u8;
-                    let b = (c & 0x000000FF) as u8;
-                    canvas[row][col] = Rgba::new(r, g, b, 255);
+    for row in (0..SCREEN_HEIGHT).step_by(4) {
+        for col in (0..SCREEN_WIDTH).step_by(4) {
+            for v in 0..4 {
+                for u in 0..4 {
+                    let pixel_position = camera_position + p0 + 
+                        (p1 - p0) * ((col + u) as f32 / SCREEN_WIDTH as f32) + 
+                        (p2 - p0) * ((row + v) as f32 / SCREEN_HEIGHT as f32);
+                    let ray_origin = camera_position;
+                    let ray_direction = (pixel_position - ray_origin).normalize();
+                    let ray_t = f32::MAX;
+                    let ray = Ray::new(ray_origin, ray_direction, ray_t);
+                    if let Some(intersected_ray) = scene.intersect(&ray) {
+                        if intersected_ray.t < f32::MAX {
+                            let color = 500 - ((intersected_ray.t * 42_f32) as i32);
+                            let c = color * 0x010101;
+                            let r = ((c & 0x00FF0000) >> 16) as u8;
+                            let g = ((c & 0x0000FF00) >> 8) as u8;
+                            let b = (c & 0x000000FF) as u8;
+                            canvas[row + v][col + u] = Rgba::new(r, g, b, 255);
+                        }
+                    }
                 }
             }
         }
