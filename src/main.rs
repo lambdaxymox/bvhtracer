@@ -169,10 +169,10 @@ fn render_test_scene(scene: &Scene) -> Canvas {
                 (p2 - p0) * (row as f32 / SCREEN_HEIGHT as f32);
             // let ray_origin = camera_position;
             let ray_direction = (pixel_position - ray_origin).normalize();
-            let ray_t = 1e30_f32;
+            let ray_t = f32::MAX;
             let ray = Ray::new(ray_origin, ray_direction, ray_t);
             if let Some(intersected_ray) = scene.intersect(&ray) {
-                if intersected_ray.t < 1e30_f32 {
+                if intersected_ray.t < f32::MAX {
                     let color = 500 - ((intersected_ray.t * 42_f32) as i32);
                     let c = color * 0x010101;
                     let r = ((c & 0x00FF0000) >> 16) as u8;
@@ -225,10 +225,10 @@ fn render_test_scene2(scene: &Scene) -> Canvas {
                 (p2 - p0) * (row as f32 / SCREEN_HEIGHT as f32);
             // let ray_origin = camera_position;
             let ray_direction = (pixel_position - ray_origin).normalize();
-            let ray_t = 1e30_f32;
+            let ray_t = f32::MAX;
             let ray = Ray::new(ray_origin, ray_direction, ray_t);
             if let Some(intersected_ray) = scene.intersect(&ray) {
-                if intersected_ray.t < 1e30_f32 {
+                if intersected_ray.t < f32::MAX {
                     let color = 500 - ((intersected_ray.t * 42_f32) as i32);
                     let c = color * 0x010101;
                     let r = ((c & 0x00FF0000) >> 16) as u8;
@@ -261,10 +261,10 @@ fn render_depth_unity(scene: &Scene) -> Canvas {
                 (p2 - p0) * (row as f32 / SCREEN_HEIGHT as f32);
             let ray_origin = camera_position;
             let ray_direction = (pixel_position - ray_origin).normalize();
-            let ray_t = 1e30_f32;
+            let ray_t = f32::MAX;
             let ray = Ray::new(ray_origin, ray_direction, ray_t);
             if let Some(intersected_ray) = scene.intersect(&ray) {
-                if intersected_ray.t < 1e30_f32 {
+                if intersected_ray.t < f32::MAX {
                     let color = 500 - ((intersected_ray.t * 42_f32) as i32);
                     let c = color * 0x010101;
                     let r = ((c & 0x00FF0000) >> 16) as u8;
