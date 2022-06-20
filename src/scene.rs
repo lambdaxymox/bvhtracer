@@ -4,7 +4,7 @@ use cglinalg::{
 use crate::bvhtracer::*;
 
 
-fn intersect_aabb(ray: &Ray, aabb_min: &Vector3<f32>, aabb_max: &Vector3<f32>) -> bool {
+fn intersect_aabb(ray: &Ray, aabb_min: &Vector3<f32>, aabb_max: &Vector3<f32>) -> f32 {
     let t_x1 = (aabb_min.x - ray.origin.x) / ray.direction.x;
     let t_x2 = (aabb_max.x - ray.origin.x) / ray.direction.x;
     let t_min = f32::min(t_x1, t_x2);
@@ -18,7 +18,11 @@ fn intersect_aabb(ray: &Ray, aabb_min: &Vector3<f32>, aabb_max: &Vector3<f32>) -
     let t_min = f32::max(t_min, f32::min(t_z1, t_z2)); 
     let t_max = f32::min(t_max, f32::max(t_z1, t_z2));
     
-    (t_max >= t_min) && (t_min < ray.t) && (t_max > 0_f32)
+    if (t_max >= t_min) && (t_min < ray.t) && (t_max > 0_f32) {
+        t_min
+    } else {
+        f32::MAX
+    }
 }
 
 
@@ -85,6 +89,7 @@ pub struct Bvh {
 
 impl Bvh {
     pub fn intersect(&self, objects: &[Triangle], ray: &Ray, node_idx: usize) -> Option<Ray> {
+        /*
         let node = &self.nodes[node_idx];
         if !intersect_aabb(ray, &node.aabb_min, &node.aabb_max) {
             return None;
@@ -107,6 +112,55 @@ impl Bvh {
                 return None;
             }
         }
+        */
+        let mut node = &self.nodes[node_idx];
+        let mut stack = vec![];
+        let mut best_ray = *ray;
+        loop {
+            if node.is_leaf() {
+                for i in 0..node.primitive_count {
+                    let primitive_idx = self.node_indices[node.first_primitive_idx];
+                    let primitive = objects[primitive_idx + i];
+                    if let Some(intersected_ray) = primitive.intersect(&best_ray) {
+                        best_ray = intersected_ray;
+                    }
+                }
+                if stack.is_empty() {
+                    break;
+                } else {
+                    node = stack.pop().unwrap();
+                }
+
+                continue;
+            }
+            let mut child1 = &self.nodes[node.left_node];
+            let mut child2 = &self.nodes[node.left_node + 1];
+            let mut dist1 = intersect_aabb(&best_ray, &child1.aabb_min, &child1.aabb_max);
+            let mut dist2 = intersect_aabb(&best_ray, &child2.aabb_min, &child2.aabb_max);
+            if dist1 > dist2 { 
+                let dist_temp = dist1;
+                let child_temp = child1;
+                dist1 = dist2;
+                dist2 = dist_temp;
+                child1 = child2;
+                child2 = child_temp;
+
+            }
+            if dist1 == f32::MAX {
+                if stack.is_empty() {
+                    break;
+                } else {
+                    node = stack.pop().unwrap();
+                }
+            } else {
+                node = child1;
+                if dist2 != f32::MAX {
+                    stack.push(child2);
+                }
+            }
+        }
+
+        Some(best_ray)
     }
 }
 
