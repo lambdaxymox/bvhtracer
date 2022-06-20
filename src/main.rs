@@ -29,39 +29,6 @@ const SCREEN_WIDTH: usize = 1280;
 const SCREEN_HEIGHT: usize = 720;
 
 
-fn intersect_tri(triangle: &Triangle, ray: &Ray) -> Option<Ray>{
-    let edge1 = triangle.vertex1 - triangle.vertex0;
-    let edge2 = triangle.vertex2 - triangle.vertex0;
-    let h = ray.direction.cross(&edge2);
-    let a = edge1.dot(&h);
-    if a > -0.0001 && a < 0.0001 {
-        // The ray is parallel to the triangle.
-        // return *ray;
-        return None;
-    }
-    let f = 1_f32 / a;
-    let s = ray.origin - triangle.vertex0;
-    let u = f * s.dot(&h);
-    if u < 0_f32 || u > 1_f32 {
-        // return *ray;
-        return None;
-    }
-    let q = s.cross(&edge1);
-    let v = f * ray.direction.dot(&q);
-    if v < 0_f32 || u + v > 1_f32 {
-        // return *ray;
-        return None;
-    }
-    let t = f * edge2.dot(&q);
-    if t > 0.0001 {
-        let t_intersect = f32::min(ray.t, t);
-
-        return Some(Ray::new(ray.origin, ray.direction, t_intersect));
-    } else {
-        return None;
-    }
-}
-
 fn initialize_scene(triangle_count: usize) -> Scene {
     let mut objects = vec![Triangle::default(); 64];
     let mut rng = rand::prelude::thread_rng();
@@ -111,7 +78,7 @@ fn render_naive() -> Canvas {
             let ray_t = f32::MAX;
             let ray = Ray::new(ray_origin, ray_direction, ray_t);
             for object in scene.objects.iter() {
-                if let Some(intersected_ray) = intersect_tri(object, &ray) { 
+                if let Some(intersected_ray) = object.intersect(&ray) { 
                     if intersected_ray.t < f32::MAX {
                         canvas[row][col] = Rgba::new(255, 255, 255, 255);
                     }
@@ -206,7 +173,7 @@ impl Bvh {
         if node.is_leaf() {
             for i in 0..node.primitive_count {
                 let primitive_idx = self.node_indices[node.first_primitive_idx + i];
-                if let Some(new_ray) = intersect_tri(&objects[primitive_idx], ray) {
+                if let Some(new_ray) = objects[primitive_idx].intersect(ray) {
                     return Some(new_ray);
                 }
             }
