@@ -70,40 +70,6 @@ fn write_image_to_file(canvas: &Canvas, file: &mut File) -> io::Result<()> {
     Ok(())
 }
 
-fn render_naive() -> Canvas {
-    let triangle_count = 64;
-    let scene = initialize_scene(triangle_count);
-    let mut canvas = Canvas::new(SCREEN_WIDTH, SCREEN_HEIGHT);
-
-    // Set up camera.
-    let camera_position = Vector3::new(0_f32, 0_f32, -18_f32);
-    let p0 = Vector3::new(-1_f32, 1_f32, -15_f32);
-    let p1 = Vector3::new(1_f32, 1_f32, -15_f32);
-    let p2 = Vector3::new(-1_f32, -1f32, -15_f32);
-
-    println!("rendering scene.");
-    for row in 0..SCREEN_HEIGHT {
-        for col in 0..SCREEN_WIDTH {
-            let pixel_position = p0 + 
-                (p1 - p0) * (col as f32 / SCREEN_WIDTH as f32) + 
-                (p2 - p0) * (row as f32 / SCREEN_HEIGHT as f32);
-            let ray_origin = camera_position;
-            let ray_direction = (pixel_position - ray_origin).normalize();
-            let ray_t = f32::MAX;
-            let ray = Ray::new(ray_origin, ray_direction, ray_t);
-            for object in scene.objects.iter() {
-                if let Some(intersected_ray) = object.intersect(&ray) { 
-                    if intersected_ray.t < f32::MAX {
-                        canvas[row][col] = Rgba::new(255, 255, 255, 255);
-                    }
-                }
-            }
-        }
-    }
-
-    canvas
-}
-
 fn render() -> Canvas {
     let triangle_count = 64;
     let scene = initialize_scene(triangle_count);
