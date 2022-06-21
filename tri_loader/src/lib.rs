@@ -38,3 +38,4 @@ pub fn load<P: AsRef<Path>>(path: P) -> Result<Vec<Triangle>, TriLoaderError> {
     let mut buf_reader = BufReader::new(file);
     from_reader(&mut buf_reader)
 }
+

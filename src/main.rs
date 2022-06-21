@@ -2,6 +2,8 @@ extern crate cglinalg;
 extern crate rand;
 extern crate rand_isaac;
 extern crate stb_image;
+extern crate tri_loader;
+
 
 use rand::prelude::IteratorRandom;
 use rand::prelude::{
@@ -16,8 +18,6 @@ use cglinalg::{
 mod triangle;
 mod canvas;
 mod scene;
-mod tri_loader;
-
 
 use crate::triangle::*;
 use crate::canvas::*;
