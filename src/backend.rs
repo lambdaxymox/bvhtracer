@@ -1,18 +1,41 @@
 use crate::gl;
 use crate::gl::types::{
-    GLboolean, GLchar, GLenum, GLfloat, GLint, GLubyte, GLuint
+    GLboolean, 
+    GLchar, 
+    GLenum, 
+    GLfloat, 
+    GLint, 
+    GLubyte, 
+    GLuint,
 };
 use glfw;
-use glfw::{Context, Glfw};
+use glfw::{
+    Context, 
+    Glfw,
+};
 
-use std::ffi::{CStr, CString};
-use std::fs::File;
-use std::io::{Read, BufReader};
+use std::ffi::{
+    CStr, 
+    CString,
+};
+use std::fs::{
+    File,
+};
+use std::io::{
+    Read, 
+    BufReader,
+};
+use std::collections::{
+    HashMap,
+};
 use std::sync::mpsc::Receiver;
 use std::ptr;
 use std::fmt;
 use std::mem;
 use std::path::Path;
+use std::slice::{
+    Iter,
+};
 
 // use log::{info, error};
 
@@ -37,78 +60,177 @@ pub fn gl_str(st: &str) -> CString {
     CString::new(st).unwrap()
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum GlParameter {
+    MaxCombinedTextureImageUnits = gl::MAX_COMBINED_TEXTURE_IMAGE_UNITS as isize,
+    MaxCubeMapTextureSize        = gl::MAX_CUBE_MAP_TEXTURE_SIZE as isize, 
+    MaxDrawBuffers               = gl::MAX_DRAW_BUFFERS as isize,
+    MaxFragmentUniformComponents = gl::MAX_FRAGMENT_UNIFORM_COMPONENTS as isize,
+    MaxTextureImageUnits         = gl::MAX_TEXTURE_IMAGE_UNITS as isize,
+    MaxTextureSize               = gl::MAX_TEXTURE_SIZE as isize,
+    MaxVaryingFloats             = gl::MAX_VARYING_FLOATS as isize,
+    MaxVertexAttributes          = gl::MAX_VERTEX_ATTRIBS as isize,
+    MaxVertexTextureImageUnits   = gl::MAX_VERTEX_TEXTURE_IMAGE_UNITS as isize,
+    MaxVertexUniformComponents   = gl::MAX_VERTEX_UNIFORM_COMPONENTS as isize,
+    MaxViewportDimensions        = gl::MAX_VIEWPORT_DIMS as isize,
+    Stereo                       = gl::STEREO as isize,
+}
+
+impl GlParameter {
+    pub fn as_isize(self) -> isize {
+        self as isize
+    }
+
+    pub fn iter() -> Iter<'static, GlParameter> {
+        static GL_PARAMETERS: [GlParameter; 12] = [
+            GlParameter::MaxCombinedTextureImageUnits,
+            GlParameter::MaxCubeMapTextureSize,
+            GlParameter::MaxDrawBuffers,
+            GlParameter::MaxFragmentUniformComponents,
+            GlParameter::MaxTextureImageUnits,
+            GlParameter::MaxTextureSize,
+            GlParameter::MaxVaryingFloats,
+            GlParameter::MaxVertexAttributes,
+            GlParameter::MaxVertexTextureImageUnits,
+            GlParameter::MaxVertexUniformComponents,
+            GlParameter::MaxViewportDimensions,
+            GlParameter::Stereo,
+        ];
+
+        GL_PARAMETERS.iter()
+    }
+}
+
+impl fmt::Display for GlParameter {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        let st = match *self {
+            GlParameter::MaxCombinedTextureImageUnits => "GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS",
+            GlParameter::MaxCubeMapTextureSize        => "GL_MAX_CUBE_MAP_TEXTURE_SIZE",
+            GlParameter::MaxDrawBuffers               => "GL_MAX_DRAW_BUFFERS",
+            GlParameter::MaxFragmentUniformComponents => "GL_MAX_FRAGMENT_UNIFORM_COMPONENTS",
+            GlParameter::MaxTextureImageUnits         => "GL_MAX_TEXTURE_IMAGE_UNITS",
+            GlParameter::MaxTextureSize               => "GL_MAX_TEXTURE_SIZE",
+            GlParameter::MaxVaryingFloats             => "GL_MAX_VARYING_FLOATS",
+            GlParameter::MaxVertexAttributes          => "GL_MAX_VERTEX_ATTRIBS",
+            GlParameter::MaxVertexTextureImageUnits   => "GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS",
+            GlParameter::MaxVertexUniformComponents   => "GL_MAX_VERTEX_UNIFORM_COMPONENTS",
+            GlParameter::MaxViewportDimensions        => "GL_MAX_VIEWPORT_DIMS",
+            GlParameter::Stereo                       => "GL_STEREO"
+        };
+
+        write!(formatter, "{}", st)
+    }
+}
+
 /// A record containing a description of the GL capabilities on a local machine.
 /// The contents of this record can be used for debugging OpenGL problems on
 /// different machines.
-struct GLParameters {
-    params: Vec<(String, String)>
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GlParameterSet {
+    data: HashMap<GlParameter, String>,
 }
 
-impl fmt::Display for GLParameters {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "GL Context Params:").unwrap();
-        for &(ref param, ref value) in self.params.iter() {
-            writeln!(f, "{} = {}", param, value).unwrap();
+impl fmt::Display for GlParameterSet {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(formatter, "GL Context Params:").unwrap();
+        for (ref param, ref value) in self.data.iter() {
+            writeln!(formatter, "{} = {}", param, value).unwrap();
         }
-        writeln!(f)
+        writeln!(formatter)
     }
 }
 
 /// Print out the GL capabilities on a local machine. This is handy for debugging
 /// OpenGL program problems on other people's machines.
-fn gl_params() -> GLParameters {
-    let params: [GLenum; 12] = [
-        gl::MAX_COMBINED_TEXTURE_IMAGE_UNITS,
-        gl::MAX_CUBE_MAP_TEXTURE_SIZE,
-        gl::MAX_DRAW_BUFFERS,
-        gl::MAX_FRAGMENT_UNIFORM_COMPONENTS,
-        gl::MAX_TEXTURE_IMAGE_UNITS,
-        gl::MAX_TEXTURE_SIZE,
-        gl::MAX_VARYING_FLOATS,
-        gl::MAX_VERTEX_ATTRIBS,
-        gl::MAX_VERTEX_TEXTURE_IMAGE_UNITS,
-        gl::MAX_VERTEX_UNIFORM_COMPONENTS,
-        gl::MAX_VIEWPORT_DIMS,
-        gl::STEREO,
-    ];
-    let names: [&str; 12] = [
-        "GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS",
-        "GL_MAX_CUBE_MAP_TEXTURE_SIZE",
-        "GL_MAX_DRAW_BUFFERS",
-        "GL_MAX_FRAGMENT_UNIFORM_COMPONENTS",
-        "GL_MAX_TEXTURE_IMAGE_UNITS",
-        "GL_MAX_TEXTURE_SIZE",
-        "GL_MAX_VARYING_FLOATS",
-        "GL_MAX_VERTEX_ATTRIBS",
-        "GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS",
-        "GL_MAX_VERTEX_UNIFORM_COMPONENTS",
-        "GL_MAX_VIEWPORT_DIMS",
-        "GL_STEREO",
-    ];
-    let mut vec: Vec<(String, String)> = vec![];
-    // Integers: this only works if the order is 0-10 integer return types.
-    for i in 0..10 {
-        let mut v = 0;
-        unsafe { 
-            gl::GetIntegerv(params[i], &mut v);
-        }
-        vec.push((format!("{}", names[i]), format!("{}", v)));
-    }
-    // others
-    let mut v: [GLint; 2] = [0; 2];
-    unsafe {    
-        gl::GetIntegerv(params[10], &mut v[0]);
-    }
-    vec.push((format!("{}", names[10]), format!("{} {}", v[0], v[1])));
-    let mut s = 0;
-    unsafe {
-        gl::GetBooleanv(params[11], &mut s);
-    }
-    vec.push((format!("{}", names[11]), format!("{}", s as usize)));
+fn gl_params() -> GlParameterSet {
+    let max_combined_texture_image_units = unsafe {
+        let mut raw_value = 0;
+        gl::GetIntegerv(GlParameter::MaxCombinedTextureImageUnits as u32, &mut raw_value);
 
-    GLParameters {
-        params: vec,
-    }
+        format!("{}", raw_value)
+    };
+    let max_cube_map_texture_size = unsafe {
+        let mut raw_value = 0;
+        gl::GetIntegerv(GlParameter::MaxCubeMapTextureSize as u32, &mut raw_value);
+        
+        format!("{}", raw_value)
+    };
+    let max_draw_buffers = unsafe {
+        let mut raw_value = 0;
+        gl::GetIntegerv(GlParameter::MaxDrawBuffers as u32, &mut raw_value);
+      
+        format!("{}", raw_value)
+    };
+    let max_fragment_uniform_components = unsafe {
+        let mut raw_value = 0;
+        gl::GetIntegerv(GlParameter::MaxFragmentUniformComponents as u32, &mut raw_value);
+      
+        format!("{}", raw_value)
+    };
+    let max_texture_image_units = unsafe {
+        let mut raw_value = 0;
+        gl::GetIntegerv(GlParameter::MaxTextureImageUnits as u32, &mut raw_value);
+      
+        format!("{}", raw_value)
+    };
+    let max_texture_size = unsafe {
+        let mut raw_value = 0;
+        gl::GetIntegerv(GlParameter::MaxTextureSize as u32, &mut raw_value);
+    
+        format!("{}", raw_value)
+    };
+    let max_varying_floats = unsafe {
+        let mut raw_value = 0;
+        gl::GetIntegerv(GlParameter::MaxVaryingFloats as u32, &mut raw_value);
+      
+        format!("{}", raw_value)
+    };
+    let max_vertex_attributes = unsafe {
+        let mut raw_value = 0;
+        gl::GetIntegerv(GlParameter::MaxVertexAttributes as u32, &mut raw_value);
+      
+        format!("{}", raw_value)
+    };
+    let max_vertex_texture_image_units = unsafe {
+        let mut raw_value = 0;
+        gl::GetIntegerv(GlParameter::MaxVertexTextureImageUnits as u32, &mut raw_value);
+      
+        format!("{}", raw_value)
+    };
+    let max_vertex_uniform_components = unsafe {
+        let mut raw_value = 0;
+        gl::GetIntegerv(GlParameter::MaxVertexUniformComponents as u32, &mut raw_value);
+    
+        format!("{}", raw_value)
+    };
+    let max_viewport_dimensions = unsafe {
+        let mut raw_value: [GLint; 2] = [0; 2];    
+        gl::GetIntegerv(GlParameter::MaxViewportDimensions as u32, &mut raw_value[0]);
+
+        format!("(width: {}, height: {})", raw_value[0], raw_value[1])
+    };
+    let stereo = unsafe {
+        let mut raw_value = 0;
+        gl::GetBooleanv(GlParameter::Stereo as u32, &mut raw_value);
+
+        format!("{}", raw_value)
+    };
+
+    let mut data = HashMap::new();
+    data.insert(GlParameter::MaxCombinedTextureImageUnits, max_combined_texture_image_units);
+    data.insert(GlParameter::MaxCubeMapTextureSize, max_cube_map_texture_size);
+    data.insert(GlParameter::MaxDrawBuffers, max_draw_buffers);
+    data.insert(GlParameter::MaxFragmentUniformComponents, max_fragment_uniform_components);
+    data.insert(GlParameter::MaxTextureImageUnits, max_texture_image_units);
+    data.insert(GlParameter::MaxTextureSize, max_texture_size);
+    data.insert(GlParameter::MaxVaryingFloats, max_varying_floats);
+    data.insert(GlParameter::MaxVertexAttributes, max_vertex_attributes);
+    data.insert(GlParameter::MaxVertexTextureImageUnits, max_vertex_texture_image_units);
+    data.insert(GlParameter::MaxVertexUniformComponents, max_vertex_uniform_components);
+    data.insert(GlParameter::MaxViewportDimensions, max_viewport_dimensions);
+    data.insert(GlParameter::Stereo, stereo);
+
+    GlParameterSet { data, }
 }
 
 /// Helper function to convert GLSL types to storage sizes
