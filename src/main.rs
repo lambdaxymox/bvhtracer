@@ -32,7 +32,6 @@ use std::fs::{
 use std::path::{
     Path,
 };
-use stb_image::image;
 use backend::*;
 
 
@@ -123,11 +122,10 @@ fn render_test_scene(scene: &Scene) -> Canvas {
     println!("rendering scene.");
     for row in 0..SCREEN_HEIGHT {
         for col in 0..SCREEN_WIDTH {
-            let ray_origin = camera_position;
             let pixel_position = p0 + 
                 (p1 - p0) * (col as f32 / SCREEN_WIDTH as f32) + 
                 (p2 - p0) * (row as f32 / SCREEN_HEIGHT as f32);
-            // let ray_origin = camera_position;
+            let ray_origin = camera_position;
             let ray_direction = (pixel_position - ray_origin).normalize();
             let ray_t = f32::MAX;
             let ray = Ray::new(ray_origin, ray_direction, ray_t);
@@ -177,11 +175,10 @@ fn render_test_scene2(scene: &Scene) -> Canvas {
     println!("rendering scene.");
     for row in 0..SCREEN_HEIGHT {
         for col in 0..SCREEN_WIDTH {
-            let ray_origin = camera_position;
             let pixel_position = p0 + 
                 (p1 - p0) * (col as f32 / SCREEN_WIDTH as f32) + 
                 (p2 - p0) * (row as f32 / SCREEN_HEIGHT as f32);
-            // let ray_origin = camera_position;
+            let ray_origin = camera_position;
             let ray_direction = (pixel_position - ray_origin).normalize();
             let ray_t = f32::MAX;
             let ray = Ray::new(ray_origin, ray_direction, ray_t);
@@ -250,12 +247,15 @@ mod gl {
 }
 
 use glfw::{Action, Context, Key};
-use gl::types::{GLuint, GLfloat};
-use std::ffi::{CStr, CString, c_void};
+use gl::types::{
+    GLuint, 
+    GLfloat
+};
+use std::ffi::{
+    c_void,
+};
 use std::ptr;
 use std::mem;
-use std::fmt;
-
 
 /// Load texture image into the GPU.
 fn send_to_gpu_texture(canvas: &Canvas, wrapping_mode: GLuint) -> Result<GLuint, String> {
