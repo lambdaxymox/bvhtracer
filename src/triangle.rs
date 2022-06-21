@@ -26,20 +26,17 @@ impl Triangle {
         let a = edge1.dot(&h);
         if a > -0.0001 && a < 0.0001 {
             // The ray is parallel to the triangle.
-            // return *ray;
             return None;
         }
         let f = 1_f32 / a;
         let s = ray.origin - self.vertex0;
         let u = f * s.dot(&h);
         if u < 0_f32 || u > 1_f32 {
-            // return *ray;
             return None;
         }
         let q = s.cross(&edge1);
         let v = f * ray.direction.dot(&q);
         if v < 0_f32 || u + v > 1_f32 {
-            // return *ray;
             return None;
         }
         let t = f * edge2.dot(&q);
