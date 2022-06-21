@@ -130,14 +130,6 @@ impl<'a> TriLoader<'a> {
         }
     }
 
-    /*
-    fn skip_one_or_more_newlines(&mut self) -> Result<(), ParseError> {
-        self.expect_tag("\n")?;
-        self.skip_zero_or_more_newlines();
-        Ok(())
-    }
-    */
-
     fn parse_triangle(&mut self) -> Result<Triangle, TriLoaderError> {
         let vertex0 = self.parse_vertex()?;
         let vertex1 = self.parse_vertex()?;
