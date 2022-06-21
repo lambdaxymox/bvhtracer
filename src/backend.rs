@@ -77,7 +77,7 @@ pub enum GlRuntimeParameter {
 }
 
 impl GlRuntimeParameter {
-    pub fn as_isize(self) -> isize {
+    pub const fn as_isize(self) -> isize {
         self as isize
     }
 }
@@ -245,7 +245,7 @@ pub enum GlslType {
 
 impl GlslType {
     /// Calculate the storage size in bytes of a GLSL data type.
-    pub fn size_of(self) -> usize {
+    pub const fn size_of(self) -> usize {
         match self {
             GlslType::GlFloat           => 1 * mem::size_of::<GLfloat>(),
             GlslType::GlFloatVec2       => 2 * mem::size_of::<GLfloat>(),
@@ -275,7 +275,7 @@ impl GlslType {
         }
     }
     
-    pub fn as_isize(self) -> isize {
+    pub const fn as_isize(self) -> isize {
         self as isize
     }
 }
