@@ -5,7 +5,6 @@ extern crate stb_image;
 extern crate tri_loader;
 
 
-use rand::prelude::IteratorRandom;
 use rand::prelude::{
     Rng,
 };
@@ -24,16 +23,10 @@ use crate::canvas::*;
 use crate::scene::*;
 use std::io;
 use std::io::{
-    BufReader,
-    Read,
     Write,
 };
 use std::fs::{
     File,
-};
-use std::ops;
-use std::num::{
-    ParseFloatError,
 };
 use std::path::{
     Path,
