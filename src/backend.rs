@@ -114,7 +114,7 @@ pub struct GlRuntimeParameterSet {
 impl fmt::Display for GlRuntimeParameterSet {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         writeln!(formatter, "GL Context Params:").unwrap();
-        for (ref param, ref value) in self.data.iter() {
+        for (param, value) in self.data.iter() {
             writeln!(formatter, "{} = {}", param, value).unwrap();
         }
         writeln!(formatter)
