@@ -11,6 +11,7 @@ use std::io::{
 use super::lexer::*;
 
 
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vertex {
     pub x: f32,
     pub y: f32,
@@ -23,6 +24,7 @@ impl Vertex {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Triangle {
     pub vertex0: Vertex,
     pub vertex1: Vertex,
@@ -163,4 +165,87 @@ impl<'a> TriLoader<'a> {
     }
 }
 
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        TriLoader, 
+        Triangle,
+        Vertex,
+    };
+
+
+    #[test]
+    fn test_loader_empty() {
+        let data = String::from(r"");
+        let expected = Ok(vec![]);
+        let mut loader = TriLoader::new(&data);
+        let result = loader.load();
+        
+        assert_eq!(result, expected);
+    }
+
+
+    #[test]
+    fn test_lexer_one_line() {
+        let data = String::from(r"
+            -1.920570 0.000680 0.030130 -1.927750 0.102380 0.000170 -1.965040 0.013640 0.009820
+        ");
+        let expected = Ok(vec![
+            Triangle::new(
+                Vertex::new(-1.920570, 0.000680, 0.030130),
+                Vertex::new(-1.927750, 0.102380, 0.000170),
+                Vertex::new(-1.965040, 0.013640, 0.009820),
+            )
+        ]);
+        let mut loader = TriLoader::new(&data);
+        let result = loader.load();
+        
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_lexer_multiple_lines() {
+        let data = String::from(r"
+            -1.920570 0.000680 0.030130 -1.927750 0.102380 0.000170 -1.965040 0.013640 0.009820     \
+            -1.879360 0.093640 0.019450 -1.927750 0.102380 0.000170 -1.920570 0.000680 0.030130     \
+            -1.879360 0.093640 0.019450 -1.889650 0.172390 -0.028960 -1.927750 0.102380 0.000170    \
+            -1.838710 0.162240 -0.008080 -1.889650 0.172390 -0.028960 -1.879360 0.093640 0.019450   \
+            -1.838710 0.162240 -0.008080 -1.844990 0.231520 -0.074300 -1.889650 0.172390 -0.028960  \
+                                                                                                    \
+                                                                                                    \
+        ");
+        let expected = Ok(vec![
+            Triangle::new( 
+                Vertex::new(-1.920570, 0.000680, 0.030130), 
+                Vertex::new(-1.927750, 0.102380, 0.000170), 
+                Vertex::new(-1.965040, 0.013640, 0.009820),
+            ),
+            Triangle::new(
+                Vertex::new(-1.879360, 0.093640, 0.019450), 
+                Vertex::new(-1.927750, 0.102380, 0.000170), 
+                Vertex::new(-1.920570, 0.000680, 0.030130),
+            ),
+            Triangle::new(
+                Vertex::new(-1.879360, 0.093640, 0.019450), 
+                Vertex::new(-1.889650, 0.172390, -0.028960), 
+                Vertex::new(-1.927750, 0.102380, 0.000170), 
+            ),
+            Triangle::new(
+                Vertex::new(-1.838710, 0.162240, -0.008080),
+                Vertex::new(-1.889650, 0.172390, -0.028960), 
+                Vertex::new(-1.879360, 0.093640, 0.019450), 
+            ),
+            Triangle::new(
+                Vertex::new(-1.838710, 0.162240, -0.008080), 
+                Vertex::new(-1.844990, 0.231520, -0.074300), 
+                Vertex::new(-1.889650, 0.172390, -0.028960), 
+            ),
+        ]);
+        let mut loader = TriLoader::new(&data);
+        let result = loader.load();
+        
+        assert_eq!(result, expected);
+    }
+}
 
