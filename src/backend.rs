@@ -80,25 +80,6 @@ impl GlParameter {
     pub fn as_isize(self) -> isize {
         self as isize
     }
-
-    pub fn iter() -> Iter<'static, GlParameter> {
-        static GL_PARAMETERS: [GlParameter; 12] = [
-            GlParameter::MaxCombinedTextureImageUnits,
-            GlParameter::MaxCubeMapTextureSize,
-            GlParameter::MaxDrawBuffers,
-            GlParameter::MaxFragmentUniformComponents,
-            GlParameter::MaxTextureImageUnits,
-            GlParameter::MaxTextureSize,
-            GlParameter::MaxVaryingFloats,
-            GlParameter::MaxVertexAttributes,
-            GlParameter::MaxVertexTextureImageUnits,
-            GlParameter::MaxVertexUniformComponents,
-            GlParameter::MaxViewportDimensions,
-            GlParameter::Stereo,
-        ];
-
-        GL_PARAMETERS.iter()
-    }
 }
 
 impl fmt::Display for GlParameter {
@@ -233,8 +214,74 @@ fn gl_params() -> GlParameterSet {
     GlParameterSet { data, }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum GlslType {
+    GlFloat           = gl::FLOAT as isize,
+    GlFloatVec2       = gl::FLOAT_VEC2 as isize,
+    GlFloatVec3       = gl::FLOAT_VEC3 as isize,
+    GlFloatVec4       = gl::FLOAT_VEC4 as isize,
+    GlInt             = gl::INT as isize,
+    GlIntVec2         = gl::INT_VEC2 as isize,
+    GlIntVec3         = gl::INT_VEC3 as isize,
+    GlIntVec4         = gl::INT_VEC4 as isize,
+    GlUnsignedInt     = gl::UNSIGNED_INT as isize,
+    GlUnsignedIntVec2 = gl::UNSIGNED_INT_VEC2 as isize,
+    GlUnsignedIntVec3 = gl::UNSIGNED_INT_VEC3 as isize,
+    GlUnsignedIntVec4 = gl::UNSIGNED_INT_VEC4 as isize,
+    GlBool            = gl::BOOL as isize,
+    GlBoolVec2        = gl::BOOL_VEC2 as isize,
+    GlBoolVec3        = gl::BOOL_VEC3 as isize,
+    GlBoolVec4        = gl::BOOL_VEC4 as isize,
+    GlFloatMat2       = gl::FLOAT_MAT2 as isize,
+    GlFloatMat2x3     = gl::FLOAT_MAT2x3 as isize,
+    GlFloatMat2x4     = gl::FLOAT_MAT2x4 as isize,
+    GlFloatMat3       = gl::FLOAT_MAT3 as isize,
+    GlFloatMat3x2     = gl::FLOAT_MAT3x2 as isize,
+    GlFloatMat3x4     = gl::FLOAT_MAT3x4 as isize,
+    GlFloatMat4       = gl::FLOAT_MAT4 as isize,
+    GlFloatMat4x2     = gl::FLOAT_MAT4x2 as isize,
+    GlFloatMat4x3     = gl::FLOAT_MAT4x3 as isize,
+}
+
+impl GlslType {
+    /// Calculate the storage size in bytes of a GLSL data type.
+    pub fn size_of(self) -> usize {
+        match self {
+            GlslType::GlFloat           => 1 * mem::size_of::<GLfloat>(),
+            GlslType::GlFloatVec2       => 2 * mem::size_of::<GLfloat>(),
+            GlslType::GlFloatVec3       => 3 * mem::size_of::<GLfloat>(),
+            GlslType::GlFloatVec4       => 4 * mem::size_of::<GLfloat>(),
+            GlslType::GlInt             => 1 * mem::size_of::<GLint>(),
+            GlslType::GlIntVec2         => 2 * mem::size_of::<GLint>(),
+            GlslType::GlIntVec3         => 3 * mem::size_of::<GLint>(),
+            GlslType::GlIntVec4         => 4 * mem::size_of::<GLint>(),
+            GlslType::GlUnsignedInt     => 1 * mem::size_of::<GLuint>(),
+            GlslType::GlUnsignedIntVec2 => 2 * mem::size_of::<GLuint>(),
+            GlslType::GlUnsignedIntVec3 => 3 * mem::size_of::<GLuint>(),
+            GlslType::GlUnsignedIntVec4 => 4 * mem::size_of::<GLuint>(),
+            GlslType::GlBool            => 1 * mem::size_of::<GLboolean>(),
+            GlslType::GlBoolVec2        => 2 * mem::size_of::<GLboolean>(),
+            GlslType::GlBoolVec3        => 3 * mem::size_of::<GLboolean>(),
+            GlslType::GlBoolVec4        => 4 * mem::size_of::<GLboolean>(),
+            GlslType::GlFloatMat2       => 4 * mem::size_of::<GLfloat>(),
+            GlslType::GlFloatMat2x3     => 6 * mem::size_of::<GLfloat>(),
+            GlslType::GlFloatMat2x4     => 8 * mem::size_of::<GLfloat>(),
+            GlslType::GlFloatMat3       => 9 * mem::size_of::<GLfloat>(),
+            GlslType::GlFloatMat3x2     => 6 * mem::size_of::<GLfloat>(),
+            GlslType::GlFloatMat3x4     => 12 * mem::size_of::<GLfloat>(),
+            GlslType::GlFloatMat4       => 16 * mem::size_of::<GLfloat>(),
+            GlslType::GlFloatMat4x2     => 8 * mem::size_of::<GLfloat>(),
+            GlslType::GlFloatMat4x3     => 12 * mem::size_of::<GLfloat>(),
+        }
+    }
+    
+    pub fn as_isize(self) -> isize {
+        self as isize
+    }
+}
+/*
 /// Helper function to convert GLSL types to storage sizes
-fn type_size(gl_type: GLenum) -> usize {
+fn gl_size_of(gl_type: GLenum) -> usize {
     match gl_type {
         gl::FLOAT             => 1 * mem::size_of::<GLfloat>(),
         gl::FLOAT_VEC2        => 2 * mem::size_of::<GLfloat>(),
@@ -264,10 +311,10 @@ fn type_size(gl_type: GLenum) -> usize {
         _ => panic!()
     }
 }
-
+*/
 /// A record for storing all the OpenGL state needed on the application side
 /// of the graphics application in order to manage OpenGL and GLFW.
-pub struct GLState {
+pub struct GlContext {
     pub glfw: glfw::Glfw,
     pub window: glfw::Window,
     pub events: Receiver<(f64, glfw::WindowEvent)>,
@@ -328,7 +375,7 @@ fn __init_glfw() -> Glfw {
 }
 
 /// Initialize a new OpenGL context and start a new GLFW window. 
-pub fn init_gl(width: u32, height: u32) -> Result<GLState, String> {
+pub fn init_gl(width: u32, height: u32) -> Result<GlContext, String> {
     // Start GL context and O/S window using the GLFW helper library.
     // info!("Starting GLFW");
     // info!("Using GLFW version {}", glfw::get_version_string());
@@ -366,7 +413,7 @@ pub fn init_gl(width: u32, height: u32) -> Result<GLState, String> {
     // info!("OpenGL version supported: {}", version);
     // info!("{}", gl_params());
 
-    Ok(GLState {
+    Ok(GlContext {
         glfw: glfw, 
         window: window, 
         events: events,
@@ -382,7 +429,7 @@ pub fn init_gl(width: u32, height: u32) -> Result<GLState, String> {
 /// Updates the timers in a GL context. It returns the elapsed time since the last call to
 /// `update_timers`.
 #[inline]
-pub fn update_timers(context: &mut GLState) -> f64 {
+pub fn update_timers(context: &mut GlContext) -> f64 {
     let current_seconds = context.glfw.get_time();
     let elapsed_seconds = current_seconds - context.running_time_seconds;
     context.running_time_seconds = current_seconds;
@@ -392,7 +439,7 @@ pub fn update_timers(context: &mut GLState) -> f64 {
 
 /// Update the framerate and display in the window titlebar.
 #[inline]
-pub fn update_fps_counter(context: &mut GLState) {     
+pub fn update_fps_counter(context: &mut GlContext) {     
     let current_time_seconds = context.glfw.get_time();
     let elapsed_seconds = current_time_seconds - context.framerate_time_seconds;
     if elapsed_seconds > 0.5 {
@@ -491,7 +538,7 @@ pub fn shader_info_log(shader_index: GLuint) -> ShaderLog {
 
 /// Create a shader from source files.
 pub fn create_shader<P: AsRef<Path>, R: Read>(
-    _context: &GLState,
+    _context: &GlContext,
     reader: &mut R, file_name: P, kind: GLenum) -> Result<GLuint, ShaderCompilationError> {
 
     let disp = file_name.as_ref().display();
@@ -598,7 +645,7 @@ pub fn validate_shader_program(sp: GLuint) -> bool {
 
 /// Compile and link a shader program.
 pub fn create_program(
-    _context: &GLState,
+    _context: &GlContext,
     vertex_shader: GLuint, fragment_shader: GLuint) -> Result<GLuint, ShaderCompilationError> {
 
     let program = unsafe { gl::CreateProgram() };
@@ -635,7 +682,7 @@ pub fn create_program(
 
 /// Compile and link a shader program directly from the files.
 pub fn create_program_from_files<P: AsRef<Path>, Q: AsRef<Path>>(
-    context: &GLState,
+    context: &GlContext,
     vert_file_name: P, frag_file_name: Q) -> Result<GLuint, ShaderCompilationError> {
 
     let mut vert_reader = BufReader::new(match File::open(&vert_file_name) {
@@ -666,7 +713,7 @@ pub fn create_program_from_files<P: AsRef<Path>, Q: AsRef<Path>>(
 
 /// Compile and link a shader program directly from any readable sources.
 pub fn create_program_from_reader<R1: Read, P1: AsRef<Path>, R2: Read, P2: AsRef<Path>>(
-    context: &GLState,
+    context: &GlContext,
     vert_reader: &mut R1, vert_file_name: P1,
     frag_reader: &mut R2, frag_file_name: P2) -> Result<GLuint, ShaderCompilationError> {
 
