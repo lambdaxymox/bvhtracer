@@ -13,12 +13,13 @@ use cglinalg::{
     Magnitude,
 };
 
-mod bvhtracer;
+mod triangle;
 mod canvas;
 mod scene;
+mod tri_loader;
 
 
-use crate::bvhtracer::*;
+use crate::triangle::*;
 use crate::canvas::*;
 use crate::scene::*;
 use std::io;
@@ -354,41 +355,19 @@ fn send_to_gpu_texture(canvas: &Canvas, wrapping_mode: GLuint) -> Result<GLuint,
     Ok(tex)
 }
 
-fn load_tri_file_model<P: AsRef<Path>>(path: P) -> Result<Vec<Triangle>, (usize, ParseFloatError)> {
-    let file = File::open(path).unwrap();
-    let mut buf_reader = BufReader::new(file);
-    let mut contents = String::new();
-    buf_reader.read_to_string(&mut contents).unwrap();
-    let mut triangles = vec![];
-    for line in contents.split('\n') {
-        let mut elements = [0_f32; 9];
-        for (i, element_i) in line.split(' ').enumerate() {
-            elements[i] = match element_i.parse::<f32>() {
-                Ok(value) => value,
-                Err(err) => return Err((i, err)),
-            };
-        }
-
-        let mut vertices = [Vector3::zero(); 3];
-        for (i, vertex_i) in elements
-            .chunks(3)
-            .map(|chunk| Vector3::new(chunk[0], chunk[1], chunk[2]))
-            .enumerate() 
-        {
-            vertices[i] = vertex_i;
-        }
-
-        let triangle = Triangle::new(vertices[0], vertices[1], vertices[2]);
-
-        triangles.push(triangle);
-    }
-
-    Ok(triangles)
+fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle> {
+    let loaded_tri_data = tri_loader::load("assets/unity.tri").unwrap();
+    loaded_tri_data.iter().map(|tri| {
+        let vertex0 = Vector3::new(tri.vertex0.x, tri.vertex0.y, tri.vertex0.z);
+        let vertex1 = Vector3::new(tri.vertex1.x, tri.vertex1.y, tri.vertex1.z);
+        let vertex2 = Vector3::new(tri.vertex2.x, tri.vertex2.y, tri.vertex2.z);
+        
+        Triangle::new(vertex0, vertex1, vertex2)
+    }).collect::<Vec<Triangle>>()
 }
 
 fn main() -> io::Result<()> {
-
-    let triangles = load_tri_file_model("assets/unity.tri").unwrap();
+    let triangles = load_tri_model("assets/unity.tri");
     let builder = SceneBuilder::new();
     let scene = builder.with_objects(triangles).build();
     let mut canvas = render_depth_unity(&scene);

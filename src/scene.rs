@@ -1,7 +1,7 @@
 use cglinalg::{
     Vector3,
 };
-use crate::bvhtracer::*;
+use crate::triangle::*;
 
 
 fn intersect_aabb(ray: &Ray, aabb_min: &Vector3<f32>, aabb_max: &Vector3<f32>) -> f32 {
