@@ -261,6 +261,9 @@ fn send_to_gpu_texture(canvas: &Canvas, wrapping_mode: GLuint) -> Result<GLuint,
     let mut tex = 0;
     unsafe {
         gl::GenTextures(1, &mut tex);
+    }
+    debug_assert!(tex > 0);
+    unsafe {
         gl::ActiveTexture(gl::TEXTURE0);
         gl::BindTexture(gl::TEXTURE_2D, tex);
         gl::TexImage2D(
@@ -274,7 +277,7 @@ fn send_to_gpu_texture(canvas: &Canvas, wrapping_mode: GLuint) -> Result<GLuint,
         gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
         gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_LINEAR as i32);
     }
-    debug_assert!(tex > 0);
+    
 
     let mut max_aniso = 0.0;
     unsafe {
