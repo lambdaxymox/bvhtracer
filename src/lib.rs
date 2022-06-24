@@ -1,3 +1,6 @@
+extern crate num_traits;
+
+
 mod triangle;
 mod canvas;
 mod scene;

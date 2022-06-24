@@ -5,12 +5,22 @@ edition = "2021"
 build = "build.rs"
 
 [dependencies]
-cglinalg = { git = "https://github.com/lambdaxymox/cglinalg/", version = "0.15.6" }
 rand = "0.8.5"
 rand_isaac = "0.3.0"
 glfw = "0.45.0"
 stb_image = "0.2.4"
-tri_loader = { path = "tri_loader" }
+
+[dependencies.cglinalg]
+git = "https://github.com/lambdaxymox/cglinalg/"
+version = "0.15.6"
+
+[dependencies.num-traits]
+version = "0.2.15"
+default-features = false
+features = ["libm"]
+
+[dependencies.tri_loader]
+path = "tri_loader"
 
 [build-dependencies]
 gl_generator = "0.14.0"

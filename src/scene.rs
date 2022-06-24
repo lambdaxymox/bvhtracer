@@ -103,9 +103,9 @@ impl Bvh {
 
             None
         } else {
-            if let Some(new_ray) = self.intersect(objects, ray, node.left_node) {
+            if let Some(new_ray) = self.intersect_recursive(objects, ray, node.left_node) {
                 Some(new_ray) 
-            } else if let Some(new_ray) = self.intersect(objects, ray, node.left_node + 1) {
+            } else if let Some(new_ray) = self.intersect_recursive(objects, ray, node.left_node + 1) {
                 Some(new_ray)
             } else {
                 return None;
@@ -247,27 +247,84 @@ impl BvhBuilder {
         if cost > 0_f32 { cost } else { f32::MAX }
     }
 
-    fn subdivide(&mut self, objects: &mut [Triangle], node_idx: usize) {
+    fn subdivide_recursive(&mut self, objects: &mut [Triangle], node_idx: usize) {
         println!("Subdividing node_idx = {}", node_idx);
         // Terminate recursion.
-        let (best_axis, best_position, best_cost) = {
-            // let node = &mut self.partial_bvh.nodes[node_idx];
+        let (best_axis, best_position) = {
+            let node = &mut self.partial_bvh.nodes[node_idx];
             // Determine the split axis using the midpoint of the boundary volume
-            /*
             if node.primitive_count <= 2 {
                 return;
             }
             // Determine the split axis and position using the bounding volume's midpoint.
             let extent = node.aabb_max - node.aabb_min;
-            let mut axis = 0;
+            let mut best_axis = 0;
             if extent.y > extent.x {
-                axis = 1;
+                best_axis = 1;
             } 
-            if extent.z > extent[axis] {
-                axis = 2;
+            if extent.z > extent[best_axis] {
+                best_axis = 2;
             }
-            let split_pos = node.aabb_min[axis] + extent[axis] * (1_f32 / 2_f32);
-            */
+            let best_position = node.aabb_min[best_axis] + extent[best_axis] * (1_f32 / 2_f32);
+
+            (best_axis, best_position)
+        };
+        let (left_count, i) = {
+            let node = &mut self.partial_bvh.nodes[node_idx];
+            let axis = best_axis as usize;
+            let split_position = best_position;
+            // In-place partition.
+            let mut i = node.first_primitive_idx;
+            let mut j = i + node.primitive_count - 1;
+            while i <= j {
+                if objects[i].centroid[axis] < split_position {
+                    i += 1;
+                } else {
+                    objects.swap(i, j);
+                    j -= 1;
+                }
+            }
+
+            // Abort split if one of the sides is empty.
+            let left_count = i - node.first_primitive_idx;
+            if left_count == 0 || left_count == node.primitive_count {
+                return;
+            }
+
+            (left_count, i)
+        };
+        // Create child nodes.
+        let left_child_idx = {
+            self.partial_bvh.nodes_used += 1;
+            self.partial_bvh.nodes_used
+        };
+        let right_child_idx = {
+            self.partial_bvh.nodes_used += 1;
+            self.partial_bvh.nodes_used
+        };
+        {
+            self.partial_bvh.nodes[left_child_idx].first_primitive_idx = self.partial_bvh.nodes[node_idx].first_primitive_idx;
+            self.partial_bvh.nodes[left_child_idx].primitive_count = left_count;
+            self.partial_bvh.nodes[right_child_idx].first_primitive_idx = i;
+            self.partial_bvh.nodes[right_child_idx].primitive_count = self.partial_bvh.nodes[node_idx].primitive_count - left_count;
+        }
+        {
+            let node = &mut self.partial_bvh.nodes[node_idx];
+            node.left_node = left_child_idx;
+            node.primitive_count = 0;
+        }
+
+        self.update_node_bounds(objects, left_child_idx);
+        self.update_node_bounds(objects, right_child_idx);
+        // Recurse
+        self.subdivide(objects, left_child_idx);
+        self.subdivide(objects, right_child_idx);
+    }
+
+    fn subdivide(&mut self, objects: &mut [Triangle], node_idx: usize) {
+        println!("Subdividing node_idx = {}", node_idx);
+        // Terminate recursion.
+        let (best_axis, best_position, best_cost) = {
             // Determine the split axis using the surface area heuristic (SAH).
             let node = self.partial_bvh.nodes[node_idx];
             let mut best_axis = -1;
@@ -287,7 +344,7 @@ impl BvhBuilder {
                 }
             }
 
-            (best_axis,best_position, best_cost)
+            (best_axis, best_position, best_cost)
         };
         let (left_count, i) = {
             let node = &mut self.partial_bvh.nodes[node_idx];
@@ -351,13 +408,11 @@ impl BvhBuilder {
     pub fn build_for(mut self, objects: &mut [Triangle]) -> Bvh {
         // Populate the triangle index array.
         for i in 0..objects.len() {
-            // self.partial_bvh.node_indices[i] = i;
             self.partial_bvh.node_indices.push(i);
         }
 
         self.partial_bvh.nodes = vec![BvhNode::default(); 2 * objects.len()];
         
-        // let len_nodes = self.partial_bvh.nodes.len();
         let root_node_idx = self.partial_bvh.root_node_idx;
         let mut root_node: &mut BvhNode = &mut self.partial_bvh.nodes[root_node_idx];
         root_node.left_node = 0;
