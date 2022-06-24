@@ -288,7 +288,7 @@ fn send_to_gpu_texture(canvas: &Canvas, wrapping_mode: GLuint) -> Result<GLuint,
 }
 
 fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle> {
-    let loaded_tri_data = tri_loader::load("assets/unity.tri").unwrap();
+    let loaded_tri_data = tri_loader::load(path).unwrap();
     loaded_tri_data.iter().map(|tri| {
         let vertex0 = Vector3::new(tri.vertex0.x, tri.vertex0.y, tri.vertex0.z);
         let vertex1 = Vector3::new(tri.vertex1.x, tri.vertex1.y, tri.vertex1.z);
