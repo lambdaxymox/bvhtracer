@@ -88,10 +88,9 @@ pub struct Bvh {
 }
 
 impl Bvh {
-    pub fn intersect(&self, objects: &[Triangle], ray: &Ray, node_idx: usize) -> Option<Ray> {
-        /*
+    pub fn intersect_recursive(&self, objects: &[Triangle], ray: &Ray, node_idx: usize) -> Option<Ray> {
         let node = &self.nodes[node_idx];
-        if !intersect_aabb(ray, &node.aabb_min, &node.aabb_max) {
+        if intersect_aabb(ray, &node.aabb_min, &node.aabb_max) == f32::MAX {
             return None;
         }
         if node.is_leaf() {
@@ -112,7 +111,9 @@ impl Bvh {
                 return None;
             }
         }
-        */
+    }
+
+    pub fn intersect(&self, objects: &[Triangle], ray: &Ray, node_idx: usize) -> Option<Ray> {
         let mut node = &self.nodes[node_idx];
         let mut stack = vec![];
         let mut best_ray = *ray;
