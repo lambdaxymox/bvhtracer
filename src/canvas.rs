@@ -57,6 +57,75 @@ pub trait Primitive: Copy + NumCast + Num + PartialOrd<Self> + Clone + Bounded {
     const DEFAULT_MIN_VALUE: Self;
 }
 
+macro_rules! declare_primitive {
+    ($base:ty, $min:expr, $mac:expr) => {
+        impl Primitive for $base {
+            const DEFAULT_MAX_VALUE: Self = $to;
+            const DEFAULT_MIN_VALUE: Self = $from;
+        }
+    };
+}
+
+impl Primitive for usize {
+    const DEFAULT_MAX_VALUE: Self = usize::MAX;
+    const DEFAULT_MIN_VALUE: Self = usize::MIN;
+}
+
+impl Primitive for u8 {
+    const DEFAULT_MAX_VALUE: Self = u8::MAX;
+    const DEFAULT_MIN_VALUE: Self = u8::MIN;
+}
+
+impl Primitive for u16 {
+    const DEFAULT_MAX_VALUE: Self = u16::MAX;
+    const DEFAULT_MIN_VALUE: Self = u16::MIN;
+}
+
+impl Primitive for u32 {
+    const DEFAULT_MAX_VALUE: Self = u32::MAX;
+    const DEFAULT_MIN_VALUE: Self = u32::MIN;
+}
+
+impl Primitive for u64 {
+    const DEFAULT_MAX_VALUE: Self = u64::MAX;
+    const DEFAULT_MIN_VALUE: Self = u64::MIN;
+}
+
+impl Primitive for isize {
+    const DEFAULT_MAX_VALUE: Self = isize::MAX;
+    const DEFAULT_MIN_VALUE: Self = isize::MIN;
+}
+
+impl Primitive for i8 {
+    const DEFAULT_MAX_VALUE: Self = i8::MAX;
+    const DEFAULT_MIN_VALUE: Self = i8::MIN;
+}
+
+impl Primitive for i16 {
+    const DEFAULT_MAX_VALUE: Self = i16::MAX;
+    const DEFAULT_MIN_VALUE: Self = i16::MIN;
+}
+
+impl Primitive for i32 {
+    const DEFAULT_MAX_VALUE: Self = i32::MAX;
+    const DEFAULT_MIN_VALUE: Self = i32::MIN;
+}
+
+impl Primitive for i64 {
+    const DEFAULT_MAX_VALUE: Self = i64::MAX;
+    const DEFAULT_MIN_VALUE: Self = i64::MIN;
+}
+
+impl Primitive for f32 {
+    const DEFAULT_MAX_VALUE: Self = 1_f32;
+    const DEFAULT_MIN_VALUE: Self = 0_f32;
+}
+
+impl Primitive for f64 {
+    const DEFAULT_MAX_VALUE: Self = 1_f64;
+    const DEFAULT_MIN_VALUE: Self = 0_f64;
+}
+
 pub trait Pixel: Copy + Clone {
     type Subpixel: Primitive;
 
