@@ -203,7 +203,6 @@ fn render_depth_unity(scene: &Scene) -> Canvas {
     let mut canvas = Canvas::new(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     // Set up camera.
-    // let camera_position = Vector3::new(-1.5, -0.2, -2.5);
     let camera_position = Vector3::new(-1.5, 0.0, -2.5);
     let p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
     let p1 = Vector3::new(1_f32, 1_f32, 2_f32);
