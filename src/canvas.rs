@@ -7,16 +7,20 @@ use num_traits::{
 use std::ops;
 
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct Rgb {
-    pub r: u8,
-    pub g: u8,
-    pub b: u8,
+pub struct Rgb<T> {
+    pub r: T,
+    pub g: T,
+    pub b: T,
 }
 
-impl Rgb {
+impl<T> Rgb<T>
+where 
+    T: Primitive,
+{
     #[inline]
-    pub fn new(r: u8, g: u8, b: u8) -> Self {
+    pub fn new(r: T, g: T, b: T) -> Self {
         Self { 
             r, b, g,
         }
@@ -24,22 +28,29 @@ impl Rgb {
 
     #[inline]
     pub const fn zero() -> Self {
-        Self { r: 0, g: 0, b: 0, }
+        Self { 
+            r: <T as Primitive>::DEFAULT_MIN_VALUE, 
+            g: <T as Primitive>::DEFAULT_MIN_VALUE, 
+            b: <T as Primitive>::DEFAULT_MIN_VALUE, 
+        }
     }
 }
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct Rgba {
-    pub r: u8,
-    pub g: u8,
-    pub b: u8,
-    pub a: u8,
+pub struct Rgba<T> {
+    pub r: T,
+    pub g: T,
+    pub b: T,
+    pub a: T,
 }
 
-impl Rgba {
+impl<T> Rgba<T> 
+where
+    T: Primitive,
+{
     #[inline]
-    pub fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
+    pub fn new(r: T, g: T, b: T, a: T) -> Self {
         Self { 
             r, b, g, a,
         }
@@ -47,7 +58,12 @@ impl Rgba {
 
     #[inline]
     pub const fn zero() -> Self {
-        Self { r: 0, g: 0, b: 0, a: 1 }
+        Self { 
+            r: <T as Primitive>::DEFAULT_MIN_VALUE, 
+            g: <T as Primitive>::DEFAULT_MIN_VALUE, 
+            b: <T as Primitive>::DEFAULT_MIN_VALUE,
+            a: <T as Primitive>::DEFAULT_MAX_VALUE,
+        }
     }
 }
 
@@ -55,15 +71,6 @@ impl Rgba {
 pub trait Primitive: Copy + NumCast + Num + PartialOrd<Self> + Clone + Bounded {
     const DEFAULT_MAX_VALUE: Self;
     const DEFAULT_MIN_VALUE: Self;
-}
-
-macro_rules! declare_primitive {
-    ($base:ty, $min:expr, $mac:expr) => {
-        impl Primitive for $base {
-            const DEFAULT_MAX_VALUE: Self = $to;
-            const DEFAULT_MIN_VALUE: Self = $from;
-        }
-    };
 }
 
 impl Primitive for usize {
@@ -187,7 +194,7 @@ impl Pixel for Rgba {
 pub struct Canvas {
     pub width: usize,
     pub height: usize,
-    pub data: Vec<Rgba>,
+    pub data: Vec<Rgba<u8>>,
 }
 
 impl Canvas 
@@ -208,13 +215,13 @@ where
         }
     }
 
-    pub fn as_ptr(&self) -> *const Rgba {
+    pub fn as_ptr(&self) -> *const Rgba<u8> {
         self.data.as_ptr()
     }
 }
 
 impl ops::Index<usize> for Canvas {
-    type Output = [Rgba];
+    type Output = [Rgba<u8>];
 
     #[inline]
     fn index(&self, index: usize) -> &Self::Output {
