@@ -37,6 +37,7 @@ where
 }
 
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Rgba<T> {
     pub r: T,
@@ -143,11 +144,9 @@ pub trait Pixel: Copy + Clone {
 
     fn channels_mut(&mut self) -> &mut [Self::Subpixel];
 
-    /*
     fn to_rgb(&self) -> Rgb<Self::Subpixel>;
 
     fn to_rgba(&self) -> Rgba<Self::Subpixel>;
-    */
 
     fn map<Op>(&self, op: Op) -> Self where Op: FnMut(Self::Subpixel) -> Self::Subpixel;
 
