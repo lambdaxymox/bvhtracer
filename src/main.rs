@@ -279,6 +279,12 @@ fn send_to_gpu_texture(canvas: &Canvas, wrapping_mode: GLuint) -> Result<GLuint,
     let mut max_aniso = 0.0;
     unsafe {
         gl::GetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &mut max_aniso);
+    }
+    let max_aniso_result = unsafe {
+        gl::GetError()
+    };
+    debug_assert_eq!(max_aniso_result, gl::NO_ERROR);
+    unsafe {
         // Set the maximum!
         gl::TexParameterf(gl::TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, max_aniso);
     }
