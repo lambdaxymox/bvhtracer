@@ -7,67 +7,6 @@ use num_traits::{
 use std::ops;
 
 
-#[repr(C)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct Rgb<T> {
-    pub r: T,
-    pub g: T,
-    pub b: T,
-}
-
-impl<T> Rgb<T>
-where 
-    T: Primitive,
-{
-    #[inline]
-    pub fn new(r: T, g: T, b: T) -> Self {
-        Self { 
-            r, b, g,
-        }
-    }
-
-    #[inline]
-    pub const fn zero() -> Self {
-        Self { 
-            r: <T as Primitive>::DEFAULT_MIN_VALUE, 
-            g: <T as Primitive>::DEFAULT_MIN_VALUE, 
-            b: <T as Primitive>::DEFAULT_MIN_VALUE, 
-        }
-    }
-}
-
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct Rgba<T> {
-    pub r: T,
-    pub g: T,
-    pub b: T,
-    pub a: T,
-}
-
-impl<T> Rgba<T> 
-where
-    T: Primitive,
-{
-    #[inline]
-    pub fn new(r: T, g: T, b: T, a: T) -> Self {
-        Self { 
-            r, b, g, a,
-        }
-    }
-
-    #[inline]
-    pub const fn zero() -> Self {
-        Self { 
-            r: <T as Primitive>::DEFAULT_MIN_VALUE, 
-            g: <T as Primitive>::DEFAULT_MIN_VALUE, 
-            b: <T as Primitive>::DEFAULT_MIN_VALUE,
-            a: <T as Primitive>::DEFAULT_MAX_VALUE,
-        }
-    }
-}
-
 /// The bottom-level property of a pixel--namely, the type of each pixel channel.
 pub trait Primitive: Copy + NumCast + Num + PartialOrd<Self> + Clone + Bounded {
     const DEFAULT_MAX_VALUE: Self;
@@ -157,14 +96,18 @@ pub trait Pixel: Copy + Clone {
         Op1: FnMut(Self::Subpixel) -> Self::Subpixel,
         Op2: FnMut(Self::Subpixel) -> Self::Subpixel;
 
-    fn apply_with_alpha<Op1, Op2>(&self, op1: Op1, op2: Op2) -> Self
+    fn apply_with_alpha<Op1, Op2>(&mut self, op1: Op1, op2: Op2)
     where
         Op1: FnMut(Self::Subpixel) -> Self::Subpixel,
         Op2: FnMut(Self::Subpixel) -> Self::Subpixel;
 
-    fn invert(&mut self);
+    fn invert(&self) -> Self;
+    
+    fn invert_mut(&mut self);
 
-    fn blend(&mut self, other: &Self);
+    fn blend(&self, other: &Self) -> Self;
+
+    fn blend_mut(&mut self, other: &Self);
 
     fn map_without_alpha<Op>(&self, op: Op) -> Self 
     where 
@@ -183,12 +126,327 @@ pub trait Pixel: Copy + Clone {
         self.apply_with_alpha(op, |alpha| alpha);
     }
 }
-/*
-impl Pixel for Rgba {
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Rgb<T> {
+    data: [T; 3],
+}
+
+impl<T> Rgb<T>
+where 
+    T: Primitive,
+{
+    #[inline]
+    pub fn new(r: T, g: T, b: T) -> Self {
+        Self { 
+            data: [r, b, g],
+        }
+    }
+
+    #[inline]
+    pub const fn r(&self) -> T {
+        self.data[0]
+    }
+
+    #[inline]
+    pub const fn g(&self) -> T {
+        self.data[1]
+    }
+
+    #[inline]
+    pub const fn b(&self) -> T {
+        self.data[2]
+    }
+
+    #[inline]
+    pub const fn zero() -> Self {
+        Self { 
+            data: [<T as Primitive>::DEFAULT_MIN_VALUE; 3],
+        }
+    }
+}
+
+impl<T> From<[T; 3]> for Rgb<T>
+where
+    T: Primitive
+{
+    #[inline]
+    fn from(data: [T; 3]) -> Self {
+        Self { data, }
+    }
+}
+
+impl<T> From<&[T; 3]> for Rgb<T>
+where
+    T: Primitive
+{
+    #[inline]
+    fn from(data: &[T; 3]) -> Self {
+        Self { data: *data, }
+    }
+}
+
+impl<T> ops::Index<usize> for Rgb<T>
+where
+    T: Primitive
+{
+    type Output = T;
+
+    #[inline]
+    fn index(&self, _index: usize) -> &Self::Output {
+        &self.data[_index]
+    }
+}
+
+impl<T> ops::IndexMut<usize> for Rgb<T>
+where
+    T: Primitive
+{
+    #[inline]
+    fn index_mut(&mut self, _index: usize) -> &mut Self::Output {
+        &mut self.data[_index]
+    }
+}
+
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Rgba<T> {
+    data: [T; 4],
+}
+
+impl<T> Rgba<T> 
+where
+    T: Primitive,
+{
+    #[inline]
+    pub fn new(r: T, g: T, b: T, a: T) -> Self {
+        Self { 
+            data: [r, b, g, a],
+        }
+    }
+
+    #[inline]
+    pub const fn r(&self) -> T {
+        self.data[0]
+    }
+
+    #[inline]
+    pub const fn g(&self) -> T {
+        self.data[1]
+    }
+
+    #[inline]
+    pub const fn b(&self) -> T {
+        self.data[2]
+    }
+
+    #[inline]
+    pub const fn a(&self) -> T {
+        self.data[3]
+    }
+
+    #[inline]
+    pub const fn zero() -> Self {
+        let min_value = <T as Primitive>::DEFAULT_MIN_VALUE;
+        let max_value = <T as Primitive>::DEFAULT_MAX_VALUE;
+
+        Self { 
+            data: [min_value, min_value, min_value, max_value],
+        }
+    }
+}
+
+impl<T> From<[T; 4]> for Rgba<T>
+where
+    T: Primitive
+{
+    #[inline]
+    fn from(data: [T; 4]) -> Self {
+        Self { data, }
+    }
+}
+
+impl<T> From<&[T; 4]> for Rgba<T>
+where
+    T: Primitive
+{
+    #[inline]
+    fn from(data: &[T; 4]) -> Self {
+        Self { data: *data, }
+    }
+}
+
+impl<T> ops::Index<usize> for Rgba<T>
+where
+    T: Primitive
+{
+    type Output = T;
+
+    #[inline]
+    fn index(&self, _index: usize) -> &Self::Output {
+        &self.data[_index]
+    }
+}
+
+impl<T> ops::IndexMut<usize> for Rgba<T>
+where
+    T: Primitive
+{
+    #[inline]
+    fn index_mut(&mut self, _index: usize) -> &mut Self::Output {
+        &mut self.data[_index]
+    }
+}
+
+
+impl<T> Pixel for Rgb<T> 
+where
+    T: Primitive
+{
+    type Subpixel = T;
+
+    const CHANNEL_COUNT: u8 = 4;
+    const COLOR_MODEL: &'static str = "RGB";
+
+    fn channels(&self) -> &[Self::Subpixel] {
+        &self.data
+    }
+
+    fn channels_mut(&mut self) -> &mut [Self::Subpixel] {
+        &mut self.data
+    }
+
+    fn to_rgb(&self) -> Rgb<Self::Subpixel> {
+        *self
+    }
+
+    fn to_rgba(&self) -> Rgba<Self::Subpixel> {
+        Rgba::new(self.r(), self.g(), self.b(), <T as Primitive>::DEFAULT_MAX_VALUE)
+    }
+
+    fn map<Op>(&self, op: Op) -> Self where Op: FnMut(Self::Subpixel) -> Self::Subpixel {
+        Self { data: self.data.map(op) }
+    }
+
+    fn apply<Op>(&mut self, op: Op) where Op: FnMut(Self::Subpixel) -> Self::Subpixel {
+        self.data = self.data.map(op);
+    }
+
+    fn map_with_alpha<Op1, Op2>(&self, op1: Op1, op2: Op2) -> Self
+    where
+        Op1: FnMut(Self::Subpixel) -> Self::Subpixel,
+        Op2: FnMut(Self::Subpixel) -> Self::Subpixel
+    {
+        self.map(op1)
+    }
+
+    fn apply_with_alpha<Op1, Op2>(&mut self, op1: Op1, op2: Op2)
+    where
+        Op1: FnMut(Self::Subpixel) -> Self::Subpixel,
+        Op2: FnMut(Self::Subpixel) -> Self::Subpixel
+    {
+        self.apply(op1);
+    }
+
+    fn invert(&self) -> Self {
+        let r = <T as Primitive>::DEFAULT_MAX_VALUE - self.r();
+        let g = <T as Primitive>::DEFAULT_MAX_VALUE - self.g();
+        let b = <T as Primitive>::DEFAULT_MAX_VALUE - self.b();
+
+        Self::new(r, g, b)
+    }
+    
+    fn invert_mut(&mut self) {
+        self.apply(|chan| { <T as Primitive>::DEFAULT_MAX_VALUE - chan })
+    }
+
+    fn blend(&self, other: &Self) -> Self {
+        unimplemented!()
+    }
+
+    fn blend_mut(&mut self, other: &Self) {
+        unimplemented!()
+    }
+}
+
+impl<T> Pixel for Rgba<T> 
+where
+    T: Primitive
+{
+    type Subpixel = T;
+
     const CHANNEL_COUNT: u8 = 4;
     const COLOR_MODEL: &'static str = "RGBA";
+
+    fn channels(&self) -> &[Self::Subpixel] {
+        &self.data
+    }
+
+    fn channels_mut(&mut self) -> &mut [Self::Subpixel] {
+        &mut self.data
+    }
+
+    fn to_rgb(&self) -> Rgb<Self::Subpixel> {
+        Rgb::new(self.r(), self.g(), self.b())
+    }
+
+    fn to_rgba(&self) -> Rgba<Self::Subpixel> {
+        *self
+    }
+
+    fn map<Op>(&self, op: Op) -> Self where Op: FnMut(Self::Subpixel) -> Self::Subpixel {
+        Self { data: self.data.map(op) }
+    }
+
+    fn apply<Op>(&mut self, op: Op) where Op: FnMut(Self::Subpixel) -> Self::Subpixel {
+        self.data = self.data.map(op);
+    }
+
+    fn map_with_alpha<Op1, Op2>(&self, op1: Op1, op2: Op2) -> Self
+    where
+        Op1: FnMut(Self::Subpixel) -> Self::Subpixel,
+        Op2: FnMut(Self::Subpixel) -> Self::Subpixel
+    {
+        self.map(op1)
+    }
+
+    fn apply_with_alpha<Op1, Op2>(&mut self, op1: Op1, op2: Op2)
+    where
+        Op1: FnMut(Self::Subpixel) -> Self::Subpixel,
+        Op2: FnMut(Self::Subpixel) -> Self::Subpixel
+    {
+        self.apply(op1);
+    }
+
+    fn invert(&self) -> Self {
+        let r = <T as Primitive>::DEFAULT_MAX_VALUE - self.r();
+        let g = <T as Primitive>::DEFAULT_MAX_VALUE - self.g();
+        let b = <T as Primitive>::DEFAULT_MAX_VALUE - self.b();
+
+        Self::new(r, g, b, self.a())
+    }
+    
+    fn invert_mut(&mut self) {
+        self.apply(|chan| { <T as Primitive>::DEFAULT_MAX_VALUE - chan })
+    }
+
+    fn blend(&self, other: &Self) -> Self {
+        unimplemented!()
+    }
+
+    fn blend_mut(&mut self, other: &Self) {
+        unimplemented!()
+    }
 }
-*/
+
+
+
+
+
+
+
 
 pub struct Canvas {
     pub width: usize,

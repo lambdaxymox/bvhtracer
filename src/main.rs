@@ -60,7 +60,7 @@ fn initialize_scene(triangle_count: usize) -> Scene {
 fn write_image_to_file(canvas: &Canvas, file: &mut File) -> io::Result<()> {
     write!(file, "P3\n{} {}\n255\n", canvas.width, canvas.height).unwrap();
     for pixel in canvas.data.iter() {
-        writeln!(file, "{} {} {}", pixel.r, pixel.g, pixel.b).unwrap();
+        writeln!(file, "{} {} {}", pixel.r(), pixel.g(), pixel.b()).unwrap();
     }
 
     Ok(())
