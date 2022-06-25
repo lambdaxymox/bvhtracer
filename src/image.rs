@@ -230,11 +230,7 @@ where
                 (self.width, self.height),
                 (x, y)
             ),
-            Some(indices) => { 
-                eprintln!("indices = {:?}", indices); 
-                
-                return <P as Pixel>::from_slice(&self.data[indices]); 
-            }
+            Some(indices) => <P as Pixel>::from_slice(&self.data[indices]),
         }
     }
 
