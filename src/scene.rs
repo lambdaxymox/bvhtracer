@@ -80,6 +80,7 @@ impl BvhNode {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Bvh {
     nodes: Vec<BvhNode>,
     node_indices: Vec<usize>,
@@ -162,6 +163,12 @@ impl Bvh {
         }
 
         Some(best_ray)
+    }
+
+    /// Returns the number of nodes in the boundary volume hierarchy.
+    #[inline]
+    pub const fn nodes_used(&self) -> usize {
+        self.nodes_used
     }
 }
 
