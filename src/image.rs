@@ -158,13 +158,6 @@ where
     pub const fn b(&self) -> T {
         self.data[2]
     }
-
-    #[inline]
-    pub const fn zero() -> Self {
-        Self { 
-            data: [<T as Primitive>::DEFAULT_MIN_VALUE; 3],
-        }
-    }
 }
 
 impl<T> From<[T; 3]> for Rgb<T>
@@ -245,16 +238,6 @@ where
     #[inline]
     pub const fn a(&self) -> T {
         self.data[3]
-    }
-
-    #[inline]
-    pub const fn zero() -> Self {
-        let min_value = <T as Primitive>::DEFAULT_MIN_VALUE;
-        let max_value = <T as Primitive>::DEFAULT_MAX_VALUE;
-
-        Self { 
-            data: [min_value, min_value, min_value, max_value],
-        }
     }
 }
 
@@ -449,8 +432,8 @@ where
 
 
 pub struct ImageBuffer<P> {
-    pub width: usize,
-    pub height: usize,
+    width: usize,
+    height: usize,
     pub data: Vec<P>,
 }
 

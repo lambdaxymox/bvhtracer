@@ -58,7 +58,7 @@ fn initialize_scene(triangle_count: usize) -> Scene {
 }
 
 fn write_image_to_file(buffer: &ImageBuffer<Rgba<u8>>, file: &mut File) -> io::Result<()> {
-    write!(file, "P3\n{} {}\n255\n", buffer.width, buffer.height).unwrap();
+    write!(file, "P3\n{} {}\n255\n", buffer.width(), buffer.height()).unwrap();
     for pixel in buffer.data.iter() {
         writeln!(file, "{} {} {}", pixel.r(), pixel.g(), pixel.b()).unwrap();
     }
@@ -276,7 +276,7 @@ fn send_to_gpu_texture(buffer: &ImageBuffer<Rgba<u8>>, wrapping_mode: GLuint) ->
         gl::ActiveTexture(gl::TEXTURE0);
         gl::BindTexture(gl::TEXTURE_2D, tex);
         gl::TexImage2D(
-            gl::TEXTURE_2D, 0, gl::RGBA as i32, buffer.width as i32, buffer.height as i32, 0,
+            gl::TEXTURE_2D, 0, gl::RGBA as i32, buffer.width() as i32, buffer.height() as i32, 0,
             gl::RGBA, gl::UNSIGNED_BYTE,
             buffer.as_ptr() as *const c_void
         );
@@ -322,9 +322,9 @@ fn main() -> io::Result<()> {
     let mut file = File::create("output.ppm").unwrap();
     write_image_to_file(&buffer, &mut file);
 
-    let height = buffer.height;
-    let width = buffer.width;
-    let half_height = buffer.height / 2;
+    let height = buffer.height();
+    let width = buffer.width();
+    let half_height = buffer.height() / 2;
     for row in 0..half_height {
         for col in 0..width {
             let temp = buffer.data[row * width + col];
