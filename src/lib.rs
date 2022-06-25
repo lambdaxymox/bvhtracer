@@ -2,11 +2,11 @@ extern crate num_traits;
 
 
 mod triangle;
-mod canvas;
+mod image;
 mod scene;
 
 
 pub use triangle::*;
-pub use canvas::*;
+pub use image::*;
 pub use scene::*;
 
