@@ -302,12 +302,14 @@ impl BvhBuilder {
         };
         // Create child nodes.
         let left_child_idx = {
+            let nodes_used = self.partial_bvh.nodes_used;
             self.partial_bvh.nodes_used += 1;
-            self.partial_bvh.nodes_used
+            nodes_used
         };
         let right_child_idx = {
+            let nodes_used = self.partial_bvh.nodes_used;
             self.partial_bvh.nodes_used += 1;
-            self.partial_bvh.nodes_used
+            nodes_used
         };
         {
             self.partial_bvh.nodes[left_child_idx].first_primitive_idx = self.partial_bvh.nodes[node_idx].first_primitive_idx;
@@ -386,12 +388,14 @@ impl BvhBuilder {
         };
         // Create child nodes.
         let left_child_idx = {
+            let nodes_used = self.partial_bvh.nodes_used;
             self.partial_bvh.nodes_used += 1;
-            self.partial_bvh.nodes_used
+            nodes_used
         };
         let right_child_idx = {
+            let nodes_used = self.partial_bvh.nodes_used;
             self.partial_bvh.nodes_used += 1;
-            self.partial_bvh.nodes_used
+            nodes_used
         };
         {
             self.partial_bvh.nodes[left_child_idx].first_primitive_idx = self.partial_bvh.nodes[node_idx].first_primitive_idx;
