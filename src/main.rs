@@ -57,7 +57,7 @@ fn initialize_scene(triangle_count: usize) -> Scene {
     builder.with_objects(objects).build()
 }
 
-fn write_image_to_file(canvas: &Canvas, file: &mut File) -> io::Result<()> {
+fn write_image_to_file(canvas: &ImageBuffer<Rgba<u8>>, file: &mut File) -> io::Result<()> {
     write!(file, "P3\n{} {}\n255\n", canvas.width, canvas.height).unwrap();
     for pixel in canvas.data.iter() {
         writeln!(file, "{} {} {}", pixel.r(), pixel.g(), pixel.b()).unwrap();
@@ -66,10 +66,12 @@ fn write_image_to_file(canvas: &Canvas, file: &mut File) -> io::Result<()> {
     Ok(())
 }
 
-fn render() -> Canvas {
+fn render() -> ImageBuffer<Rgba<u8>> {
     let triangle_count = 64;
     let scene = initialize_scene(triangle_count);
-    let mut canvas = Canvas::new(SCREEN_WIDTH, SCREEN_HEIGHT);
+    let mut canvas = ImageBuffer::from_fn(SCREEN_WIDTH, SCREEN_HEIGHT, |_, _| {
+        Rgba::from([0, 0, 0, 1])
+    });
 
     // Set up camera.
     let camera_position = Vector3::new(0_f32, 0_f32, -18_f32);
@@ -110,9 +112,11 @@ fn test_scene() -> Scene {
     builder.with_objects(triangles).build()
 }
 
-fn render_test_scene(scene: &Scene) -> Canvas {
+fn render_test_scene(scene: &Scene) -> ImageBuffer<Rgba<u8>> {
     // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
-    let mut canvas = Canvas::new(SCREEN_WIDTH, SCREEN_HEIGHT);
+    let mut canvas = ImageBuffer::from_fn(SCREEN_WIDTH, SCREEN_HEIGHT, |_, _| {
+        Rgba::from([0, 0, 0, 1])
+    });
 
     // Set up camera.
     let camera_position = Vector3::new(0_f32, 0_f32, 2_f32);
@@ -163,9 +167,11 @@ fn test_scene2() -> Scene {
     builder.with_objects(triangles).build()
 }
 
-fn render_test_scene2(scene: &Scene) -> Canvas {
+fn render_test_scene2(scene: &Scene) -> ImageBuffer<Rgba<u8>> {
     // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
-    let mut canvas = Canvas::new(SCREEN_WIDTH, SCREEN_HEIGHT);
+    let mut canvas = ImageBuffer::from_fn(SCREEN_WIDTH, SCREEN_HEIGHT, |_, _| {
+        Rgba::from([0, 0, 0, 1])
+    });
 
     // Set up camera.
     let camera_position = Vector3::new(0_f32, 0_f32, 2_f32);
@@ -199,9 +205,11 @@ fn render_test_scene2(scene: &Scene) -> Canvas {
     canvas
 }
 
-fn render_depth_unity(scene: &Scene) -> Canvas {
+fn render_depth_unity(scene: &Scene) -> ImageBuffer<Rgba<u8>> {
     // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
-    let mut canvas = Canvas::new(SCREEN_WIDTH, SCREEN_HEIGHT);
+    let mut canvas = ImageBuffer::from_fn(SCREEN_WIDTH, SCREEN_HEIGHT, |_, _| {
+        Rgba::from([0, 0, 0, 1])
+    });
 
     // Set up camera.
     let camera_position = Vector3::new(-1.5, 0.0, -2.5);
@@ -258,7 +266,7 @@ use std::ptr;
 use std::mem;
 
 /// Load texture image into the GPU.
-fn send_to_gpu_texture(canvas: &Canvas, wrapping_mode: GLuint) -> Result<GLuint, String> {
+fn send_to_gpu_texture(canvas: &ImageBuffer<Rgba<u8>>, wrapping_mode: GLuint) -> Result<GLuint, String> {
     let mut tex = 0;
     unsafe {
         gl::GenTextures(1, &mut tex);
