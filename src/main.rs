@@ -95,8 +95,7 @@ fn render() -> ImageBuffer<Rgba<u8>, Vec<u8>> {
             let ray = Ray::new(ray_origin, ray_direction, ray_t);
             if let Some(intersected_ray) = scene.intersect(&ray) {
                 if intersected_ray.t < f32::MAX {
-                    // TODO: This needs to be (col, row).
-                    buffer[(row, col)] = Rgba::new(255, 255, 255, 255);
+                    buffer[(col, row)] = Rgba::new(255, 255, 255, 255);
                 }
             }
         }
@@ -148,8 +147,7 @@ fn render_test_scene(scene: &Scene) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
                     let r = ((c & 0x00FF0000) >> 16) as u8;
                     let g = ((c & 0x0000FF00) >> 8) as u8;
                     let b = (c & 0x000000FF) as u8;
-                    // TODO: This needs to be (col, row).
-                    buffer[(row, col)] = Rgba::new(r, g, b, 255);
+                    buffer[(col, row)] = Rgba::new(r, g, b, 255);
                 }
             }
         }
@@ -206,8 +204,7 @@ fn render_test_scene2(scene: &Scene) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
                     let r = ((c & 0x00FF0000) >> 16) as u8;
                     let g = ((c & 0x0000FF00) >> 8) as u8;
                     let b = (c & 0x000000FF) as u8;
-                    // TODO: This needs to be (col, row).
-                    buffer[(row, col)] = Rgba::new(r, g, b, 255);
+                    buffer[(col, row)] = Rgba::new(r, g, b, 255);
                 }
             }
         }
@@ -248,8 +245,7 @@ fn render_depth_unity(scene: &Scene) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
                             let r = ((c & 0x00FF0000) >> 16) as u8;
                             let g = ((c & 0x0000FF00) >> 8) as u8;
                             let b = (c & 0x000000FF) as u8;
-                            // TODO: This needs to be (col, row).
-                            buffer[(row + v, col + u)] = Rgba::new(r, g, b, 255);
+                            buffer[(col + u, row + v)] = Rgba::new(r, g, b, 255);
                         }
                     }
                 }
@@ -335,9 +331,10 @@ fn main() -> io::Result<()> {
     let mut file = File::create("output.ppm").unwrap();
     println!("rendering scene.");
     write_image_to_file(&buffer, &mut file)?;
-    /*
+
+    // Flip the image.
     let height = buffer.height();
-    let width = buffer.width();
+    let width = buffer.width_subpixels();
     let half_height = buffer.height() / 2;
     for row in 0..half_height {
         for col in 0..width {
@@ -346,7 +343,6 @@ fn main() -> io::Result<()> {
             buffer.data[((height - row - 1) * width) + col] = temp;
         }
     }
-    */
 
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 

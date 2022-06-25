@@ -176,6 +176,11 @@ where
     }
 
     #[inline]
+    pub fn width_subpixels(&self) -> usize {
+        self.width * (P::CHANNEL_COUNT as usize)
+    }
+
+    #[inline]
     pub fn height(&self) -> usize {
         self.height
     }
