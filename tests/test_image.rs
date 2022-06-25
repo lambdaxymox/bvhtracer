@@ -77,3 +77,41 @@ fn test_image_buffer4() {
     assert_eq!(buffer.get_pixel_unchecked(2, 1), &Rgba::new(0,   0,   0,   255));
 }
 
+#[test]
+fn test_out_of_bounds() {
+    let data: Vec<u8> = vec![
+        255, 0,   0, 255, 0,   255, 0,   255, 0, 0, 255, 255,
+        255, 255, 0, 255, 255, 255, 255, 255, 0, 0, 0,   255
+    ];
+    let buffer: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::from_raw(3, 2, data).unwrap();
+
+    assert!(buffer.get_pixel(usize::MAX, usize::MAX).is_none());
+}
+
+#[test]
+fn test_put_pixel() {
+    let data: Vec<u8> = vec![
+        0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 
+        0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255,
+        0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255,
+    ];
+    let mut result: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::from_raw(3, 3, data).unwrap();
+    let expected_data: Vec<u8> = vec![
+        1,  2,  3,  255, 4,  5,  6,  255, 7,  8,  9,  255, 
+        10, 11, 12, 255, 13, 14, 15, 255, 16, 17, 18, 255,
+        19, 20, 21, 255, 22, 23, 24, 255, 25, 26, 27, 255,
+    ];
+    let expected: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::from_raw(3, 3, expected_data).unwrap();
+    result.put_pixel(0, 0, Rgba::from([1,  2,  3,  255]));
+    result.put_pixel(1, 0, Rgba::from([4,  5,  6,  255]));
+    result.put_pixel(2, 0, Rgba::from([7,  8,  9,  255]));
+    result.put_pixel(0, 1, Rgba::from([10, 11, 12, 255]));
+    result.put_pixel(1, 1, Rgba::from([13, 14, 15, 255]));
+    result.put_pixel(2, 1, Rgba::from([16, 17, 18, 255]));
+    result.put_pixel(0, 2, Rgba::from([19, 20, 21, 255]));
+    result.put_pixel(1, 2, Rgba::from([22, 23, 24, 255]));
+    result.put_pixel(2, 2, Rgba::from([25, 26, 27, 255]));
+
+    assert_eq!(result, expected);
+}
+

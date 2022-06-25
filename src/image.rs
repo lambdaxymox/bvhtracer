@@ -112,6 +112,7 @@ where
     }
 }
 
+#[derive(Debug, Hash, PartialEq, Eq)]
 pub struct ImageBuffer<P, Storage> {
     width: usize,
     height: usize,
