@@ -519,15 +519,6 @@ where
         *self.get_pixel_mut_unchecked(x, y) = pixel;
     }
 
-    /*
-    pub fn clear(&mut self) {
-        let zero = Rgba::zero();
-        for pixel in self.data.as_mut_slice() {
-            *pixel = zero;
-        }
-    }
-    */
-
     pub fn as_ptr(&self) -> *const P {
         self.data.as_ptr()
     }

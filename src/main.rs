@@ -57,9 +57,9 @@ fn initialize_scene(triangle_count: usize) -> Scene {
     builder.with_objects(objects).build()
 }
 
-fn write_image_to_file(canvas: &ImageBuffer<Rgba<u8>>, file: &mut File) -> io::Result<()> {
-    write!(file, "P3\n{} {}\n255\n", canvas.width, canvas.height).unwrap();
-    for pixel in canvas.data.iter() {
+fn write_image_to_file(buffer: &ImageBuffer<Rgba<u8>>, file: &mut File) -> io::Result<()> {
+    write!(file, "P3\n{} {}\n255\n", buffer.width, buffer.height).unwrap();
+    for pixel in buffer.data.iter() {
         writeln!(file, "{} {} {}", pixel.r(), pixel.g(), pixel.b()).unwrap();
     }
 
@@ -69,7 +69,7 @@ fn write_image_to_file(canvas: &ImageBuffer<Rgba<u8>>, file: &mut File) -> io::R
 fn render() -> ImageBuffer<Rgba<u8>> {
     let triangle_count = 64;
     let scene = initialize_scene(triangle_count);
-    let mut canvas = ImageBuffer::from_fn(SCREEN_WIDTH, SCREEN_HEIGHT, |_, _| {
+    let mut buffer = ImageBuffer::from_fn(SCREEN_WIDTH, SCREEN_HEIGHT, |_, _| {
         Rgba::from([0, 0, 0, 1])
     });
 
@@ -91,13 +91,13 @@ fn render() -> ImageBuffer<Rgba<u8>> {
             let ray = Ray::new(ray_origin, ray_direction, ray_t);
             if let Some(intersected_ray) = scene.intersect(&ray) {
                 if intersected_ray.t < f32::MAX {
-                    canvas[row][col] = Rgba::new(255, 255, 255, 255);
+                    buffer[row][col] = Rgba::new(255, 255, 255, 255);
                 }
             }
         }
     }
 
-    canvas
+    buffer
 }
 
 fn test_scene() -> Scene {
@@ -114,7 +114,7 @@ fn test_scene() -> Scene {
 
 fn render_test_scene(scene: &Scene) -> ImageBuffer<Rgba<u8>> {
     // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
-    let mut canvas = ImageBuffer::from_fn(SCREEN_WIDTH, SCREEN_HEIGHT, |_, _| {
+    let mut buffer = ImageBuffer::from_fn(SCREEN_WIDTH, SCREEN_HEIGHT, |_, _| {
         Rgba::from([0, 0, 0, 1])
     });
 
@@ -141,13 +141,13 @@ fn render_test_scene(scene: &Scene) -> ImageBuffer<Rgba<u8>> {
                     let r = ((c & 0x00FF0000) >> 16) as u8;
                     let g = ((c & 0x0000FF00) >> 8) as u8;
                     let b = (c & 0x000000FF) as u8;
-                    canvas[row][col] = Rgba::new(r, g, b, 255);
+                    buffer[row][col] = Rgba::new(r, g, b, 255);
                 }
             }
         }
     }
 
-    canvas
+    buffer
 }
 
 fn test_scene2() -> Scene {
@@ -169,7 +169,7 @@ fn test_scene2() -> Scene {
 
 fn render_test_scene2(scene: &Scene) -> ImageBuffer<Rgba<u8>> {
     // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
-    let mut canvas = ImageBuffer::from_fn(SCREEN_WIDTH, SCREEN_HEIGHT, |_, _| {
+    let mut buffer = ImageBuffer::from_fn(SCREEN_WIDTH, SCREEN_HEIGHT, |_, _| {
         Rgba::from([0, 0, 0, 1])
     });
 
@@ -196,18 +196,18 @@ fn render_test_scene2(scene: &Scene) -> ImageBuffer<Rgba<u8>> {
                     let r = ((c & 0x00FF0000) >> 16) as u8;
                     let g = ((c & 0x0000FF00) >> 8) as u8;
                     let b = (c & 0x000000FF) as u8;
-                    canvas[row][col] = Rgba::new(r, g, b, 255);
+                    buffer[row][col] = Rgba::new(r, g, b, 255);
                 }
             }
         }
     }
 
-    canvas
+    buffer
 }
 
 fn render_depth_unity(scene: &Scene) -> ImageBuffer<Rgba<u8>> {
     // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
-    let mut canvas = ImageBuffer::from_fn(SCREEN_WIDTH, SCREEN_HEIGHT, |_, _| {
+    let mut buffer = ImageBuffer::from_fn(SCREEN_WIDTH, SCREEN_HEIGHT, |_, _| {
         Rgba::from([0, 0, 0, 1])
     });
 
@@ -236,7 +236,7 @@ fn render_depth_unity(scene: &Scene) -> ImageBuffer<Rgba<u8>> {
                             let r = ((c & 0x00FF0000) >> 16) as u8;
                             let g = ((c & 0x0000FF00) >> 8) as u8;
                             let b = (c & 0x000000FF) as u8;
-                            canvas[row + v][col + u] = Rgba::new(r, g, b, 255);
+                            buffer[row + v][col + u] = Rgba::new(r, g, b, 255);
                         }
                     }
                 }
@@ -244,7 +244,7 @@ fn render_depth_unity(scene: &Scene) -> ImageBuffer<Rgba<u8>> {
         }
     }
 
-    canvas
+    buffer
 }
 
 
@@ -266,7 +266,7 @@ use std::ptr;
 use std::mem;
 
 /// Load texture image into the GPU.
-fn send_to_gpu_texture(canvas: &ImageBuffer<Rgba<u8>>, wrapping_mode: GLuint) -> Result<GLuint, String> {
+fn send_to_gpu_texture(buffer: &ImageBuffer<Rgba<u8>>, wrapping_mode: GLuint) -> Result<GLuint, String> {
     let mut tex = 0;
     unsafe {
         gl::GenTextures(1, &mut tex);
@@ -276,9 +276,9 @@ fn send_to_gpu_texture(canvas: &ImageBuffer<Rgba<u8>>, wrapping_mode: GLuint) ->
         gl::ActiveTexture(gl::TEXTURE0);
         gl::BindTexture(gl::TEXTURE_2D, tex);
         gl::TexImage2D(
-            gl::TEXTURE_2D, 0, gl::RGBA as i32, canvas.width as i32, canvas.height as i32, 0,
+            gl::TEXTURE_2D, 0, gl::RGBA as i32, buffer.width as i32, buffer.height as i32, 0,
             gl::RGBA, gl::UNSIGNED_BYTE,
-            canvas.as_ptr() as *const c_void
+            buffer.as_ptr() as *const c_void
         );
         gl::GenerateMipmap(gl::TEXTURE_2D);
         gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, wrapping_mode as i32);
@@ -318,18 +318,18 @@ fn main() -> io::Result<()> {
     let triangles = load_tri_model("assets/unity.tri");
     let builder = SceneBuilder::new();
     let scene = builder.with_objects(triangles).build();
-    let mut canvas = render_depth_unity(&scene);
+    let mut buffer = render_depth_unity(&scene);
     let mut file = File::create("output.ppm").unwrap();
-    write_image_to_file(&canvas, &mut file);
+    write_image_to_file(&buffer, &mut file);
 
-    let height = canvas.height;
-    let width = canvas.width;
-    let half_height = canvas.height / 2;
+    let height = buffer.height;
+    let width = buffer.width;
+    let half_height = buffer.height / 2;
     for row in 0..half_height {
         for col in 0..width {
-            let temp = canvas.data[row * width + col];
-            canvas.data[row * width + col] = canvas.data[((height - row - 1) * width) + col];
-            canvas.data[((height - row - 1) * width) + col] = temp;
+            let temp = buffer.data[row * width + col];
+            buffer.data[row * width + col] = buffer.data[((height - row - 1) * width) + col];
+            buffer.data[((height - row - 1) * width) + col] = temp;
         }
     }
 
@@ -452,7 +452,7 @@ fn main() -> io::Result<()> {
         vao
     };
 
-    let tex = send_to_gpu_texture(&canvas, gl::REPEAT).unwrap();
+    let tex = send_to_gpu_texture(&buffer, gl::REPEAT).unwrap();
 
     // Loop until the user closes the window
     while !window.should_close() {
