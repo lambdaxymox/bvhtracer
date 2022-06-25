@@ -58,7 +58,7 @@ fn test_image_buffer3() {
     assert_eq!(buffer.get_pixel_unchecked(0, 0), &Rgba::new(255, 0,   0,   255));
     assert_eq!(buffer.get_pixel_unchecked(1, 0), &Rgba::new(0,   255, 0,   255));
     assert_eq!(buffer.get_pixel_unchecked(0, 1), &Rgba::new(0,   0,   255, 255));
-    assert_eq!(buffer.get_pixel_unchecked(1, 1), &Rgba::new(255, 0,   255, 255));
+    assert_eq!(buffer.get_pixel_unchecked(1, 1), &Rgba::new(255, 255, 0,   255));
 }
 
 #[test]

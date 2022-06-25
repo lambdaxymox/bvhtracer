@@ -144,7 +144,7 @@ where
     #[inline]
     pub fn new(r: T, g: T, b: T) -> Self {
         Self { 
-            data: [r, b, g],
+            data: [r, g, b],
         }
     }
 
@@ -220,7 +220,7 @@ where
     #[inline]
     pub fn new(r: T, g: T, b: T, a: T) -> Self {
         Self { 
-            data: [r, b, g, a],
+            data: [r, g, b, a],
         }
     }
 
