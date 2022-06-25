@@ -17,11 +17,13 @@ use cglinalg::{
 
 mod backend;
 mod triangle;
+mod pixel;
 mod image;
 mod scene;
 
 use crate::triangle::*;
 use crate::image::*;
+use crate::pixel::*;
 use crate::scene::*;
 use std::io;
 use std::io::{
