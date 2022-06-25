@@ -83,6 +83,10 @@ pub trait Pixel: Copy + Clone {
 
     fn channels_mut(&mut self) -> &mut [Self::Subpixel];
 
+    fn from_slice(slice: &[Self::Subpixel]) -> &Self;
+
+    fn from_slice_mut(slice: &mut [Self::Subpixel]) -> &mut Self;
+
     fn to_rgb(&self) -> Rgb<Self::Subpixel>;
 
     fn to_rgba(&self) -> Rgba<Self::Subpixel>;
@@ -290,7 +294,7 @@ where
 {
     type Subpixel = T;
 
-    const CHANNEL_COUNT: u8 = 4;
+    const CHANNEL_COUNT: u8 = 3;
     const COLOR_MODEL: &'static str = "RGB";
 
     fn channels(&self) -> &[Self::Subpixel] {
@@ -299,6 +303,20 @@ where
 
     fn channels_mut(&mut self) -> &mut [Self::Subpixel] {
         &mut self.data
+    }
+
+    fn from_slice(slice: &[Self::Subpixel]) -> &Self {
+        assert_eq!(slice.len(), Self::CHANNEL_COUNT as usize);
+        unsafe { 
+            &*(slice.as_ptr() as *const Self)
+        }
+    }
+
+    fn from_slice_mut(slice: &mut [Self::Subpixel]) -> &mut Self {
+        assert_eq!(slice.len(), Self::CHANNEL_COUNT as usize);
+        unsafe { 
+            &mut *(slice.as_mut_ptr() as *mut Self)
+        }
     }
 
     fn to_rgb(&self) -> Rgb<Self::Subpixel> {
@@ -369,6 +387,20 @@ where
 
     fn channels_mut(&mut self) -> &mut [Self::Subpixel] {
         &mut self.data
+    }
+
+    fn from_slice(slice: &[Self::Subpixel]) -> &Self {
+        assert_eq!(slice.len(), Self::CHANNEL_COUNT as usize);
+        unsafe { 
+            &*(slice.as_ptr() as *const Self)
+        }
+    }
+
+    fn from_slice_mut(slice: &mut [Self::Subpixel]) -> &mut Self {
+        assert_eq!(slice.len(), Self::CHANNEL_COUNT as usize);
+        unsafe { 
+            &mut *(slice.as_mut_ptr() as *mut Self)
+        }
     }
 
     fn to_rgb(&self) -> Rgb<Self::Subpixel> {
