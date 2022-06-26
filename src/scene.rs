@@ -97,7 +97,7 @@ pub struct Bvh {
 }
 
 impl Bvh {
-    pub fn intersect_recursive(&self, objects: &[Triangle], ray: &Ray, node_idx: usize) -> Option<Ray> {
+    fn intersect_subtree_recursive(&self, objects: &[Triangle], ray: &Ray, node_idx: usize) -> Option<Ray> {
         let node = &self.nodes[node_idx];
         if node.aabb.intersect(ray) == f32::MAX {
             return None;
@@ -112,9 +112,9 @@ impl Bvh {
 
             None
         } else {
-            if let Some(new_ray) = self.intersect_recursive(objects, ray, node.left_node) {
+            if let Some(new_ray) = self.intersect_subtree_recursive(objects, ray, node.left_node) {
                 Some(new_ray) 
-            } else if let Some(new_ray) = self.intersect_recursive(objects, ray, node.left_node + 1) {
+            } else if let Some(new_ray) = self.intersect_subtree_recursive(objects, ray, node.left_node + 1) {
                 Some(new_ray)
             } else {
                 return None;
@@ -122,7 +122,11 @@ impl Bvh {
         }
     }
 
-    pub fn intersect(&self, objects: &[Triangle], ray: &Ray, node_idx: usize) -> Option<Ray> {
+    pub fn intersect_recursive(&self, objects: &[Triangle], ray: &Ray) -> Option<Ray> {
+        self.intersect_subtree_recursive(objects, ray, self.root_node_idx)
+    }
+
+    fn intersect_subtree(&self, objects: &[Triangle], ray: &Ray, node_idx: usize) -> Option<Ray> {
         let mut node = &self.nodes[node_idx];
         let mut stack = vec![];
         let mut best_ray = *ray;
@@ -171,6 +175,11 @@ impl Bvh {
         }
 
         Some(best_ray)
+    }
+
+
+    pub fn intersect(&self, objects: &[Triangle], ray: &Ray) -> Option<Ray> {
+        self.intersect_subtree(objects, ray, self.root_node_idx)
     }
 
     /// Returns the number of nodes in the boundary volume hierarchy.
@@ -484,11 +493,11 @@ impl Scene {
     }
 
     pub fn intersect(&self, ray: &Ray) -> Option<Ray> {
-        self.bvh.intersect(&self.objects, ray, self.bvh.root_node_idx)
+        self.bvh.intersect(&self.objects, ray)
     }
 
     pub fn intersect_recursive(&self, ray: &Ray) -> Option<Ray> {
-        self.bvh.intersect_recursive(&self.objects, ray, self.bvh.root_node_idx)
+        self.bvh.intersect_recursive(&self.objects, ray)
     }
 }
 
