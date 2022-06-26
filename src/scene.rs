@@ -477,4 +477,9 @@ impl Scene {
     pub fn intersect(&self, ray: &Ray) -> Option<Ray> {
         self.bvh.intersect(&self.objects, ray, self.bvh.root_node_idx)
     }
+
+    pub fn intersect_recursive(&self, ray: &Ray) -> Option<Ray> {
+        self.bvh.intersect_recursive(&self.objects, ray, self.bvh.root_node_idx)
+    }
 }
+

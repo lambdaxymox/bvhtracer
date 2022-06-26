@@ -29,6 +29,7 @@ use std::io;
 use std::io::{
     Write,
 };
+use std::ops;
 use std::fs::{
     File,
 };
@@ -59,6 +60,28 @@ fn initialize_scene(triangle_count: usize) -> Scene {
     builder.with_objects(objects).build()
 }
 
+pub struct PpmEncoder<'a, W: 'a> {
+    writer: &'a mut W,
+}
+
+impl<'a, W: Write + 'a> PpmEncoder<'a, W> {
+    pub fn new(writer: &'a mut W) -> Self {
+        Self { writer, }
+    }
+
+    pub fn encode<Storage>(&mut self, buffer: &ImageBuffer<Rgba<u8>, Storage>) -> io::Result<()> 
+    where
+        Storage: ops::Deref<Target = [u8]>,
+    {
+        write!(self.writer, "P3\n{} {}\n255\n", buffer.width(), buffer.height()).unwrap();
+        for pixel in buffer.pixels() {
+            writeln!(self.writer, "{} {} {}", pixel.r(), pixel.g(), pixel.b()).unwrap();    
+        }
+
+        Ok(())
+    }
+}
+/*
 fn write_image_to_file(buffer: &ImageBuffer<Rgba<u8>, Vec<u8>>, file: &mut File) -> io::Result<()> {
     write!(file, "P3\n{} {}\n255\n", buffer.width(), buffer.height()).unwrap();
     for pixel in buffer.pixels() {
@@ -67,7 +90,7 @@ fn write_image_to_file(buffer: &ImageBuffer<Rgba<u8>, Vec<u8>>, file: &mut File)
 
     Ok(())
 }
-
+*/
 fn render() -> ImageBuffer<Rgba<u8>, Vec<u8>> {
     let triangle_count = 64;
     let scene = initialize_scene(triangle_count);
@@ -330,7 +353,9 @@ fn main() -> io::Result<()> {
     let mut buffer = render_depth_unity(&scene);
     let mut file = File::create("output.ppm").unwrap();
     println!("rendering scene.");
-    write_image_to_file(&buffer, &mut file)?;
+    let mut ppm_encoder = PpmEncoder::new(&mut file);
+    ppm_encoder.encode(&buffer)?;
+    // write_image_to_file(&buffer, &mut file)?;
 
     // Flip the image.
     let height = buffer.height();
