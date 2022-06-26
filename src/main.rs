@@ -81,16 +81,7 @@ impl<'a, W: Write + 'a> PpmEncoder<'a, W> {
         Ok(())
     }
 }
-/*
-fn write_image_to_file(buffer: &ImageBuffer<Rgba<u8>, Vec<u8>>, file: &mut File) -> io::Result<()> {
-    write!(file, "P3\n{} {}\n255\n", buffer.width(), buffer.height()).unwrap();
-    for pixel in buffer.pixels() {
-        writeln!(file, "{} {} {}", pixel.r(), pixel.g(), pixel.b()).unwrap();
-    }
 
-    Ok(())
-}
-*/
 fn render() -> ImageBuffer<Rgba<u8>, Vec<u8>> {
     let triangle_count = 64;
     let scene = initialize_scene(triangle_count);
@@ -355,7 +346,6 @@ fn main() -> io::Result<()> {
     println!("rendering scene.");
     let mut ppm_encoder = PpmEncoder::new(&mut file);
     ppm_encoder.encode(&buffer)?;
-    // write_image_to_file(&buffer, &mut file)?;
 
     // Flip the image.
     let height = buffer.height();
