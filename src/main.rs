@@ -209,7 +209,11 @@ fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle<f32>> {
 fn main() -> io::Result<()> {
     let triangles = load_tri_model("assets/unity.tri");
     let builder = SceneBuilder::new();
+    use std::time::SystemTime;
+    let now = SystemTime::now();
     let scene = builder.with_objects(triangles).build();
+    let elapsed = now.elapsed().unwrap();
+    println!("BVH construction time = {} s", elapsed.as_secs());
     let mut buffer = render_depth_unity(&scene);
     let mut file = File::create("output.ppm").unwrap();
     println!("rendering scene.");
