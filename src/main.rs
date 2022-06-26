@@ -60,42 +60,6 @@ fn initialize_scene(triangle_count: usize) -> Scene {
     builder.with_objects(objects).build()
 }
 
-fn render() -> ImageBuffer<Rgba<u8>, Vec<u8>> {
-    let triangle_count = 64;
-    let scene = initialize_scene(triangle_count);
-    let mut buffer = ImageBuffer::from_fill(
-        SCREEN_WIDTH, 
-        SCREEN_HEIGHT,
-        Rgba::from([0, 0, 0, 1])
-    );
-
-    // Set up camera.
-    let camera_position = Vector3::new(0_f32, 0_f32, -18_f32);
-    let p0 = Vector3::new(-1_f32, 1_f32, -15_f32);
-    let p1 = Vector3::new(1_f32, 1_f32, -15_f32);
-    let p2 = Vector3::new(-1_f32, -1f32, -15_f32);
-
-    println!("rendering scene.");
-    for row in 0..SCREEN_HEIGHT {
-        for col in 0..SCREEN_WIDTH {
-            let pixel_position = p0 + 
-                (p1 - p0) * (col as f32 / SCREEN_WIDTH as f32) + 
-                (p2 - p0) * (row as f32 / SCREEN_HEIGHT as f32);
-            let ray_origin = camera_position;
-            let ray_direction = (pixel_position - ray_origin).normalize();
-            let ray_t = f32::MAX;
-            let ray = Ray::new(ray_origin, ray_direction, ray_t);
-            if let Some(intersected_ray) = scene.intersect(&ray) {
-                if intersected_ray.t < f32::MAX {
-                    buffer[(col, row)] = Rgba::new(255, 255, 255, 255);
-                }
-            }
-        }
-    }
-
-    buffer
-}
-
 fn render_depth_unity(scene: &Scene) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
     // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
     let mut buffer = ImageBuffer::from_fill(
@@ -212,9 +176,15 @@ fn main() -> io::Result<()> {
     let triangles = load_tri_model("assets/unity.tri");
     let builder = SceneBuilder::new();
     let scene = builder.with_objects(triangles).build();
-    let mut buffer = render_depth_unity(&scene);
-    let mut file = File::create("output.ppm").unwrap();
     println!("rendering scene.");
+
+    use std::time::SystemTime;
+    let now = SystemTime::now();
+    let mut buffer = render_depth_unity(&scene);
+    let elapsed = now.elapsed().unwrap();
+    println!("rendering time = {} s", elapsed.as_secs_f64());
+    
+    let mut file = File::create("output.ppm").unwrap();
     let mut ppm_encoder = ppm::PpmEncoder::new(&mut file);
     ppm_encoder.encode(&buffer)?;
     buffer.flip_vertical();
