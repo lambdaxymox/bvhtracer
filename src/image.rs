@@ -128,8 +128,8 @@ where
     pub fn from_raw(width: usize, height: usize, buffer: Storage) -> Option<ImageBuffer<P, Storage>> {
         if Self::image_fits_inside_storage(width, height, buffer.len()) {
             Some(ImageBuffer {
-                width: width,
-                height: height,
+                width,
+                height,
                 data: buffer,
                 _marker: PhantomData,
             })
@@ -321,8 +321,8 @@ where
         let size = Self::image_buffer_len(width, height).unwrap();
 
         ImageBuffer { 
-            width: width, 
-            height: height, 
+            width, 
+            height, 
             data: vec![<P::Subpixel as Zero>::zero(); size],
              _marker: PhantomData,
         }

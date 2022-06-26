@@ -45,15 +45,15 @@ impl Bvh {
                 }
             }
 
-            None
+            return None;
+        }
+            
+        if let Some(new_ray) = self.intersect_subtree_recursive(objects, ray, node.left_node) {
+            Some(new_ray)
+        } else if let Some(new_ray) = self.intersect_subtree_recursive(objects, ray, node.left_node + 1) {
+            Some(new_ray)
         } else {
-            if let Some(new_ray) = self.intersect_subtree_recursive(objects, ray, node.left_node) {
-                Some(new_ray) 
-            } else if let Some(new_ray) = self.intersect_subtree_recursive(objects, ray, node.left_node + 1) {
-                Some(new_ray)
-            } else {
-                return None;
-            }
+            None
         }
     }
 
@@ -124,6 +124,7 @@ impl Bvh {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct BvhBuilder {
     partial_bvh: Bvh,
 }
@@ -162,9 +163,8 @@ impl BvhBuilder {
         let first = {
             let mut node = &mut self.partial_bvh.nodes[node_idx];
             node.aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
-            let first = node.first_primitive_idx;
-
-            first
+            
+            node.first_primitive_idx
         };
 
         for i in 0..self.partial_bvh.nodes[node_idx].primitive_count {

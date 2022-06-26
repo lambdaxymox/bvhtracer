@@ -33,9 +33,6 @@ use std::ptr;
 use std::fmt;
 use std::mem;
 use std::path::Path;
-use std::slice::{
-    Iter,
-};
 
 // use log::{info, error};
 
@@ -353,7 +350,7 @@ pub fn init_gl(width: u32, height: u32) -> Result<GlContext, String> {
 
     // info!("Started GLFW successfully");
     let maybe_glfw_window = glfw.create_window(
-        width, height, &format!("Googly Blocks"), glfw::WindowMode::Windowed
+        width, height, "Googly Blocks", glfw::WindowMode::Windowed
     );
     let (mut window, events) = match maybe_glfw_window {
         Some(tuple) => tuple,
@@ -430,22 +427,22 @@ pub enum ShaderCompilationError {
 }
 
 impl fmt::Display for ShaderCompilationError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &ShaderCompilationError::ShaderNotFound(ref file_name) => {
-                write!(f, "Could not open the shader file for reading: {}", file_name.to_string())
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            ShaderCompilationError::ShaderNotFound(ref file_name) => {
+                write!(formatter, "Could not open the shader file for reading: {}", file_name)
             }
-            &ShaderCompilationError::CouldNotParseShader(ref file_name) => {
-                write!(f, "The shader file exists, but there was an error in reading it: {}", file_name.to_string())
+            ShaderCompilationError::CouldNotParseShader(ref file_name) => {
+                write!(formatter, "The shader file exists, but there was an error in reading it: {}", file_name)
             }
-            &ShaderCompilationError::CouldNotCompileShader(ref file_name) => {
-                write!(f, "The shader could not be compiled: {}", file_name.to_string())
+            ShaderCompilationError::CouldNotCompileShader(ref file_name) => {
+                write!(formatter, "The shader could not be compiled: {}", file_name)
             }
-            &ShaderCompilationError::CouldNotLinkShader => {
-                write!(f, "The shader program could not be linked.")
+            ShaderCompilationError::CouldNotLinkShader => {
+                write!(formatter, "The shader program could not be linked.")
             }
-            &ShaderCompilationError::ShaderValidationFailed => {
-                write!(f, "Shader validation failed.")
+            ShaderCompilationError::ShaderValidationFailed => {
+                write!(formatter, "Shader validation failed.")
             }
         }
     }
@@ -491,17 +488,17 @@ pub fn shader_info_log(shader_index: GLuint) -> ShaderLog {
     unsafe {
         gl::GetShaderiv(shader_index, gl::INFO_LOG_LENGTH, &mut actual_length);
     }
-    let mut raw_log = vec![0 as i8; actual_length as usize];
+    let mut raw_log = vec![0_i8; actual_length as usize];
     unsafe {
         gl::GetShaderInfoLog(shader_index, raw_log.len() as i32, &mut actual_length, &mut raw_log[0]);
     }
     
     let mut log = String::new();
-    for i in 0..actual_length as usize {
-        log.push(raw_log[i] as u8 as char);
+    for raw_log_i in raw_log.iter().take(actual_length as usize) {
+        log.push(*raw_log_i as u8 as char);
     }
 
-    ShaderLog { index: shader_index, log: log }
+    ShaderLog { index: shader_index, log }
 }
 
 /// Create a shader from source files.
@@ -571,22 +568,22 @@ impl fmt::Display for ProgramLog {
 
 /// Query the shader program information log generated during shader compilation
 /// from OpenGL.
-pub fn program_info_log(index: GLuint) -> ProgramLog {
+pub fn program_info_log(program_index: GLuint) -> ProgramLog {
     let mut actual_length = 0;
     unsafe {
-        gl::GetProgramiv(index, gl::INFO_LOG_LENGTH, &mut actual_length);
+        gl::GetProgramiv(program_index, gl::INFO_LOG_LENGTH, &mut actual_length);
     }
-    let mut raw_log = vec![0 as i8; actual_length as usize];
+    let mut raw_log = vec![0_i8; actual_length as usize];
     unsafe {
-        gl::GetProgramInfoLog(index, raw_log.len() as i32, &mut actual_length, &mut raw_log[0]);
+        gl::GetProgramInfoLog(program_index, raw_log.len() as i32, &mut actual_length, &mut raw_log[0]);
     }
 
     let mut log = String::new();
-    for i in 0..actual_length as usize {
-        log.push(raw_log[i] as u8 as char);
+    for raw_log_i in raw_log.iter().take(actual_length as usize) {
+        log.push(*raw_log_i as u8 as char);
     }
 
-    ProgramLog { index: index, log: log }
+    ProgramLog { index: program_index, log }
 }
 
 /// Validate that the shader program `sp` can execute with the current OpenGL program state.

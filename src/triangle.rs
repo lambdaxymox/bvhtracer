@@ -36,8 +36,8 @@ where
         let edge2 = self.vertex2 - self.vertex0;
         let h = ray.direction.cross(&edge2);
         let a = edge1.dot(&h);
-        let _0_0001: S = num_traits::cast(0.0001_f64).unwrap();
-        if a > -_0_0001 && a < _0_0001 {
+        let threshold: S = num_traits::cast(0.0001_f64).unwrap();
+        if a > -threshold && a < threshold {
             // The ray is parallel to the triangle.
             return None;
         }
@@ -53,12 +53,12 @@ where
             return None;
         }
         let t = f * edge2.dot(&q);
-        if t > _0_0001 {
+        if t > threshold {
             let t_intersect = S::min(ray.t, t);
     
-            return Some(t_intersect);
+            Some(t_intersect)
         } else {
-            return None;
+            None
         }
     }
 }

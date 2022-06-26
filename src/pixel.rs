@@ -335,7 +335,7 @@ where
         self.data = self.data.map(op);
     }
 
-    fn map_with_alpha<Op1, Op2>(&self, op1: Op1, op2: Op2) -> Self
+    fn map_with_alpha<Op1, Op2>(&self, op1: Op1, _op2: Op2) -> Self
     where
         Op1: FnMut(Self::Subpixel) -> Self::Subpixel,
         Op2: FnMut(Self::Subpixel) -> Self::Subpixel
@@ -343,7 +343,7 @@ where
         self.map(op1)
     }
 
-    fn apply_with_alpha<Op1, Op2>(&mut self, op1: Op1, op2: Op2)
+    fn apply_with_alpha<Op1, Op2>(&mut self, op1: Op1, _op2: Op2)
     where
         Op1: FnMut(Self::Subpixel) -> Self::Subpixel,
         Op2: FnMut(Self::Subpixel) -> Self::Subpixel
@@ -419,20 +419,23 @@ where
         self.data = self.data.map(op);
     }
 
-    fn map_with_alpha<Op1, Op2>(&self, op1: Op1, op2: Op2) -> Self
+    fn map_with_alpha<Op1, Op2>(&self, mut op1: Op1, mut op2: Op2) -> Self
     where
         Op1: FnMut(Self::Subpixel) -> Self::Subpixel,
         Op2: FnMut(Self::Subpixel) -> Self::Subpixel
     {
-        self.map(op1)
+        Rgba::from([op1(self.data[0]), op1(self.data[1]), op1(self.data[2]), op2(self.data[3])])
     }
 
-    fn apply_with_alpha<Op1, Op2>(&mut self, op1: Op1, op2: Op2)
+    fn apply_with_alpha<Op1, Op2>(&mut self, mut op1: Op1, mut op2: Op2)
     where
         Op1: FnMut(Self::Subpixel) -> Self::Subpixel,
         Op2: FnMut(Self::Subpixel) -> Self::Subpixel
     {
-        self.apply(op1);
+        self.data[0] = op1(self.data[0]);
+        self.data[1] = op1(self.data[1]);
+        self.data[2] = op1(self.data[2]);
+        self.data[3] = op2(self.data[3]);
     }
 
     fn invert(&self) -> Self {
