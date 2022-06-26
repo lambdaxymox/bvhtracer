@@ -29,19 +29,59 @@ pub struct Bvh {
     nodes_used: usize,
 }
 
+#[derive(Clone, Debug)]
+struct PrimitiveIter<'a> {
+    objects: &'a [Triangle<f32>],
+    primitive_count: usize,
+    base_primitive_index: usize,
+    current_offset: usize,
+}
+
+impl<'a> PrimitiveIter<'a> {
+    fn new(objects: &'a [Triangle<f32>], primitive_count: usize, base_primitive_index: usize) -> Self {
+        Self {
+            objects,
+            primitive_count,
+            base_primitive_index,
+            current_offset: 0,
+        }
+    }
+}
+
+impl<'a> Iterator for PrimitiveIter<'a> {
+    type Item = &'a Triangle<f32>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_offset < self.primitive_count {
+            let current_primitive_index = self.base_primitive_index + self.current_offset;
+            let current_object = &self.objects[current_primitive_index];
+            self.current_offset += 1;
+            
+            return Some(current_object);
+        }
+
+        None
+    }
+}
+
 
 impl Bvh {
+    fn primitive_iter<'a>(&self, objects: &'a [Triangle<f32>], node: &BvhNode) -> PrimitiveIter<'a> {
+        let base_primitive_index = self.node_indices[node.first_primitive_idx];
+        
+        PrimitiveIter::new(objects, node.primitive_count, base_primitive_index)
+    }
+
     fn intersect_subtree_recursive(&self, objects: &[Triangle<f32>], ray: &Ray<f32>, node_idx: usize) -> Option<Ray<f32>> {
         let node = &self.nodes[node_idx];
         if node.aabb.intersect(ray).is_none() {
             return None;
         }
         if node.is_leaf() {
-            for i in 0..node.primitive_count {
-                let primitive_idx = self.node_indices[node.first_primitive_idx + i];
-                let primitive = objects[primitive_idx];
+            for primitive in self.primitive_iter(objects, node) {
                 if let Some(t_intersect) = primitive.intersect(ray) {
                     let new_ray = Ray::new(ray.origin, ray.direction, t_intersect);
+
                     return Some(new_ray);
                 }
             }
@@ -68,13 +108,12 @@ impl Bvh {
         let mut best_ray = *ray;
         loop {
             if node.is_leaf() {
-                for i in 0..node.primitive_count {
-                    let primitive_idx = self.node_indices[node.first_primitive_idx];
-                    let primitive = objects[primitive_idx + i];
+                for primitive in self.primitive_iter(objects, node) {
                     if let Some(t_intersect) = primitive.intersect(&best_ray) {
                         best_ray = Ray::new(ray.origin, ray.direction, t_intersect);
                     }
                 }
+                
                 if stack.is_empty() {
                     break;
                 } else {
@@ -191,7 +230,6 @@ impl BvhBuilder {
                 return;
             }
             // Determine the split axis and position using the bounding volume's midpoint.
-            // let extent = node.aabb_max - node.aabb_min;
             let extent = node.aabb.extent();
             let mut best_axis = 0;
             if extent.y > extent.x {
@@ -312,7 +350,6 @@ impl BvhBuilder {
             let node = &mut self.partial_bvh.nodes[node_idx];
             let axis = best_axis as usize;
             let split_position = best_position;
-            // let extent = node.aabb_max - node.aabb_min;
             let extent = node.aabb.extent();
             let parent_area = extent.x * extent.y + extent.y * extent.z + extent.z * extent.x;
             let parent_cost = (node.primitive_count as f32) * parent_area;
