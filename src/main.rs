@@ -21,11 +21,13 @@ mod triangle;
 mod pixel;
 mod image;
 mod ppm;
+mod ray;
 mod scene;
 
 use crate::triangle::*;
 use crate::image::*;
 use crate::pixel::*;
+use crate::ray::*;
 use crate::scene::*;
 use std::io;
 use std::fs::{

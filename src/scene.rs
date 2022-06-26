@@ -1,5 +1,6 @@
 use crate::aabb::*;
 use crate::triangle::*;
+use crate::ray::*;
 use cglinalg::{
     Vector3,
     SimdScalarFloat,
