@@ -41,7 +41,7 @@ fn sample_unit_sphere(rng: &mut IsaacRng) -> Vector3<f32> {
     }
 }
 
-fn gen_hitting_ray() -> Ray {
+fn gen_hitting_ray() -> Ray<f32> {
     use rand::SeedableRng;
     let mut rng = IsaacRng::seed_from_u64(0);
     let sphere_radius = 10_f32;
@@ -52,7 +52,7 @@ fn gen_hitting_ray() -> Ray {
     Ray::from_origin_dir(ray_origin, ray_direction)
 }
 
-fn gen_missing_ray() -> Ray {
+fn gen_missing_ray() -> Ray<f32> {
     use rand::SeedableRng;
     let mut rng = IsaacRng::seed_from_u64(0);
     let sphere_radius = 10_f32;

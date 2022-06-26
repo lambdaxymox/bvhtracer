@@ -51,7 +51,7 @@ impl Aabb {
         self.b_max - self.b_min
     }
 
-    pub fn intersect(&self, ray: &Ray) -> f32 {
+    pub fn intersect(&self, ray: &Ray<f32>) -> f32 {
         let t_x1 = (self.b_min.x - ray.origin.x) * ray.recip_direction.x;
         let t_x2 = (self.b_max.x - ray.origin.x) * ray.recip_direction.x;
         let t_min = f32::min(t_x1, t_x2);

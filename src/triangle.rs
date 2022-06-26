@@ -20,7 +20,7 @@ impl Triangle {
         Self { vertex0, vertex1, vertex2, centroid, }
     }
 
-    pub fn intersect(&self, ray: &Ray) -> Option<Ray> {
+    pub fn intersect(&self, ray: &Ray<f32>) -> Option<Ray<f32>> {
         let edge1 = self.vertex1 - self.vertex0;
         let edge2 = self.vertex2 - self.vertex0;
         let h = ray.direction.cross(&edge2);

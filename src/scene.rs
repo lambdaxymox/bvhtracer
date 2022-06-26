@@ -31,7 +31,7 @@ pub struct Bvh {
 }
 
 impl Bvh {
-    fn intersect_subtree_recursive(&self, objects: &[Triangle], ray: &Ray, node_idx: usize) -> Option<Ray> {
+    fn intersect_subtree_recursive(&self, objects: &[Triangle], ray: &Ray<f32>, node_idx: usize) -> Option<Ray<f32>> {
         let node = &self.nodes[node_idx];
         if node.aabb.intersect(ray) == f32::MAX {
             return None;
@@ -56,11 +56,11 @@ impl Bvh {
         }
     }
 
-    pub fn intersect_recursive(&self, objects: &[Triangle], ray: &Ray) -> Option<Ray> {
+    pub fn intersect_recursive(&self, objects: &[Triangle], ray: &Ray<f32>) -> Option<Ray<f32>> {
         self.intersect_subtree_recursive(objects, ray, self.root_node_idx)
     }
 
-    fn intersect_subtree(&self, objects: &[Triangle], ray: &Ray, node_idx: usize) -> Option<Ray> {
+    fn intersect_subtree(&self, objects: &[Triangle], ray: &Ray<f32>, node_idx: usize) -> Option<Ray<f32>> {
         let mut node = &self.nodes[node_idx];
         let mut stack = vec![];
         let mut best_ray = *ray;
@@ -112,7 +112,7 @@ impl Bvh {
     }
 
 
-    pub fn intersect(&self, objects: &[Triangle], ray: &Ray) -> Option<Ray> {
+    pub fn intersect(&self, objects: &[Triangle], ray: &Ray<f32>) -> Option<Ray<f32>> {
         self.intersect_subtree(objects, ray, self.root_node_idx)
     }
 
@@ -426,11 +426,11 @@ impl Scene {
         Self { objects, bvh, }
     }
 
-    pub fn intersect(&self, ray: &Ray) -> Option<Ray> {
+    pub fn intersect(&self, ray: &Ray<f32>) -> Option<Ray<f32>> {
         self.bvh.intersect(&self.objects, ray)
     }
 
-    pub fn intersect_recursive(&self, ray: &Ray) -> Option<Ray> {
+    pub fn intersect_recursive(&self, ray: &Ray<f32>) -> Option<Ray<f32>> {
         self.bvh.intersect_recursive(&self.objects, ray)
     }
 }
