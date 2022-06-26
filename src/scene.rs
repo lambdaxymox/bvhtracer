@@ -9,7 +9,7 @@ use cglinalg::{
 
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub struct BvhNode {
-    aabb: Aabb,
+    aabb: Aabb<f32>,
     left_node: usize,
     first_primitive_idx: usize,
     primitive_count: usize,
