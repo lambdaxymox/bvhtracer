@@ -33,6 +33,10 @@ struct Aabb {
 }
 
 impl Aabb {
+    fn new(b_min: Vector3<f32>, b_max: Vector3<f32>) -> Self {
+        Self { b_min, b_max, }
+    }
+
     fn grow(&mut self, position: &Vector3<f32>) {
         #[inline]
         fn min(vector1: &Vector3<f32>, vector2: &Vector3<f32>) -> Vector3<f32> {
@@ -61,13 +65,39 @@ impl Aabb {
 
         extent.x * extent.y + extent.y * extent.z + extent.z * extent.x
     }
+
+    fn extent(&self) -> Vector3<f32> {
+        self.b_max - self.b_min
+    }
+
+    fn intersect(&self, ray: &Ray) -> f32 {
+        let t_x1 = (self.b_min.x - ray.origin.x) * ray.recip_direction.x;
+        let t_x2 = (self.b_max.x - ray.origin.x) * ray.recip_direction.x;
+        let t_min = f32::min(t_x1, t_x2);
+        let t_max = f32::max(t_x1, t_x2);
+        let t_y1 = (self.b_min.y - ray.origin.y) * ray.recip_direction.y; 
+        let t_y2 = (self.b_max.y - ray.origin.y) * ray.recip_direction.y;
+        let t_min = f32::max(t_min, f32::min(t_y1, t_y2)); 
+        let t_max = f32::min(t_max, f32::max(t_y1, t_y2));
+        let t_z1 = (self.b_min.z - ray.origin.z) * ray.recip_direction.z;
+        let t_z2 = (self.b_max.z - ray.origin.z) * ray.recip_direction.z;
+        let t_min = f32::max(t_min, f32::min(t_z1, t_z2)); 
+        let t_max = f32::min(t_max, f32::max(t_z1, t_z2));
+        
+        if (t_max >= t_min) && (t_min < ray.t) && (t_max > 0_f32) {
+            t_min
+        } else {
+            f32::MAX
+        }
+    }
 }
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub struct BvhNode {
-    aabb_min: Vector3<f32>,
-    aabb_max: Vector3<f32>,
+    // aabb_min: Vector3<f32>,
+    // aabb_max: Vector3<f32>,
+    aabb: Aabb,
     left_node: usize,
     first_primitive_idx: usize,
     primitive_count: usize,
@@ -91,7 +121,12 @@ pub struct Bvh {
 impl Bvh {
     pub fn intersect_recursive(&self, objects: &[Triangle], ray: &Ray, node_idx: usize) -> Option<Ray> {
         let node = &self.nodes[node_idx];
+        /*
         if intersect_aabb(ray, &node.aabb_min, &node.aabb_max) == f32::MAX {
+            return None;
+        }
+        */
+        if node.aabb.intersect(ray) == f32::MAX {
             return None;
         }
         if node.is_leaf() {
@@ -137,8 +172,10 @@ impl Bvh {
             }
             let mut child1 = &self.nodes[node.left_node];
             let mut child2 = &self.nodes[node.left_node + 1];
-            let mut dist1 = intersect_aabb(&best_ray, &child1.aabb_min, &child1.aabb_max);
-            let mut dist2 = intersect_aabb(&best_ray, &child2.aabb_min, &child2.aabb_max);
+            // let mut dist1 = intersect_aabb(&best_ray, &child1.aabb_min, &child1.aabb_max);
+            // let mut dist2 = intersect_aabb(&best_ray, &child2.aabb_min, &child2.aabb_max);
+            let mut dist1 = child1.aabb.intersect(&best_ray);
+            let mut dist2 = child2.aabb.intersect(&best_ray);
             if dist1 > dist2 { 
                 let dist_temp = dist1;
                 let child_temp = child1;
@@ -209,8 +246,9 @@ impl BvhBuilder {
 
         let first = {
             let mut node = &mut self.partial_bvh.nodes[node_idx];
-            node.aabb_min = Vector3::from_fill(f32::MAX); 
-            node.aabb_max = Vector3::from_fill(-f32::MAX);
+            // node.aabb_min = Vector3::from_fill(f32::MAX); 
+            // node.aabb_max = Vector3::from_fill(-f32::MAX);
+            node.aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
             let first = node.first_primitive_idx;
 
             first
@@ -220,12 +258,12 @@ impl BvhBuilder {
             let leaf_triangle_idx = self.partial_bvh.node_indices[first + i];
             let leaf_triangle = &objects[leaf_triangle_idx];
             let node = &mut self.partial_bvh.nodes[node_idx];
-            node.aabb_min = min(&node.aabb_min, &leaf_triangle.vertex0);
-            node.aabb_min = min(&node.aabb_min, &leaf_triangle.vertex1);
-            node.aabb_min = min(&node.aabb_min, &leaf_triangle.vertex2);
-            node.aabb_max = max(&node.aabb_max, &leaf_triangle.vertex0);
-            node.aabb_max = max(&node.aabb_max, &leaf_triangle.vertex1);
-            node.aabb_max = max(&node.aabb_max, &leaf_triangle.vertex2);
+            node.aabb.b_min = min(&node.aabb.b_min, &leaf_triangle.vertex0);
+            node.aabb.b_min = min(&node.aabb.b_min, &leaf_triangle.vertex1);
+            node.aabb.b_min = min(&node.aabb.b_min, &leaf_triangle.vertex2);
+            node.aabb.b_max = max(&node.aabb.b_max, &leaf_triangle.vertex0);
+            node.aabb.b_max = max(&node.aabb.b_max, &leaf_triangle.vertex1);
+            node.aabb.b_max = max(&node.aabb.b_max, &leaf_triangle.vertex2);
         }
     }
 
@@ -264,7 +302,8 @@ impl BvhBuilder {
                 return;
             }
             // Determine the split axis and position using the bounding volume's midpoint.
-            let extent = node.aabb_max - node.aabb_min;
+            // let extent = node.aabb_max - node.aabb_min;
+            let extent = node.aabb.extent();
             let mut best_axis = 0;
             if extent.y > extent.x {
                 best_axis = 1;
@@ -272,7 +311,8 @@ impl BvhBuilder {
             if extent.z > extent[best_axis] {
                 best_axis = 2;
             }
-            let best_position = node.aabb_min[best_axis] + extent[best_axis] * (1_f32 / 2_f32);
+            // let best_position = node.aabb_min[best_axis] + extent[best_axis] * (1_f32 / 2_f32);
+            let best_position = node.aabb.b_min[best_axis] + extent[best_axis] * (1_f32 / 2_f32);
 
             (best_axis, best_position)
         };
@@ -359,7 +399,8 @@ impl BvhBuilder {
             let node = &mut self.partial_bvh.nodes[node_idx];
             let axis = best_axis as usize;
             let split_position = best_position;
-            let extent = node.aabb_max - node.aabb_min;
+            // let extent = node.aabb_max - node.aabb_min;
+            let extent = node.aabb.extent();
             let parent_area = extent.x * extent.y + extent.y * extent.z + extent.z * extent.x;
             let parent_cost = (node.primitive_count as f32) * parent_area;
             if best_cost >= parent_cost {
