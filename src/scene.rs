@@ -180,32 +180,7 @@ impl BvhBuilder {
         }
     }
 
-    fn evaluate_sah(&self, objects: &[Triangle<f32>], node: &BvhNode, axis: usize, position: f32) -> f32 {
-        let mut left_box = Aabb::default();
-        let mut right_box = Aabb::default();
-        let mut left_count = 0;
-        let mut right_count = 0;
-        for i in 0..node.primitive_count {
-            let primitive_idx = self.partial_bvh.node_indices[node.first_primitive_idx + i];
-            let primitive = &objects[primitive_idx];
-            if primitive.centroid[axis] < position {
-                left_count += 1;
-                left_box.grow(&primitive.vertex0);
-                left_box.grow(&primitive.vertex1);
-                left_box.grow(&primitive.vertex2);
-            } else {
-                right_count += 1;
-                right_box.grow(&primitive.vertex0);
-                right_box.grow(&primitive.vertex1);
-                right_box.grow(&primitive.vertex2);
-            }
-        }
-        let cost = (left_count as f32) * left_box.area() + (right_count as f32) * right_box.area();
-        
-        if cost > 0_f32 { cost } else { f32::MAX }
-    }
-
-    fn subdivide_recursive(&mut self, objects: &mut [Triangle<f32>], node_idx: usize) {
+    fn subdivide_midpoint(&mut self, objects: &mut [Triangle<f32>], node_idx: usize) {
         println!("Subdividing node_idx = {}", node_idx);
         // Terminate recursion.
         let (best_axis, best_position) = {
@@ -280,6 +255,31 @@ impl BvhBuilder {
         // Recurse
         self.subdivide(objects, left_child_idx);
         self.subdivide(objects, right_child_idx);
+    }
+
+    fn evaluate_sah(&self, objects: &[Triangle<f32>], node: &BvhNode, axis: usize, position: f32) -> f32 {
+        let mut left_box = Aabb::default();
+        let mut right_box = Aabb::default();
+        let mut left_count = 0;
+        let mut right_count = 0;
+        for i in 0..node.primitive_count {
+            let primitive_idx = self.partial_bvh.node_indices[node.first_primitive_idx + i];
+            let primitive = &objects[primitive_idx];
+            if primitive.centroid[axis] < position {
+                left_count += 1;
+                left_box.grow(&primitive.vertex0);
+                left_box.grow(&primitive.vertex1);
+                left_box.grow(&primitive.vertex2);
+            } else {
+                right_count += 1;
+                right_box.grow(&primitive.vertex0);
+                right_box.grow(&primitive.vertex1);
+                right_box.grow(&primitive.vertex2);
+            }
+        }
+        let cost = (left_count as f32) * left_box.area() + (right_count as f32) * right_box.area();
+        
+        if cost > 0_f32 { cost } else { f32::MAX }
     }
 
     fn subdivide(&mut self, objects: &mut [Triangle<f32>], node_idx: usize) {
@@ -387,6 +387,25 @@ impl BvhBuilder {
 
         self.partial_bvh
     }
+
+    pub fn build_for_midpoint(mut self, objects: &mut [Triangle<f32>]) -> Bvh {
+        // Populate the triangle index array.
+        for i in 0..objects.len() {
+            self.partial_bvh.node_indices.push(i);
+        }
+
+        self.partial_bvh.nodes = vec![BvhNode::default(); 2 * objects.len()];
+        
+        let root_node_idx = self.partial_bvh.root_node_idx;
+        let mut root_node: &mut BvhNode = &mut self.partial_bvh.nodes[root_node_idx];
+        root_node.left_node = 0;
+        root_node.primitive_count = objects.len();
+
+        self.update_node_bounds(objects, self.partial_bvh.root_node_idx);
+        self.subdivide_midpoint(objects, self.partial_bvh.root_node_idx);
+
+        self.partial_bvh
+    }
 }
 
 
@@ -411,6 +430,12 @@ impl SceneBuilder {
 
     pub fn build(mut self) -> Scene {
         let bvh = self.bvh_builder.build_for(&mut self.objects);
+
+        Scene::new(self.objects, bvh)
+    }
+
+    pub fn build_midpoint(mut self) -> Scene {
+        let bvh = self.bvh_builder.build_for_midpoint(&mut self.objects);
 
         Scene::new(self.objects, bvh)
     }
