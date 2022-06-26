@@ -322,18 +322,7 @@ fn main() -> io::Result<()> {
     println!("rendering scene.");
     let mut ppm_encoder = ppm::PpmEncoder::new(&mut file);
     ppm_encoder.encode(&buffer)?;
-
-    // Flip the image.
-    let height = buffer.height();
-    let width = buffer.width_subpixels();
-    let half_height = buffer.height() / 2;
-    for row in 0..half_height {
-        for col in 0..width {
-            let temp = buffer.data[row * width + col];
-            buffer.data[row * width + col] = buffer.data[((height - row - 1) * width) + col];
-            buffer.data[((height - row - 1) * width) + col] = temp;
-        }
-    }
+    buffer.flip_vertical();
 
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 

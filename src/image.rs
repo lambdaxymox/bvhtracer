@@ -116,7 +116,7 @@ where
 pub struct ImageBuffer<P, Storage> {
     width: usize,
     height: usize,
-    pub data: Storage,
+    data: Storage,
     _marker: PhantomData<P>,
 }
 
@@ -297,6 +297,19 @@ where
 
     pub fn put_pixel(&mut self, x: usize, y: usize, pixel: P) {
         *self.get_pixel_mut_unchecked(x, y) = pixel;
+    }
+
+    pub fn flip_vertical(&mut self) {
+        let height = self.height();
+        let width = self.width_subpixels();
+        let half_height = self.height() / 2;
+        for row in 0..half_height {
+            for col in 0..width {
+                let temp = self.data[row * width + col];
+                self.data[row * width + col] = self.data[((height - row - 1) * width) + col];
+                self.data[((height - row - 1) * width) + col] = temp;
+            }
+        }
     }
 }
 
