@@ -36,7 +36,7 @@ where
         let edge2 = self.vertex2 - self.vertex0;
         let h = ray.direction.cross(&edge2);
         let a = edge1.dot(&h);
-        let _0_0001: S = num_traits::cast(0.0001_f32).unwrap();
+        let _0_0001: S = num_traits::cast(0.0001_f64).unwrap();
         if a > -_0_0001 && a < _0_0001 {
             // The ray is parallel to the triangle.
             return None;

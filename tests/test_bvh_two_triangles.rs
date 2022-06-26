@@ -35,3 +35,39 @@ fn test_one_triangle_should_have_one_volume() {
     assert_eq!(scene.bvh.nodes_used(), 1);
 }
 
+#[test]
+fn test_one_triangle_intersection_hits1() {
+    let scene = scene();
+    let ray_origin = Vector3::new(0_f32, 0_f32, 5_f32);
+    let target_origin = scene.objects[0].centroid;
+    let ray_direction = (target_origin - ray_origin).normalize();
+    let ray = Ray::from_origin_dir(ray_origin, ray_direction);
+    let result = scene.intersect(&ray);
+
+    assert!(result.is_some());
+}
+
+#[test]
+fn test_one_triangle_intersection_hits2() {
+    let scene = scene();
+    let ray_origin = Vector3::new(0_f32, 0_f32, 5_f32);
+    let target_origin = scene.objects[1].centroid;
+    let ray_direction = (target_origin - ray_origin).normalize();
+    let ray = Ray::from_origin_dir(ray_origin, ray_direction);
+    let result = scene.intersect(&ray);
+
+    assert!(result.is_some());
+}
+
+#[test]
+fn test_one_triangle_intersection_miss() {
+    let scene = scene();
+    let ray_origin = Vector3::new(0_f32, 0_f32, 5_f32);
+    let scene_origin = Vector3::zero();
+    let ray_direction = (scene_origin - ray_origin).normalize();
+    let ray = Ray::from_origin_dir(ray_origin, ray_direction);
+    let result = scene.intersect(&ray);
+
+    assert!(result.is_none());
+}
+

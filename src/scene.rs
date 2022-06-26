@@ -3,7 +3,6 @@ use crate::triangle::*;
 use crate::ray::*;
 use cglinalg::{
     Vector3,
-    SimdScalarFloat,
 };
 
 
@@ -29,6 +28,7 @@ pub struct Bvh {
     root_node_idx: usize,
     nodes_used: usize,
 }
+
 
 impl Bvh {
     fn intersect_subtree_recursive(&self, objects: &[Triangle<f32>], ray: &Ray<f32>, node_idx: usize) -> Option<Ray<f32>> {
