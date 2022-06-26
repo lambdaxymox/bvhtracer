@@ -3,7 +3,7 @@ use cglinalg::{
 };
 use crate::triangle::*;
 
-
+/*
 fn intersect_aabb(ray: &Ray, aabb_min: &Vector3<f32>, aabb_max: &Vector3<f32>) -> f32 {
     let t_x1 = (aabb_min.x - ray.origin.x) * ray.recip_direction.x;
     let t_x2 = (aabb_max.x - ray.origin.x) * ray.recip_direction.x;
@@ -24,7 +24,7 @@ fn intersect_aabb(ray: &Ray, aabb_min: &Vector3<f32>, aabb_max: &Vector3<f32>) -
         f32::MAX
     }
 }
-
+*/
 
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 struct Aabb {
