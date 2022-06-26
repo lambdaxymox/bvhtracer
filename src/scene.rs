@@ -1,5 +1,6 @@
 use cglinalg::{
     Vector3,
+    ScalarFloat,
 };
 use crate::triangle::*;
 
@@ -39,11 +40,12 @@ impl Aabb {
     }
 
     fn area(&self) -> f32 {
-        let extent = self.b_max - self.b_min;
+        let extent = self.extent();
 
         extent.x * extent.y + extent.y * extent.z + extent.z * extent.x
     }
 
+    #[inline]
     fn extent(&self) -> Vector3<f32> {
         self.b_max - self.b_min
     }
