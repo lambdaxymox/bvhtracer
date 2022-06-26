@@ -15,6 +15,7 @@ use cglinalg::{
     Magnitude,
 };
 
+mod aabb;
 mod backend;
 mod triangle;
 mod pixel;
