@@ -57,7 +57,7 @@ where
         self.b_max - self.b_min
     }
 
-    pub fn intersect(&self, ray: &Ray<S>) -> S {
+    pub fn intersect(&self, ray: &Ray<S>) -> Option<S> {
         let t_x1 = (self.b_min.x - ray.origin.x) * ray.recip_direction.x;
         let t_x2 = (self.b_max.x - ray.origin.x) * ray.recip_direction.x;
         let t_min = S::min(t_x1, t_x2);
@@ -72,9 +72,9 @@ where
         let t_max = S::min(t_max, S::max(t_z1, t_z2));
         
         if (t_max >= t_min) && (t_min < ray.t) && (t_max > S::zero()) {
-            t_min
+            Some(t_min)
         } else {
-            S::max_value()
+            None
         }
     }
 }

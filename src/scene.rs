@@ -33,7 +33,7 @@ pub struct Bvh {
 impl Bvh {
     fn intersect_subtree_recursive(&self, objects: &[Triangle<f32>], ray: &Ray<f32>, node_idx: usize) -> Option<Ray<f32>> {
         let node = &self.nodes[node_idx];
-        if node.aabb.intersect(ray) == f32::MAX {
+        if node.aabb.intersect(ray).is_none() {
             return None;
         }
         if node.is_leaf() {
@@ -83,8 +83,8 @@ impl Bvh {
             }
             let mut child1 = &self.nodes[node.left_node];
             let mut child2 = &self.nodes[node.left_node + 1];
-            let mut dist1 = child1.aabb.intersect(&best_ray);
-            let mut dist2 = child2.aabb.intersect(&best_ray);
+            let mut dist1 = child1.aabb.intersect(&best_ray).unwrap_or(f32::MAX);
+            let mut dist2 = child2.aabb.intersect(&best_ray).unwrap_or(f32::MAX);
             if dist1 > dist2 { 
                 let dist_temp = dist1;
                 let child_temp = child1;
