@@ -1,48 +1,60 @@
 use crate::ray::*;
 use cglinalg::{
     Vector3,
+    SimdScalar,
+    SimdScalarFloat,
 };
 
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
-pub struct Triangle {
-    pub vertex0: Vector3<f32>,
-    pub vertex1: Vector3<f32>,
-    pub vertex2: Vector3<f32>,
-    pub centroid: Vector3<f32>,
+pub struct Triangle<S> 
+where
+    S: SimdScalar
+{
+    pub vertex0: Vector3<S>,
+    pub vertex1: Vector3<S>,
+    pub vertex2: Vector3<S>,
+    pub centroid: Vector3<S>,
 }
 
-impl Triangle {
-    pub fn new(vertex0: Vector3<f32>, vertex1: Vector3<f32>, vertex2: Vector3<f32>) -> Self {
-        let one_third = 1_f32 / 3_f32;
+impl<S> Triangle<S> 
+where
+    S: SimdScalarFloat
+{
+    pub fn new(vertex0: Vector3<S>, vertex1: Vector3<S>, vertex2: Vector3<S>) -> Self {
+        let one = S::one();
+        let three = one + one + one;
+        let one_third = one / three;
         let centroid = (vertex0 + vertex1 + vertex2) * one_third;
 
         Self { vertex0, vertex1, vertex2, centroid, }
     }
 
-    pub fn intersect(&self, ray: &Ray<f32>) -> Option<Ray<f32>> {
+    pub fn intersect(&self, ray: &Ray<S>) -> Option<Ray<S>> {
         let edge1 = self.vertex1 - self.vertex0;
         let edge2 = self.vertex2 - self.vertex0;
         let h = ray.direction.cross(&edge2);
         let a = edge1.dot(&h);
-        if a > -0.0001 && a < 0.0001 {
+        let _0_0001: S = num_traits::cast(0.0001_f32).unwrap();
+        if a > -_0_0001 && a < _0_0001 {
             // The ray is parallel to the triangle.
             return None;
         }
-        let f = 1_f32 / a;
+        let f = S::one() / a;
         let s = ray.origin - self.vertex0;
         let u = f * s.dot(&h);
-        if u < 0_f32 || u > 1_f32 {
+        if u < S::zero() || u > S::one() {
             return None;
         }
         let q = s.cross(&edge1);
         let v = f * ray.direction.dot(&q);
-        if v < 0_f32 || u + v > 1_f32 {
+        if v < S::zero() || u + v > S::one() {
             return None;
         }
         let t = f * edge2.dot(&q);
-        if t > 0.0001 {
-            let t_intersect = f32::min(ray.t, t);
+        if t > _0_0001 {
+            let t_intersect = S::min(ray.t, t);
     
             return Some(Ray::new(ray.origin, ray.direction, t_intersect));
         } else {

@@ -31,7 +31,7 @@ pub struct Bvh {
 }
 
 impl Bvh {
-    fn intersect_subtree_recursive(&self, objects: &[Triangle], ray: &Ray<f32>, node_idx: usize) -> Option<Ray<f32>> {
+    fn intersect_subtree_recursive(&self, objects: &[Triangle<f32>], ray: &Ray<f32>, node_idx: usize) -> Option<Ray<f32>> {
         let node = &self.nodes[node_idx];
         if node.aabb.intersect(ray) == f32::MAX {
             return None;
@@ -56,11 +56,11 @@ impl Bvh {
         }
     }
 
-    pub fn intersect_recursive(&self, objects: &[Triangle], ray: &Ray<f32>) -> Option<Ray<f32>> {
+    pub fn intersect_recursive(&self, objects: &[Triangle<f32>], ray: &Ray<f32>) -> Option<Ray<f32>> {
         self.intersect_subtree_recursive(objects, ray, self.root_node_idx)
     }
 
-    fn intersect_subtree(&self, objects: &[Triangle], ray: &Ray<f32>, node_idx: usize) -> Option<Ray<f32>> {
+    fn intersect_subtree(&self, objects: &[Triangle<f32>], ray: &Ray<f32>, node_idx: usize) -> Option<Ray<f32>> {
         let mut node = &self.nodes[node_idx];
         let mut stack = vec![];
         let mut best_ray = *ray;
@@ -112,7 +112,7 @@ impl Bvh {
     }
 
 
-    pub fn intersect(&self, objects: &[Triangle], ray: &Ray<f32>) -> Option<Ray<f32>> {
+    pub fn intersect(&self, objects: &[Triangle<f32>], ray: &Ray<f32>) -> Option<Ray<f32>> {
         self.intersect_subtree(objects, ray, self.root_node_idx)
     }
 
@@ -139,7 +139,7 @@ impl BvhBuilder {
         Self { partial_bvh, }
     }
 
-    fn update_node_bounds(&mut self, objects: &mut [Triangle], node_idx: usize) {
+    fn update_node_bounds(&mut self, objects: &mut [Triangle<f32>], node_idx: usize) {
         #[inline]
         fn min(vector1: &Vector3<f32>, vector2: &Vector3<f32>) -> Vector3<f32> {
             Vector3::new(
@@ -179,7 +179,7 @@ impl BvhBuilder {
         }
     }
 
-    fn evaluate_sah(&self, objects: &[Triangle], node: &BvhNode, axis: usize, position: f32) -> f32 {
+    fn evaluate_sah(&self, objects: &[Triangle<f32>], node: &BvhNode, axis: usize, position: f32) -> f32 {
         let mut left_box = Aabb::default();
         let mut right_box = Aabb::default();
         let mut left_count = 0;
@@ -204,7 +204,7 @@ impl BvhBuilder {
         if cost > 0_f32 { cost } else { f32::MAX }
     }
 
-    fn subdivide_recursive(&mut self, objects: &mut [Triangle], node_idx: usize) {
+    fn subdivide_recursive(&mut self, objects: &mut [Triangle<f32>], node_idx: usize) {
         println!("Subdividing node_idx = {}", node_idx);
         // Terminate recursion.
         let (best_axis, best_position) = {
@@ -281,7 +281,7 @@ impl BvhBuilder {
         self.subdivide(objects, right_child_idx);
     }
 
-    fn subdivide(&mut self, objects: &mut [Triangle], node_idx: usize) {
+    fn subdivide(&mut self, objects: &mut [Triangle<f32>], node_idx: usize) {
         println!("Subdividing node_idx = {}", node_idx);
         // Terminate recursion.
         let (best_axis, best_position, best_cost) = {
@@ -368,7 +368,7 @@ impl BvhBuilder {
         self.subdivide(objects, right_child_idx);
     }
 
-    pub fn build_for(mut self, objects: &mut [Triangle]) -> Bvh {
+    pub fn build_for(mut self, objects: &mut [Triangle<f32>]) -> Bvh {
         // Populate the triangle index array.
         for i in 0..objects.len() {
             self.partial_bvh.node_indices.push(i);
@@ -390,7 +390,7 @@ impl BvhBuilder {
 
 
 pub struct SceneBuilder {
-    objects: Vec<Triangle>,
+    objects: Vec<Triangle<f32>>,
     bvh_builder: BvhBuilder
 }
 
@@ -402,7 +402,7 @@ impl SceneBuilder {
         }
     }
 
-    pub fn with_objects(mut self, objects: Vec<Triangle>) -> Self {
+    pub fn with_objects(mut self, objects: Vec<Triangle<f32>>) -> Self {
         self.objects = objects;
 
         self
@@ -417,12 +417,12 @@ impl SceneBuilder {
 
 
 pub struct Scene {
-    pub objects: Vec<Triangle>,
+    pub objects: Vec<Triangle<f32>>,
     pub bvh: Bvh,
 }
 
 impl Scene {
-    pub fn new(objects: Vec<Triangle>, bvh: Bvh) -> Self {
+    pub fn new(objects: Vec<Triangle<f32>>, bvh: Bvh) -> Self {
         Self { objects, bvh, }
     }
 

@@ -3,7 +3,6 @@ use cglinalg::{
     SimdScalar,
     SimdScalarFloat,
 };
-use crate::triangle::*;
 use crate::ray::*;
 
 

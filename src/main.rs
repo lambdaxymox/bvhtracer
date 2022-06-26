@@ -195,7 +195,7 @@ fn send_to_gpu_texture(buffer: &ImageBuffer<Rgba<u8>, Vec<u8>>, wrapping_mode: G
     Ok(tex)
 }
 
-fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle> {
+fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle<f32>> {
     let loaded_tri_data = tri_loader::load(path).unwrap();
     loaded_tri_data.iter().map(|tri| {
         let vertex0 = Vector3::new(tri.vertex0.x, tri.vertex0.y, tri.vertex0.z);
@@ -203,7 +203,7 @@ fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle> {
         let vertex2 = Vector3::new(tri.vertex2.x, tri.vertex2.y, tri.vertex2.z);
         
         Triangle::new(vertex0, vertex1, vertex2)
-    }).collect::<Vec<Triangle>>()
+    }).collect::<Vec<Triangle<_>>>()
 }
 
 fn main() -> io::Result<()> {
