@@ -95,8 +95,6 @@ impl Aabb {
 
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub struct BvhNode {
-    // aabb_min: Vector3<f32>,
-    // aabb_max: Vector3<f32>,
     aabb: Aabb,
     left_node: usize,
     first_primitive_idx: usize,
@@ -121,11 +119,6 @@ pub struct Bvh {
 impl Bvh {
     pub fn intersect_recursive(&self, objects: &[Triangle], ray: &Ray, node_idx: usize) -> Option<Ray> {
         let node = &self.nodes[node_idx];
-        /*
-        if intersect_aabb(ray, &node.aabb_min, &node.aabb_max) == f32::MAX {
-            return None;
-        }
-        */
         if node.aabb.intersect(ray) == f32::MAX {
             return None;
         }
@@ -172,8 +165,6 @@ impl Bvh {
             }
             let mut child1 = &self.nodes[node.left_node];
             let mut child2 = &self.nodes[node.left_node + 1];
-            // let mut dist1 = intersect_aabb(&best_ray, &child1.aabb_min, &child1.aabb_max);
-            // let mut dist2 = intersect_aabb(&best_ray, &child2.aabb_min, &child2.aabb_max);
             let mut dist1 = child1.aabb.intersect(&best_ray);
             let mut dist2 = child2.aabb.intersect(&best_ray);
             if dist1 > dist2 { 
@@ -246,8 +237,6 @@ impl BvhBuilder {
 
         let first = {
             let mut node = &mut self.partial_bvh.nodes[node_idx];
-            // node.aabb_min = Vector3::from_fill(f32::MAX); 
-            // node.aabb_max = Vector3::from_fill(-f32::MAX);
             node.aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
             let first = node.first_primitive_idx;
 
@@ -311,7 +300,6 @@ impl BvhBuilder {
             if extent.z > extent[best_axis] {
                 best_axis = 2;
             }
-            // let best_position = node.aabb_min[best_axis] + extent[best_axis] * (1_f32 / 2_f32);
             let best_position = node.aabb.b_min[best_axis] + extent[best_axis] * (1_f32 / 2_f32);
 
             (best_axis, best_position)
