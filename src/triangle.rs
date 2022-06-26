@@ -31,7 +31,7 @@ where
         Self { vertex0, vertex1, vertex2, centroid, }
     }
 
-    pub fn intersect(&self, ray: &Ray<S>) -> Option<Ray<S>> {
+    pub fn intersect(&self, ray: &Ray<S>) -> Option<S> {
         let edge1 = self.vertex1 - self.vertex0;
         let edge2 = self.vertex2 - self.vertex0;
         let h = ray.direction.cross(&edge2);
@@ -56,7 +56,7 @@ where
         if t > _0_0001 {
             let t_intersect = S::min(ray.t, t);
     
-            return Some(Ray::new(ray.origin, ray.direction, t_intersect));
+            return Some(t_intersect);
         } else {
             return None;
         }

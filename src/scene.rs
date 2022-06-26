@@ -39,7 +39,8 @@ impl Bvh {
         if node.is_leaf() {
             for i in 0..node.primitive_count {
                 let primitive_idx = self.node_indices[node.first_primitive_idx + i];
-                if let Some(new_ray) = objects[primitive_idx].intersect(ray) {
+                if let Some(t_intersect) = objects[primitive_idx].intersect(ray) {
+                    let new_ray = Ray::new(ray.origin, ray.direction, t_intersect);
                     return Some(new_ray);
                 }
             }
@@ -69,8 +70,8 @@ impl Bvh {
                 for i in 0..node.primitive_count {
                     let primitive_idx = self.node_indices[node.first_primitive_idx];
                     let primitive = objects[primitive_idx + i];
-                    if let Some(intersected_ray) = primitive.intersect(&best_ray) {
-                        best_ray = intersected_ray;
+                    if let Some(t_intersect) = primitive.intersect(&best_ray) {
+                        best_ray = Ray::new(ray.origin, ray.direction, t_intersect);
                     }
                 }
                 if stack.is_empty() {
