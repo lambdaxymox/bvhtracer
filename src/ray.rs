@@ -33,5 +33,9 @@ where
     pub fn from_origin_dir(origin: Vector3<S>, direction: Vector3<S>) -> Self {
         Self::new(origin, direction, S::max_value())
     }
+
+    pub fn interpolate(&self, t: S) -> Vector3<S> {
+        self.origin + self.direction * t
+    }
 }
 
