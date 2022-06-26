@@ -39,7 +39,8 @@ impl Bvh {
         if node.is_leaf() {
             for i in 0..node.primitive_count {
                 let primitive_idx = self.node_indices[node.first_primitive_idx + i];
-                if let Some(t_intersect) = objects[primitive_idx].intersect(ray) {
+                let primitive = objects[primitive_idx];
+                if let Some(t_intersect) = primitive.intersect(ray) {
                     let new_ray = Ray::new(ray.origin, ray.direction, t_intersect);
                     return Some(new_ray);
                 }
@@ -171,12 +172,12 @@ impl BvhBuilder {
             let leaf_triangle_idx = self.partial_bvh.node_indices[first + i];
             let leaf_triangle = &objects[leaf_triangle_idx];
             let node = &mut self.partial_bvh.nodes[node_idx];
-            node.aabb.b_min = min(&node.aabb.b_min, &leaf_triangle.vertex0);
-            node.aabb.b_min = min(&node.aabb.b_min, &leaf_triangle.vertex1);
-            node.aabb.b_min = min(&node.aabb.b_min, &leaf_triangle.vertex2);
-            node.aabb.b_max = max(&node.aabb.b_max, &leaf_triangle.vertex0);
-            node.aabb.b_max = max(&node.aabb.b_max, &leaf_triangle.vertex1);
-            node.aabb.b_max = max(&node.aabb.b_max, &leaf_triangle.vertex2);
+            node.aabb.box_min = min(&node.aabb.box_min, &leaf_triangle.vertex0);
+            node.aabb.box_min = min(&node.aabb.box_min, &leaf_triangle.vertex1);
+            node.aabb.box_min = min(&node.aabb.box_min, &leaf_triangle.vertex2);
+            node.aabb.box_max = max(&node.aabb.box_max, &leaf_triangle.vertex0);
+            node.aabb.box_max = max(&node.aabb.box_max, &leaf_triangle.vertex1);
+            node.aabb.box_max = max(&node.aabb.box_max, &leaf_triangle.vertex2);
         }
     }
 
@@ -199,7 +200,7 @@ impl BvhBuilder {
             if extent.z > extent[best_axis] {
                 best_axis = 2;
             }
-            let best_position = node.aabb.b_min[best_axis] + extent[best_axis] * (1_f32 / 2_f32);
+            let best_position = node.aabb.box_min[best_axis] + extent[best_axis] * (1_f32 / 2_f32);
 
             (best_axis, best_position)
         };
