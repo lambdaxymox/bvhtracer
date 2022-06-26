@@ -72,7 +72,7 @@ impl Bvh {
         PrimitiveIter::new(objects, node.primitive_count, base_primitive_index)
     }
 
-    fn intersect_subtree_recursive(&self, objects: &[Triangle<f32>], ray: &Ray<f32>, node_idx: usize) -> Option<Ray<f32>> {
+    fn intersect_subtree_recursive(&self, objects: &[Triangle<f32>], ray: &Ray<f32>, node_idx: usize) -> Option<f32> {
         let node = &self.nodes[node_idx];
         if node.aabb.intersect(ray).is_none() {
             return None;
@@ -80,9 +80,7 @@ impl Bvh {
         if node.is_leaf() {
             for primitive in self.primitive_iter(objects, node) {
                 if let Some(t_intersect) = primitive.intersect(ray) {
-                    let new_ray = Ray::new(ray.origin, ray.direction, t_intersect);
-
-                    return Some(new_ray);
+                    return Some(t_intersect);
                 }
             }
 
@@ -98,11 +96,11 @@ impl Bvh {
         }
     }
 
-    pub fn intersect_recursive(&self, objects: &[Triangle<f32>], ray: &Ray<f32>) -> Option<Ray<f32>> {
+    pub fn intersect_recursive(&self, objects: &[Triangle<f32>], ray: &Ray<f32>) -> Option<f32> {
         self.intersect_subtree_recursive(objects, ray, self.root_node_idx)
     }
 
-    fn intersect_subtree(&self, objects: &[Triangle<f32>], ray: &Ray<f32>, node_idx: usize) -> Option<Ray<f32>> {
+    fn intersect_subtree(&self, objects: &[Triangle<f32>], ray: &Ray<f32>, node_idx: usize) -> Option<f32> {
         let mut node = &self.nodes[node_idx];
         let mut stack = vec![];
         let mut best_ray = *ray;
@@ -110,7 +108,7 @@ impl Bvh {
             if node.is_leaf() {
                 for primitive in self.primitive_iter(objects, node) {
                     if let Some(t_intersect) = primitive.intersect(&best_ray) {
-                        best_ray = Ray::new(ray.origin, ray.direction, t_intersect);
+                        best_ray.t = t_intersect;
                     }
                 }
                 
@@ -149,11 +147,11 @@ impl Bvh {
             }
         }
 
-        Some(best_ray)
+        Some(best_ray.t)
     }
 
 
-    pub fn intersect(&self, objects: &[Triangle<f32>], ray: &Ray<f32>) -> Option<Ray<f32>> {
+    pub fn intersect(&self, objects: &[Triangle<f32>], ray: &Ray<f32>) -> Option<f32> {
         self.intersect_subtree(objects, ray, self.root_node_idx)
     }
 
@@ -490,11 +488,11 @@ impl Scene {
         Self { objects, bvh, }
     }
 
-    pub fn intersect(&self, ray: &Ray<f32>) -> Option<Ray<f32>> {
+    pub fn intersect(&self, ray: &Ray<f32>) -> Option<f32> {
         self.bvh.intersect(&self.objects, ray)
     }
 
-    pub fn intersect_recursive(&self, ray: &Ray<f32>) -> Option<Ray<f32>> {
+    pub fn intersect_recursive(&self, ray: &Ray<f32>) -> Option<f32> {
         self.bvh.intersect_recursive(&self.objects, ray)
     }
 }
