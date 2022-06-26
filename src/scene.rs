@@ -3,28 +3,6 @@ use cglinalg::{
 };
 use crate::triangle::*;
 
-/*
-fn intersect_aabb(ray: &Ray, aabb_min: &Vector3<f32>, aabb_max: &Vector3<f32>) -> f32 {
-    let t_x1 = (aabb_min.x - ray.origin.x) * ray.recip_direction.x;
-    let t_x2 = (aabb_max.x - ray.origin.x) * ray.recip_direction.x;
-    let t_min = f32::min(t_x1, t_x2);
-    let t_max = f32::max(t_x1, t_x2);
-    let t_y1 = (aabb_min.y - ray.origin.y) * ray.recip_direction.y; 
-    let t_y2 = (aabb_max.y - ray.origin.y) * ray.recip_direction.y;
-    let t_min = f32::max(t_min, f32::min(t_y1, t_y2)); 
-    let t_max = f32::min(t_max, f32::max(t_y1, t_y2));
-    let t_z1 = (aabb_min.z - ray.origin.z) * ray.recip_direction.z;
-    let t_z2 = (aabb_max.z - ray.origin.z) * ray.recip_direction.z;
-    let t_min = f32::max(t_min, f32::min(t_z1, t_z2)); 
-    let t_max = f32::min(t_max, f32::max(t_z1, t_z2));
-    
-    if (t_max >= t_min) && (t_min < ray.t) && (t_max > 0_f32) {
-        t_min
-    } else {
-        f32::MAX
-    }
-}
-*/
 
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 struct Aabb {
