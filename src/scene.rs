@@ -1,6 +1,6 @@
 use cglinalg::{
     Vector3,
-    ScalarFloat,
+    SimdScalarFloat,
 };
 use crate::triangle::*;
 
