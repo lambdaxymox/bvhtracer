@@ -120,18 +120,14 @@ impl Bvh {
 
                 continue;
             }
+
             let mut child1 = &self.nodes[node.left_node];
             let mut child2 = &self.nodes[node.left_node + 1];
             let mut dist1 = child1.aabb.intersect(&best_ray).unwrap_or(f32::MAX);
             let mut dist2 = child2.aabb.intersect(&best_ray).unwrap_or(f32::MAX);
-            if dist1 > dist2 { 
-                let dist_temp = dist1;
-                let child_temp = child1;
-                dist1 = dist2;
-                dist2 = dist_temp;
-                child1 = child2;
-                child2 = child_temp;
-
+            if dist1 > dist2 {
+                std::mem::swap(&mut dist1, &mut dist2);
+                std::mem::swap(&mut child1, &mut child2);
             }
             if dist1 == f32::MAX {
                 if stack.is_empty() {
