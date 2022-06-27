@@ -84,15 +84,6 @@ fn gen_ray() -> Ray<f32> {
     Ray::from_origin_dir(ray_origin, ray_direction)
 }
 
-fn bvh_intersection_recursive_hit(bh: &mut criterion::Criterion) {
-    let scene = scene();
-    let ray = gen_ray();
-
-    bh.bench_function("bvh_intersection_recursive_hit", move |bh| bh.iter(|| {
-        scene.intersect_recursive(&ray)
-    }));
-}
-
 fn bvh_intersection_hit(bh: &mut criterion::Criterion) {
     let scene = scene();
     let ray = gen_ray();
@@ -105,7 +96,6 @@ fn bvh_intersection_hit(bh: &mut criterion::Criterion) {
 
 criterion_group!(
     bvh_intersection_benchmarks,
-    bvh_intersection_recursive_hit,
     bvh_intersection_hit,
 );
 criterion_main!(bvh_intersection_benchmarks);
