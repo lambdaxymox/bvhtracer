@@ -19,6 +19,16 @@ impl BvhNode {
     pub fn is_leaf(&self) -> bool {
         self.primitive_count > 0
     }
+
+    #[inline]
+    pub fn left_node(&self) -> usize {
+        self.left_node
+    }
+
+    #[inline]
+    pub fn right_node(&self) -> usize {
+        self.left_node + 1
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -87,9 +97,9 @@ impl Bvh {
             return None;
         }
             
-        if let Some(new_ray) = self.intersect_subtree_recursive(objects, ray, node.left_node) {
+        if let Some(new_ray) = self.intersect_subtree_recursive(objects, ray, node.left_node()) {
             Some(new_ray)
-        } else if let Some(new_ray) = self.intersect_subtree_recursive(objects, ray, node.left_node + 1) {
+        } else if let Some(new_ray) = self.intersect_subtree_recursive(objects, ray, node.right_node()) {
             Some(new_ray)
         } else {
             None
@@ -101,12 +111,12 @@ impl Bvh {
     }
 
     fn intersect_subtree(&self, objects: &[Triangle<f32>], ray: &Ray<f32>, node_idx: usize) -> Option<f32> {
-        let mut node = &self.nodes[node_idx];
+        let mut current_node = &self.nodes[node_idx];
         let mut stack = vec![];
         let mut best_ray = *ray;
         loop {
-            if node.is_leaf() {
-                for primitive in self.primitive_iter(objects, node) {
+            if current_node.is_leaf() {
+                for primitive in self.primitive_iter(objects, current_node) {
                     if let Some(t_intersect) = primitive.intersect(&best_ray) {
                         best_ray.t = t_intersect;
                     }
@@ -115,14 +125,14 @@ impl Bvh {
                 if stack.is_empty() {
                     break;
                 } else {
-                    node = stack.pop().unwrap();
+                    current_node = stack.pop().unwrap();
                 }
 
                 continue;
             }
 
-            let mut child1 = &self.nodes[node.left_node];
-            let mut child2 = &self.nodes[node.left_node + 1];
+            let mut child1 = &self.nodes[current_node.left_node()];
+            let mut child2 = &self.nodes[current_node.right_node()];
             let mut dist1 = child1.aabb.intersect(&best_ray).unwrap_or(f32::MAX);
             let mut dist2 = child2.aabb.intersect(&best_ray).unwrap_or(f32::MAX);
             if dist1 > dist2 {
@@ -133,10 +143,10 @@ impl Bvh {
                 if stack.is_empty() {
                     break;
                 } else {
-                    node = stack.pop().unwrap();
+                    current_node = stack.pop().unwrap();
                 }
             } else {
-                node = child1;
+                current_node = child1;
                 if dist2 != f32::MAX {
                     stack.push(child2);
                 }
