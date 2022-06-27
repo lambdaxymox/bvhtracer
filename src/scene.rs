@@ -21,6 +21,11 @@ impl BvhNode {
     }
 
     #[inline]
+    pub fn is_branch(&self) -> bool {
+        self.primitive_count == 0
+    }
+
+    #[inline]
     pub fn left_node(&self) -> usize {
         self.left_node
     }
@@ -113,47 +118,45 @@ impl Bvh {
     fn intersect_subtree(&self, objects: &[Triangle<f32>], ray: &Ray<f32>, node_idx: usize) -> Option<f32> {
         let mut current_node = &self.nodes[node_idx];
         let mut stack = vec![];
-        let mut best_ray = *ray;
+        let mut closest_ray = *ray;
         loop {
             if current_node.is_leaf() {
                 for primitive in self.primitive_iter(objects, current_node) {
-                    if let Some(t_intersect) = primitive.intersect(&best_ray) {
-                        best_ray.t = t_intersect;
+                    if let Some(t_intersect) = primitive.intersect(&closest_ray) {
+                        closest_ray.t = t_intersect;
                     }
                 }
-                
-                if stack.is_empty() {
-                    break;
-                } else {
-                    current_node = stack.pop().unwrap();
-                }
-
-                continue;
-            }
-
-            let mut child1 = &self.nodes[current_node.left_node()];
-            let mut child2 = &self.nodes[current_node.right_node()];
-            let mut dist1 = child1.aabb.intersect(&best_ray).unwrap_or(f32::MAX);
-            let mut dist2 = child2.aabb.intersect(&best_ray).unwrap_or(f32::MAX);
-            if dist1 > dist2 {
-                std::mem::swap(&mut dist1, &mut dist2);
-                std::mem::swap(&mut child1, &mut child2);
-            }
-            if dist1 == f32::MAX {
-                if stack.is_empty() {
-                    break;
-                } else {
-                    current_node = stack.pop().unwrap();
-                }
             } else {
-                current_node = child1;
-                if dist2 != f32::MAX {
-                    stack.push(child2);
+                let (closest_child, closest_dist, farthest_child, farthest_dist) = {
+                    let left_child = &self.nodes[current_node.left_node()];
+                    let right_child = &self.nodes[current_node.right_node()];
+                    let left_dist = left_child.aabb.intersect(&closest_ray);
+                    let right_dist = right_child.aabb.intersect(&closest_ray);
+                    if left_dist.unwrap_or(f32::MAX) < right_dist.unwrap_or(f32::MAX) {
+                        (left_child, left_dist, right_child, right_dist)
+                    } else {
+                        (right_child, right_dist, left_child, left_dist)
+                    }
+                };
+
+                if closest_dist.is_some() {
+                    current_node = closest_child;
+                    if farthest_dist.is_some() {
+                        stack.push(farthest_child);
+                    }
+
+                    continue;
                 }
+            }
+
+            if stack.is_empty() {
+                break;
+            } else {
+                current_node = stack.pop().unwrap();
             }
         }
 
-        Some(best_ray.t)
+        Some(closest_ray.t)
     }
 
 
