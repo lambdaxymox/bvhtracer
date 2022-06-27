@@ -79,13 +79,13 @@ impl<'a> Iterator for PrimitiveIter<'a> {
     }
 }
 
-
 impl Bvh {
     fn primitive_iter<'a>(&self, objects: &'a [Triangle<f32>], node: &BvhNode) -> PrimitiveIter<'a> {
         let base_primitive_index = self.node_indices[node.first_primitive_idx];
         
         PrimitiveIter::new(objects, node.primitive_count, base_primitive_index)
     }
+
 
     fn intersect_subtree(&self, objects: &[Triangle<f32>], ray: &Ray<f32>, node_idx: usize) -> Option<f32> {
         let mut current_node = &self.nodes[node_idx];
@@ -98,16 +98,22 @@ impl Bvh {
                         closest_ray.t = t_intersect;
                     }
                 }
+
+                if !stack.is_empty() {
+                    current_node = stack.pop().unwrap();
+                } else {
+                    break;
+                }
             } else {
                 let (closest_child, closest_dist, farthest_child, farthest_dist) = {
                     let left_child = &self.nodes[current_node.left_node()];
                     let right_child = &self.nodes[current_node.right_node()];
-                    let left_dist = left_child.aabb.intersect(&closest_ray);
-                    let right_dist = right_child.aabb.intersect(&closest_ray);
-                    if left_dist.unwrap_or(f32::MAX) < right_dist.unwrap_or(f32::MAX) {
-                        (left_child, left_dist, right_child, right_dist)
+                    let left_child_dist = left_child.aabb.intersect(&closest_ray);
+                    let right_child_dist = right_child.aabb.intersect(&closest_ray);
+                    if left_child_dist.unwrap_or(f32::MAX) < right_child_dist.unwrap_or(f32::MAX) {
+                        (left_child, left_child_dist, right_child, right_child_dist)
                     } else {
-                        (right_child, right_dist, left_child, left_dist)
+                        (right_child, right_child_dist, left_child, left_child_dist)
                     }
                 };
 
@@ -119,12 +125,12 @@ impl Bvh {
 
                     continue;
                 }
-            }
-
-            if stack.is_empty() {
-                break;
-            } else {
-                current_node = stack.pop().unwrap();
+                    
+                if !stack.is_empty() {
+                    current_node = stack.pop().unwrap();
+                } else {
+                    break;
+                }
             }
         }
 
