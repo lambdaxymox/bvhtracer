@@ -46,6 +46,13 @@ where
         self.box_max = max(&self.box_max, position);
     }
 
+    pub fn grow_aabb(&mut self, new_bounding_box: &Aabb<S>) { 
+        if new_bounding_box.box_min.x != S::max_value() { 
+            self.grow( &new_bounding_box.box_min); 
+            self.grow( &new_bounding_box.box_max); 
+        } 
+    }
+
     pub fn area(&self) -> S {
         let extent = self.extent();
 

@@ -173,16 +173,22 @@ fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle<f32>> {
 }
 
 fn main() -> io::Result<()> {
+    use std::time::SystemTime;
+
     let triangles = load_tri_model("assets/unity.tri");
     let builder = SceneBuilder::new();
-    let scene = builder.with_objects(triangles).build();
-    println!("rendering scene.");
 
-    use std::time::SystemTime;
+    println!("Constructing BVH.");
+    let now = SystemTime::now();
+    let scene = builder.with_objects(triangles).build();
+    let elapsed = now.elapsed().unwrap();
+    println!("BVH building time = {} us", elapsed.as_micros());
+
+    println!("Rendering scene.");
     let now = SystemTime::now();
     let mut buffer = render_depth_unity(&scene);
     let elapsed = now.elapsed().unwrap();
-    println!("rendering time = {} s", elapsed.as_secs_f64());
+    println!("Rendering time = {} s", elapsed.as_secs_f64());
     
     let mut file = File::create("output.ppm").unwrap();
     let mut ppm_encoder = ppm::PpmEncoder::new(&mut file);

@@ -6,6 +6,28 @@ use cglinalg::{
 };
 
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+struct Bin {
+    bounding_box: Aabb<f32>,
+    primitive_count: usize,
+}
+
+impl Bin {
+    fn new(bounding_box: Aabb<f32>, primitive_count: usize) -> Self {
+        Self { bounding_box, primitive_count, }
+    }
+}
+
+impl Default for Bin {
+    #[inline]
+    fn default() -> Self {
+        Self { 
+            bounding_box: Aabb::default(), 
+            primitive_count: 0 
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub struct BvhNode {
     aabb: Aabb<f32>,
@@ -252,10 +274,11 @@ impl BvhBuilder {
         (best_axis, best_position, best_cost)
     }
 
+    /*
     fn find_best_split_plane(&self, objects: &[Triangle<f32>], node: &BvhNode, plane_count: usize) -> (isize, f32, f32) {
         let mut best_axis = -1;
         let mut best_position = 0_f32;
-        let mut best_cost = 1e30;
+        let mut best_cost = f32::MAX;
         for axis in 0..3 {
             let bounds_min = node.aabb.box_min[axis];
             let bounds_max = node.aabb.box_max[axis];
@@ -276,6 +299,75 @@ impl BvhBuilder {
 
         (best_axis, best_position, best_cost)
     }
+    */
+    
+    fn find_best_split_plane(&self, objects: &[Triangle<f32>], node: &BvhNode) -> (isize, f32, f32) {
+        const BIN_COUNT: usize = 8;
+        let mut best_axis = -1;
+        let mut best_position = 0_f32;
+        let mut best_cost = f32::MAX;
+        for axis in 0..3 {
+            let mut bounds_min = 1e30;
+            let mut bounds_max = 1e-30;
+            for i in 0..node.primitive_count {
+                let primitive_idx = self.partial_bvh.node_indices[node.first_primitive_idx + i];
+                let primitive = &objects[primitive_idx];
+                bounds_min = f32::min(bounds_min, primitive.centroid[axis]);
+                bounds_max = f32::max(bounds_max, primitive.centroid[axis]);
+            }
+            if bounds_min == bounds_max {
+                continue;
+            }
+
+            let mut bins = [Bin::default(); BIN_COUNT]; // vec![Bin::default(); BIN_COUNT];
+            let scale = (BIN_COUNT as f32) / (bounds_max - bounds_min);
+            for i in 0..node.primitive_count {
+                let primitive_idx = self.partial_bvh.node_indices[node.first_primitive_idx + i];
+                let primitive = &objects[primitive_idx];
+                let possible_bin_index = ((primitive.centroid[axis] - bounds_min) * scale) as usize;
+                let bin_index = usize::min(BIN_COUNT - 1, possible_bin_index);
+                bins[bin_index].primitive_count += 1;
+                bins[bin_index].bounding_box.grow(&primitive.vertex0);
+                bins[bin_index].bounding_box.grow(&primitive.vertex1);
+                bins[bin_index].bounding_box.grow(&primitive.vertex2);
+            }
+
+            // Assemble the data for calculating the `BIN_COUNT - 1` planes between the `BIN_COUNT` bins.
+            let mut left_area = [0_f32; BIN_COUNT - 1]; // vec![0_f32; BIN_COUNT - 1];
+            let mut right_area = [0_f32; BIN_COUNT - 1]; // vec![0_f32; BIN_COUNT - 1];
+            let mut left_count = [0; BIN_COUNT - 1];  // vec![0; BIN_COUNT - 1];
+            let mut right_count = [0; BIN_COUNT - 1]; // vec![0; BIN_COUNT - 1];
+            let mut left_box = Aabb::default();
+            let mut right_box = Aabb::default();
+            let mut left_sum = 0;
+            let mut right_sum = 0;
+            for i in 0..(BIN_COUNT - 1) {
+                left_sum += bins[i].primitive_count;
+                left_count[i] = left_sum;
+                left_box.grow_aabb(&bins[i].bounding_box);
+                left_area[i] = left_box.area();
+    
+                right_sum += bins[BIN_COUNT - 1 - i].primitive_count;
+                right_count[BIN_COUNT - 2 - i] = right_sum;
+                right_box.grow_aabb(&bins[BIN_COUNT - 1 - i].bounding_box);
+                right_area[BIN_COUNT - 2 - i] = right_box.area();
+            }
+
+            // Calculate the SAH cost for the seven planes.
+            let scale = (bounds_max - bounds_min) / (BIN_COUNT as f32);
+            for i in 0..(BIN_COUNT - 1) {
+                let plane_cost = (left_count[i] as f32) * left_area[i] + (right_count[i] as f32) * right_area[i];
+                if plane_cost < best_cost {
+                    best_axis = axis as isize;
+                    best_position = bounds_min + scale * ((i + 1) as f32);
+                    best_cost = plane_cost;
+                }
+            }
+        }
+
+
+        (best_axis, best_position, best_cost)
+    }
 
     #[inline]
     fn calculate_node_cost(&self, node: &BvhNode) -> f32 {
@@ -287,11 +379,10 @@ impl BvhBuilder {
     }
 
     fn subdivide(&mut self, objects: &mut [Triangle<f32>], node_idx: usize) {
-        println!("Subdividing node_idx = {}", node_idx);
         // Terminate recursion.
         let (best_axis, best_position, best_cost) = {
             let node = &self.partial_bvh.nodes[node_idx];
-            self.find_best_split_plane(objects, node, 100)
+            self.find_best_split_plane(objects, node)
         };
         let (left_count, i) = {
             let node = &self.partial_bvh.nodes[node_idx];
