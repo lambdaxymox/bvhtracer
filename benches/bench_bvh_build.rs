@@ -47,10 +47,10 @@ fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle<f32>> {
 fn bvh_construction(bh: &mut criterion::Criterion) {
     let triangles = load_tri_model("assets/unity.tri");
     let mut group = bh.benchmark_group("bvh_construction");
-    group.sample_size(10);
+    group.sample_size(100);
     group.bench_function("bvh_construction", move |bh| bh.iter(|| {
         let builder = SceneBuilder::new();
-        builder.with_objects(triangles.clone()).build()
+        criterion::black_box(builder.with_objects(triangles.clone()).build())
     }));
     group.finish();
 }

@@ -319,7 +319,7 @@ impl BvhBuilder {
                 continue;
             }
 
-            let mut bins = [Bin::default(); BIN_COUNT]; // vec![Bin::default(); BIN_COUNT];
+            let mut bins = [Bin::default(); BIN_COUNT];
             let scale = (BIN_COUNT as f32) / (bounds_max - bounds_min);
             for i in 0..node.primitive_count {
                 let primitive_idx = self.partial_bvh.node_indices[node.first_primitive_idx + i];
@@ -333,10 +333,10 @@ impl BvhBuilder {
             }
 
             // Assemble the data for calculating the `BIN_COUNT - 1` planes between the `BIN_COUNT` bins.
-            let mut left_area = [0_f32; BIN_COUNT - 1]; // vec![0_f32; BIN_COUNT - 1];
-            let mut right_area = [0_f32; BIN_COUNT - 1]; // vec![0_f32; BIN_COUNT - 1];
-            let mut left_count = [0; BIN_COUNT - 1];  // vec![0; BIN_COUNT - 1];
-            let mut right_count = [0; BIN_COUNT - 1]; // vec![0; BIN_COUNT - 1];
+            let mut left_area = [0_f32; BIN_COUNT - 1];
+            let mut right_area = [0_f32; BIN_COUNT - 1];
+            let mut left_count = [0; BIN_COUNT - 1];
+            let mut right_count = [0; BIN_COUNT - 1];
             let mut left_box = Aabb::default();
             let mut right_box = Aabb::default();
             let mut left_sum = 0;
