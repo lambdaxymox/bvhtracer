@@ -205,6 +205,7 @@ impl BvhBuilder {
         }
     }
 
+    /*
     fn subdivide_midpoint(&mut self, objects: &mut [Triangle<f32>], node_idx: usize) {
         println!("Subdividing node_idx = {}", node_idx);
         // Terminate recursion.
@@ -280,6 +281,7 @@ impl BvhBuilder {
         self.subdivide(objects, left_child_idx);
         self.subdivide(objects, right_child_idx);
     }
+    */
 
     fn evaluate_sah(&self, objects: &[Triangle<f32>], node: &BvhNode, axis: usize, position: f32) -> f32 {
         let mut left_box = Aabb::default();
@@ -331,7 +333,7 @@ impl BvhBuilder {
     fn find_best_split_plane(&self, objects: &[Triangle<f32>], node: &BvhNode, planes: usize) -> (isize, f32, f32) {
         let mut best_axis = -1;
         let mut best_position = 0_f32;
-        let mut best_cost = f32::MAX;
+        let mut best_cost = 1e30;
         for axis in 0..3 {
             let bounds_min = node.aabb.box_min[axis];
             let bounds_max = node.aabb.box_max[axis];
@@ -339,7 +341,7 @@ impl BvhBuilder {
                 continue;
             }
             let scale = (bounds_max - bounds_min) / planes as f32;
-            for i in 0..node.primitive_count {
+            for i in 0..planes {
                 let candidate_position = bounds_min + (i as f32) * scale;
                 let cost = self.evaluate_sah(objects, &node, axis, candidate_position);
                 if cost < best_cost {
@@ -353,6 +355,7 @@ impl BvhBuilder {
         (best_axis, best_position, best_cost)
     }
 
+    #[inline]
     fn calculate_node_cost(&self, node: &BvhNode) -> f32 {
         let extent = node.aabb.extent();
         let parent_area = extent.x * extent.y + extent.y * extent.z + extent.z * extent.x;
