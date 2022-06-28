@@ -252,7 +252,7 @@ impl BvhBuilder {
         (best_axis, best_position, best_cost)
     }
 
-    fn find_best_split_plane(&self, objects: &[Triangle<f32>], node: &BvhNode, planes: usize) -> (isize, f32, f32) {
+    fn find_best_split_plane(&self, objects: &[Triangle<f32>], node: &BvhNode, plane_count: usize) -> (isize, f32, f32) {
         let mut best_axis = -1;
         let mut best_position = 0_f32;
         let mut best_cost = 1e30;
@@ -262,8 +262,8 @@ impl BvhBuilder {
             if bounds_min == bounds_max {
                 continue;
             }
-            let scale = (bounds_max - bounds_min) / planes as f32;
-            for i in 0..planes {
+            let scale = (bounds_max - bounds_min) / plane_count as f32;
+            for i in 0..plane_count {
                 let candidate_position = bounds_min + (i as f32) * scale;
                 let cost = self.evaluate_sah(objects, &node, axis, candidate_position);
                 if cost < best_cost {
@@ -290,7 +290,6 @@ impl BvhBuilder {
         println!("Subdividing node_idx = {}", node_idx);
         // Terminate recursion.
         let (best_axis, best_position, best_cost) = {
-            // Determine the split axis using the surface area heuristic (SAH).
             let node = &self.partial_bvh.nodes[node_idx];
             self.find_best_split_plane(objects, node, 100)
         };
