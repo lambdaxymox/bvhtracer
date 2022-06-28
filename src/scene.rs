@@ -343,37 +343,11 @@ impl BvhBuilder {
             // Determine the split axis using the surface area heuristic (SAH).
             let node = &self.partial_bvh.nodes[node_idx];
             self.find_best_split_plane(objects, node)
-            /*
-            let mut best_axis = -1;
-            let mut best_position = 0_f32;
-            let mut best_cost = f32::MAX;
-            for axis in 0..3 {
-                for i in 0..node.primitive_count {
-                    let primitive_idx = self.partial_bvh.node_indices[node.first_primitive_idx + i];
-                    let primitive = &objects[primitive_idx];
-                    let candidate_position = primitive.centroid[axis as usize];
-                    let cost = self.evaluate_sah(objects, &node, axis, candidate_position);
-                    if cost < best_cost {
-                        best_position = candidate_position;
-                        best_axis = axis as isize;
-                        best_cost = cost;
-                    }
-                }
-            }
-
-            (best_axis, best_position, best_cost)
-            */
         };
         let (left_count, i) = {
             let node = &self.partial_bvh.nodes[node_idx];
             let axis = best_axis as usize;
             let split_position = best_position;
-
-            /*
-            let extent = node.aabb.extent();
-            let parent_area = extent.x * extent.y + extent.y * extent.z + extent.z * extent.x;
-            let parent_cost = (node.primitive_count as f32) * parent_area;
-            */
             let no_split_cost = self.calculate_node_cost(node);
             if best_cost >= no_split_cost {
                 return;
