@@ -306,7 +306,7 @@ impl BvhBuilder {
         if cost > 0_f32 { cost } else { f32::MAX }
     }
 
-    fn find_best_split_plane(&self, objects: &[Triangle<f32>], node: &BvhNode) -> (isize, f32, f32) {
+    fn find_best_split_plane_sah(&self, objects: &[Triangle<f32>], node: &BvhNode) -> (isize, f32, f32) {
         // Determine the split axis using the surface area heuristic (SAH).
         let mut best_axis = -1;
         let mut best_position = 0_f32;
@@ -316,6 +316,31 @@ impl BvhBuilder {
                 let primitive_idx = self.partial_bvh.node_indices[node.first_primitive_idx + i];
                 let primitive = &objects[primitive_idx];
                 let candidate_position = primitive.centroid[axis as usize];
+                let cost = self.evaluate_sah(objects, &node, axis, candidate_position);
+                if cost < best_cost {
+                    best_position = candidate_position;
+                    best_axis = axis as isize;
+                    best_cost = cost;
+                }
+            }
+        }
+
+        (best_axis, best_position, best_cost)
+    }
+
+    fn find_best_split_plane(&self, objects: &[Triangle<f32>], node: &BvhNode, planes: usize) -> (isize, f32, f32) {
+        let mut best_axis = -1;
+        let mut best_position = 0_f32;
+        let mut best_cost = f32::MAX;
+        for axis in 0..3 {
+            let bounds_min = node.aabb.box_min[axis];
+            let bounds_max = node.aabb.box_max[axis];
+            if bounds_min == bounds_max {
+                continue;
+            }
+            let scale = (bounds_max - bounds_min) / planes as f32;
+            for i in 0..node.primitive_count {
+                let candidate_position = bounds_min + (i as f32) * scale;
                 let cost = self.evaluate_sah(objects, &node, axis, candidate_position);
                 if cost < best_cost {
                     best_position = candidate_position;
@@ -342,7 +367,7 @@ impl BvhBuilder {
         let (best_axis, best_position, best_cost) = {
             // Determine the split axis using the surface area heuristic (SAH).
             let node = &self.partial_bvh.nodes[node_idx];
-            self.find_best_split_plane(objects, node)
+            self.find_best_split_plane(objects, node, 100)
         };
         let (left_count, i) = {
             let node = &self.partial_bvh.nodes[node_idx];
@@ -421,25 +446,6 @@ impl BvhBuilder {
 
         self.partial_bvh
     }
-
-    pub fn build_for_midpoint(mut self, objects: &mut [Triangle<f32>]) -> Bvh {
-        // Populate the triangle index array.
-        for i in 0..objects.len() {
-            self.partial_bvh.node_indices.push(i);
-        }
-
-        self.partial_bvh.nodes = vec![BvhNode::default(); 2 * objects.len()];
-        
-        let root_node_idx = self.partial_bvh.root_node_idx;
-        let mut root_node: &mut BvhNode = &mut self.partial_bvh.nodes[root_node_idx];
-        root_node.left_node = 0;
-        root_node.primitive_count = objects.len();
-
-        self.update_node_bounds(objects, self.partial_bvh.root_node_idx);
-        self.subdivide_midpoint(objects, self.partial_bvh.root_node_idx);
-
-        self.partial_bvh
-    }
 }
 
 
@@ -464,12 +470,6 @@ impl SceneBuilder {
 
     pub fn build(mut self) -> Scene {
         let bvh = self.bvh_builder.build_for(&mut self.objects);
-
-        Scene::new(self.objects, bvh)
-    }
-
-    pub fn build_midpoint(mut self) -> Scene {
-        let bvh = self.bvh_builder.build_for_midpoint(&mut self.objects);
 
         Scene::new(self.objects, bvh)
     }

@@ -44,17 +44,6 @@ fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle<f32>> {
     }).collect::<Vec<Triangle<_>>>()
 }
 
-fn bvh_construction_midpoint(bh: &mut criterion::Criterion) {
-    let triangles = load_tri_model("assets/unity.tri");
-    let mut group = bh.benchmark_group("bvh_construction");
-    group.sample_size(10);
-    group.bench_function("bvh_construction_midpoint", move |bh| bh.iter(|| {
-        let builder = SceneBuilder::new();
-        builder.with_objects(triangles.clone()).build_midpoint()
-    }));
-    group.finish();
-}
-
 fn bvh_construction(bh: &mut criterion::Criterion) {
     let triangles = load_tri_model("assets/unity.tri");
     let mut group = bh.benchmark_group("bvh_construction");
@@ -69,7 +58,6 @@ fn bvh_construction(bh: &mut criterion::Criterion) {
 
 criterion_group!(
     bvh_construction_benchmarks,
-    bvh_construction_midpoint,
     bvh_construction,
 );
 criterion_main!(bvh_construction_benchmarks);
