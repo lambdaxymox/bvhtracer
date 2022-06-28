@@ -21,10 +21,7 @@ impl Bin {
 impl Default for Bin {
     #[inline]
     fn default() -> Self {
-        Self { 
-            bounding_box: Aabb::default(), 
-            primitive_count: 0 
-        }
+        Self::new(Aabb::default(), 0)
     }
 }
 
@@ -108,8 +105,7 @@ impl Bvh {
         PrimitiveIter::new(objects, node.primitive_count, base_primitive_index)
     }
 
-
-    fn intersect_subtree(&self, objects: &[Triangle<f32>], ray: &Ray<f32>, node_idx: usize) -> Option<f32> {
+    fn intersect_subtree(&self, objects: &[Triangle<f32>], ray: &Ray<f32>, node_idx: usize) -> Option<f32> {          
         let mut current_node = &self.nodes[node_idx];
         let mut stack = vec![];
         let mut closest_ray = *ray;
@@ -226,7 +222,7 @@ impl BvhBuilder {
             node.aabb.box_max = max(&node.aabb.box_max, &leaf_triangle.vertex2);
         }
     }
-
+    /*
     fn evaluate_sah(&self, objects: &[Triangle<f32>], node: &BvhNode, axis: usize, position: f32) -> f32 {
         let mut left_box = Aabb::default();
         let mut right_box = Aabb::default();
@@ -273,7 +269,7 @@ impl BvhBuilder {
 
         (best_axis, best_position, best_cost)
     }
-
+    */
     /*
     fn find_best_split_plane(&self, objects: &[Triangle<f32>], node: &BvhNode, plane_count: usize) -> (isize, f32, f32) {
         let mut best_axis = -1;
