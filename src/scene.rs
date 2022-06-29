@@ -190,23 +190,16 @@ impl BvhBuilder {
     }
 
     fn update_node_bounds(&mut self, objects: &mut [Triangle<f32>], node_idx: usize) {
-        let first = {
-            let mut node = &mut self.partial_bvh.nodes[node_idx];
-            node.aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
-            
-            node.first_primitive_idx
-        };
-
-        for i in 0..self.partial_bvh.nodes[node_idx].primitive_count {
-            let leaf_triangle_idx = self.partial_bvh.node_indices[first + i];
-            let leaf_triangle = &objects[leaf_triangle_idx];
-            let node = &mut self.partial_bvh.nodes[node_idx];
-            node.aabb.box_min = Vector3::component_min(&node.aabb.box_min, &leaf_triangle.vertex0);
-            node.aabb.box_min = Vector3::component_min(&node.aabb.box_min, &leaf_triangle.vertex1);
-            node.aabb.box_min = Vector3::component_min(&node.aabb.box_min, &leaf_triangle.vertex2);
-            node.aabb.box_max = Vector3::component_max(&node.aabb.box_max, &leaf_triangle.vertex0);
-            node.aabb.box_max = Vector3::component_max(&node.aabb.box_max, &leaf_triangle.vertex1);
-            node.aabb.box_max = Vector3::component_max(&node.aabb.box_max, &leaf_triangle.vertex2);
+        let it = self.primitive_iter(objects, &self.partial_bvh.nodes[node_idx]);
+        let node = &mut self.partial_bvh.nodes[node_idx];
+        node.aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
+        for primitive in it {
+            node.aabb.box_min = Vector3::component_min(&node.aabb.box_min, &primitive.vertex0);
+            node.aabb.box_min = Vector3::component_min(&node.aabb.box_min, &primitive.vertex1);
+            node.aabb.box_min = Vector3::component_min(&node.aabb.box_min, &primitive.vertex2);
+            node.aabb.box_max = Vector3::component_max(&node.aabb.box_max, &primitive.vertex0);
+            node.aabb.box_max = Vector3::component_max(&node.aabb.box_max, &primitive.vertex1);
+            node.aabb.box_max = Vector3::component_max(&node.aabb.box_max, &primitive.vertex2);
         }
     }
     /*
