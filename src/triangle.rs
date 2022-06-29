@@ -31,6 +31,7 @@ where
         Self { vertex0, vertex1, vertex2, centroid, }
     }
 
+    #[inline]
     pub fn intersect(&self, ray: &Ray<S>) -> Option<S> {
         let edge1 = self.vertex1 - self.vertex0;
         let edge2 = self.vertex2 - self.vertex0;
@@ -54,9 +55,7 @@ where
         }
         let t = f * edge2.dot(&q);
         if t > threshold {
-            let t_intersect = S::min(ray.t, t);
-    
-            Some(t_intersect)
+            Some(S::min(ray.t, t))
         } else {
             None
         }

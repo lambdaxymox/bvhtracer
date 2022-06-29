@@ -105,7 +105,7 @@ impl Bvh {
         PrimitiveIter::new(objects, node.primitive_count, base_primitive_index)
     }
 
-    fn intersect_subtree(&self, objects: &[Triangle<f32>], ray: &Ray<f32>, node_idx: usize) -> Option<f32> {          
+    fn intersect_subtree(&self, objects: &[Triangle<f32>], ray: &Ray<f32>, node_idx: usize) -> Option<f32> {    
         let mut current_node = &self.nodes[node_idx];
         let mut stack = vec![];
         let mut closest_ray = *ray;
