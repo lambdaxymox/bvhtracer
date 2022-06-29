@@ -43,23 +43,6 @@ const SCREEN_WIDTH: usize = 640;
 const SCREEN_HEIGHT: usize = 640;
 
 
-fn initialize_scene(triangle_count: usize) -> Scene {
-    let mut objects = vec![Triangle::default(); triangle_count];
-    let mut rng = rand::prelude::thread_rng();
-    for object in objects.iter_mut() {
-        let r0 = Vector3::new(rng.gen::<f32>(), rng.gen::<f32>(), rng.gen::<f32>());
-        let r1 = Vector3::new(rng.gen::<f32>(), rng.gen::<f32>(), rng.gen::<f32>());
-        let r2 = Vector3::new(rng.gen::<f32>(), rng.gen::<f32>(), rng.gen::<f32>());
-        let vertex0 = r0 * 9_f32 - Vector3::from_fill(5_f32);
-        let vertex1 = vertex0 + r1;
-        let vertex2 = vertex0 + r2;
-        *object = Triangle::new(vertex0, vertex1, vertex2);
-    }
-
-    let builder = SceneBuilder::new();
-    builder.with_objects(objects).build()
-}
-
 fn render_depth_unity(scene: &Scene) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
     // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
     let mut buffer = ImageBuffer::from_fill(
