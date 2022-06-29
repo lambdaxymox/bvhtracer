@@ -12,15 +12,21 @@ use cglinalg::{
 };
 
 fn scene() -> Scene {
-    let triangle1 = Triangle::new(
+    let displacement = Vector3::new(5_f32, 0_f32, 0_f32);
+    let triangle = Triangle::new(
         Vector3::new(0_f32, 1_f32 / 2_f32, 0_f32),
         Vector3::new(-1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
         Vector3::new(1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
     );
+    let triangle1 = Triangle::new(
+        triangle.vertex0 - displacement,
+        triangle.vertex1 - displacement,
+        triangle.vertex2 - displacement,
+    );
     let triangle2 = Triangle::new(
-        Vector3::new(2_f32 / f32::sqrt(3_f32), 1_f32, -0.2_f32),
-        Vector3::new(-2_f32 / f32::sqrt(3_f32), 1_f32, -0.2_f32),
-        Vector3::new(0_f32, -1_f32, -0.2_f32),
+        triangle.vertex0 + displacement,
+        triangle.vertex1 + displacement,
+        triangle.vertex2 + displacement,
     );
     let triangles = vec![triangle1, triangle2];
     let builder = SceneBuilder::new();
@@ -28,15 +34,9 @@ fn scene() -> Scene {
     builder.with_objects(triangles).build()
 }
 
-#[test]
-fn test_one_triangle_should_have_one_volume() {
-    let scene = scene();
-
-    assert_eq!(scene.bvh.nodes_used(), 1);
-}
 
 #[test]
-fn test_one_triangle_intersection_hits1() {
+fn test_two_triangles_intersection_hits1() {
     let scene = scene();
     let ray_origin = Vector3::new(0_f32, 0_f32, 5_f32);
     let target_origin = scene.objects[0].centroid;
@@ -48,7 +48,7 @@ fn test_one_triangle_intersection_hits1() {
 }
 
 #[test]
-fn test_one_triangle_intersection_hits2() {
+fn test_two_triangles_intersection_hits2() {
     let scene = scene();
     let ray_origin = Vector3::new(0_f32, 0_f32, 5_f32);
     let target_origin = scene.objects[1].centroid;
@@ -60,7 +60,7 @@ fn test_one_triangle_intersection_hits2() {
 }
 
 #[test]
-fn test_one_triangle_intersection_miss() {
+fn test_two_triangles_intersection_miss() {
     let scene = scene();
     let ray_origin = Vector3::new(0_f32, 0_f32, 5_f32);
     let scene_origin = Vector3::zero();

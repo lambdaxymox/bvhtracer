@@ -19,7 +19,6 @@ impl Bin {
 }
 
 impl Default for Bin {
-    #[inline]
     fn default() -> Self {
         Self::new(Aabb::default(), 0)
     }
@@ -152,7 +151,7 @@ impl Bvh {
             }
         }
 
-        Some(closest_ray.t)
+        if closest_ray.t < f32::MAX { Some(closest_ray.t) } else { None }
     }
 
 

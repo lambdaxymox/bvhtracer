@@ -35,9 +35,13 @@ fn scene() -> Scene {
 }
 
 #[test]
-fn test_one_triangle_should_have_one_volume() {
+fn test_three_triangles_centroids_hit() {
     let scene = scene();
+    for triangle in scene.objects.iter() {
+        let ray_origin = Vector3::new(0_f32, 0_f32, 10_f32);
+        let ray_direction = (triangle.centroid - ray_origin).normalize();
+        let ray = Ray::from_origin_dir(ray_origin, ray_direction);
 
-    assert_eq!(scene.bvh.nodes_used(), 3);
+        assert!(triangle.intersect(&ray).is_some());
+    }
 }
-
