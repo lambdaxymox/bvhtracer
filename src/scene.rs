@@ -190,24 +190,6 @@ impl BvhBuilder {
     }
 
     fn update_node_bounds(&mut self, objects: &mut [Triangle<f32>], node_idx: usize) {
-        #[inline]
-        fn min(vector1: &Vector3<f32>, vector2: &Vector3<f32>) -> Vector3<f32> {
-            Vector3::new(
-                f32::min(vector1.x, vector2.x),
-                f32::min(vector1.y, vector2.y),
-                f32::min(vector1.z, vector2.z),
-            )
-        }
-
-        #[inline]
-        fn max(vector1: &Vector3<f32>, vector2: &Vector3<f32>) -> Vector3<f32> {
-            Vector3::new(
-                f32::max(vector1.x, vector2.x),
-                f32::max(vector1.y, vector2.y),
-                f32::max(vector1.z, vector2.z),
-            )
-        }
-
         let first = {
             let mut node = &mut self.partial_bvh.nodes[node_idx];
             node.aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
@@ -219,12 +201,12 @@ impl BvhBuilder {
             let leaf_triangle_idx = self.partial_bvh.node_indices[first + i];
             let leaf_triangle = &objects[leaf_triangle_idx];
             let node = &mut self.partial_bvh.nodes[node_idx];
-            node.aabb.box_min = min(&node.aabb.box_min, &leaf_triangle.vertex0);
-            node.aabb.box_min = min(&node.aabb.box_min, &leaf_triangle.vertex1);
-            node.aabb.box_min = min(&node.aabb.box_min, &leaf_triangle.vertex2);
-            node.aabb.box_max = max(&node.aabb.box_max, &leaf_triangle.vertex0);
-            node.aabb.box_max = max(&node.aabb.box_max, &leaf_triangle.vertex1);
-            node.aabb.box_max = max(&node.aabb.box_max, &leaf_triangle.vertex2);
+            node.aabb.box_min = Vector3::component_min(&node.aabb.box_min, &leaf_triangle.vertex0);
+            node.aabb.box_min = Vector3::component_min(&node.aabb.box_min, &leaf_triangle.vertex1);
+            node.aabb.box_min = Vector3::component_min(&node.aabb.box_min, &leaf_triangle.vertex2);
+            node.aabb.box_max = Vector3::component_max(&node.aabb.box_max, &leaf_triangle.vertex0);
+            node.aabb.box_max = Vector3::component_max(&node.aabb.box_max, &leaf_triangle.vertex1);
+            node.aabb.box_max = Vector3::component_max(&node.aabb.box_max, &leaf_triangle.vertex2);
         }
     }
     /*

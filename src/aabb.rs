@@ -24,26 +24,8 @@ where
     }
 
     pub fn grow(&mut self, position: &Vector3<S>) {
-        #[inline]
-        fn min<S: SimdScalarFloat>(vector1: &Vector3<S>, vector2: &Vector3<S>) -> Vector3<S> {
-            Vector3::new(
-                S::min(vector1.x, vector2.x),
-                S::min(vector1.y, vector2.y),
-                S::min(vector1.z, vector2.z),
-            )
-        }
-
-        #[inline]
-        fn max<S: SimdScalarFloat>(vector1: &Vector3<S>, vector2: &Vector3<S>) -> Vector3<S> {
-            Vector3::new(
-                S::max(vector1.x, vector2.x),
-                S::max(vector1.y, vector2.y),
-                S::max(vector1.z, vector2.z),
-            )
-        }
-
-        self.box_min = min(&self.box_min, position);
-        self.box_max = max(&self.box_max, position);
+        self.box_min = Vector3::component_min(&self.box_min, position);
+        self.box_max = Vector3::component_max(&self.box_max, position);
     }
 
     pub fn grow_aabb(&mut self, new_bounding_box: &Aabb<S>) { 
