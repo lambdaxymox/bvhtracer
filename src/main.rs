@@ -86,14 +86,12 @@ fn render_depth_unity(scene: &Scene) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
                     let ray_t = f32::MAX;
                     let ray = Ray::new(ray_origin, ray_direction, ray_t);
                     if let Some(t_intersect) = scene.intersect(&ray) {
-                        if t_intersect < f32::MAX {
-                            let color = 500 - ((t_intersect * 42_f32) as i32);
-                            let c = color * 0x010101;
-                            let r = ((c & 0x00FF0000) >> 16) as u8;
-                            let g = ((c & 0x0000FF00) >> 8) as u8;
-                            let b = (c & 0x000000FF) as u8;
-                            buffer[(col + u, row + v)] = Rgba::new(r, g, b, 255);
-                        }
+                        let color = 500 - ((t_intersect * 42_f32) as i32);
+                        let c = color * 0x010101;
+                        let r = ((c & 0x00FF0000) >> 16) as u8;
+                        let g = ((c & 0x0000FF00) >> 8) as u8;
+                        let b = (c & 0x000000FF) as u8;
+                        buffer[(col + u, row + v)] = Rgba::new(r, g, b, 255);
                     }
                 }
             }

@@ -190,16 +190,36 @@ impl BvhBuilder {
     }
 
     fn update_node_bounds(&mut self, objects: &mut [Triangle<f32>], node_idx: usize) {
+        // NOTE: We use local implementations of min and max of vector components here because the
+        // compiler does not seem to want to inline it here.
+        #[inline] fn __min(this: &Vector3<f32>, that: &Vector3<f32>) -> Vector3<f32> { 
+            // this.component_min(that)
+            Vector3::new(
+                f32::min(this.x, that.x),
+                f32::min(this.y, that.y),
+                f32::min(this.z, that.z),
+            )
+        }
+
+        #[inline] fn __max(this: &Vector3<f32>, that: &Vector3<f32>) -> Vector3<f32> {
+            // this.component_max(that)
+            Vector3::new(
+                f32::max(this.x, that.x),
+                f32::max(this.y, that.y),
+                f32::max(this.z, that.z),
+            )
+        }
+
         let it = self.primitive_iter(objects, &self.partial_bvh.nodes[node_idx]);
         let node = &mut self.partial_bvh.nodes[node_idx];
         node.aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
         for primitive in it {
-            node.aabb.box_min = Vector3::component_min(&node.aabb.box_min, &primitive.vertex0);
-            node.aabb.box_min = Vector3::component_min(&node.aabb.box_min, &primitive.vertex1);
-            node.aabb.box_min = Vector3::component_min(&node.aabb.box_min, &primitive.vertex2);
-            node.aabb.box_max = Vector3::component_max(&node.aabb.box_max, &primitive.vertex0);
-            node.aabb.box_max = Vector3::component_max(&node.aabb.box_max, &primitive.vertex1);
-            node.aabb.box_max = Vector3::component_max(&node.aabb.box_max, &primitive.vertex2);
+            node.aabb.bounds_min = __min(&node.aabb.bounds_min, &primitive.vertex0);
+            node.aabb.bounds_min = __min(&node.aabb.bounds_min, &primitive.vertex1);
+            node.aabb.bounds_min = __min(&node.aabb.bounds_min, &primitive.vertex2);
+            node.aabb.bounds_max = __max(&node.aabb.bounds_max, &primitive.vertex0);
+            node.aabb.bounds_max = __max(&node.aabb.bounds_max, &primitive.vertex1);
+            node.aabb.bounds_max = __max(&node.aabb.bounds_max, &primitive.vertex2);
         }
     }
     /*
