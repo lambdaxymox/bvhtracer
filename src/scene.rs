@@ -24,6 +24,41 @@ impl Default for Bin {
     }
 }
 
+#[derive(Clone, Debug)]
+struct PrimitiveIter<'a> {
+    objects: &'a [Triangle<f32>],
+    primitive_count: usize,
+    base_primitive_index: usize,
+    current_offset: usize,
+}
+
+impl<'a> PrimitiveIter<'a> {
+    fn new(objects: &'a [Triangle<f32>], primitive_count: usize, base_primitive_index: usize) -> Self {
+        Self {
+            objects,
+            primitive_count,
+            base_primitive_index,
+            current_offset: 0,
+        }
+    }
+}
+
+impl<'a> Iterator for PrimitiveIter<'a> {
+    type Item = &'a Triangle<f32>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_offset < self.primitive_count {
+            let current_primitive_index = self.base_primitive_index + self.current_offset;
+            let current_object = &self.objects[current_primitive_index];
+            self.current_offset += 1;
+            
+            return Some(current_object);
+        }
+
+        None
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub struct BvhNode {
     aabb: Aabb<f32>,
@@ -60,41 +95,6 @@ pub struct Bvh {
     node_indices: Vec<usize>,
     root_node_idx: usize,
     nodes_used: usize,
-}
-
-#[derive(Clone, Debug)]
-struct PrimitiveIter<'a> {
-    objects: &'a [Triangle<f32>],
-    primitive_count: usize,
-    base_primitive_index: usize,
-    current_offset: usize,
-}
-
-impl<'a> PrimitiveIter<'a> {
-    fn new(objects: &'a [Triangle<f32>], primitive_count: usize, base_primitive_index: usize) -> Self {
-        Self {
-            objects,
-            primitive_count,
-            base_primitive_index,
-            current_offset: 0,
-        }
-    }
-}
-
-impl<'a> Iterator for PrimitiveIter<'a> {
-    type Item = &'a Triangle<f32>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.current_offset < self.primitive_count {
-            let current_primitive_index = self.base_primitive_index + self.current_offset;
-            let current_object = &self.objects[current_primitive_index];
-            self.current_offset += 1;
-            
-            return Some(current_object);
-        }
-
-        None
-    }
 }
 
 impl Bvh {
@@ -181,6 +181,12 @@ impl BvhBuilder {
         let partial_bvh = Bvh { nodes, node_indices, root_node_idx, nodes_used, };
 
         Self { partial_bvh, }
+    }
+
+    fn primitive_iter<'a>(&self, objects: &'a [Triangle<f32>], node: &BvhNode) -> PrimitiveIter<'a> {
+        let base_primitive_index = self.partial_bvh.node_indices[node.first_primitive_idx];
+        
+        PrimitiveIter::new(objects, node.primitive_count, base_primitive_index)
     }
 
     fn update_node_bounds(&mut self, objects: &mut [Triangle<f32>], node_idx: usize) {
@@ -304,9 +310,7 @@ impl BvhBuilder {
         for axis in 0..3 {
             let mut bounds_min = 1e30;
             let mut bounds_max = 1e-30;
-            for i in 0..node.primitive_count {
-                let primitive_idx = self.partial_bvh.node_indices[node.first_primitive_idx + i];
-                let primitive = &objects[primitive_idx];
+            for primitive in self.primitive_iter(objects, node) {
                 bounds_min = f32::min(bounds_min, primitive.centroid[axis]);
                 bounds_max = f32::max(bounds_max, primitive.centroid[axis]);
             }
@@ -316,9 +320,7 @@ impl BvhBuilder {
 
             let mut bins = [Bin::default(); BIN_COUNT];
             let scale = (BIN_COUNT as f32) / (bounds_max - bounds_min);
-            for i in 0..node.primitive_count {
-                let primitive_idx = self.partial_bvh.node_indices[node.first_primitive_idx + i];
-                let primitive = &objects[primitive_idx];
+            for primitive in self.primitive_iter(objects, node) {
                 let possible_bin_index = ((primitive.centroid[axis] - bounds_min) * scale) as usize;
                 let bin_index = usize::min(BIN_COUNT - 1, possible_bin_index);
                 bins[bin_index].primitive_count += 1;
