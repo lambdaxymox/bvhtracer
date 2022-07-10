@@ -82,14 +82,6 @@ impl App {
 
     fn render(&mut self) {
         // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
-        /*
-        let mut buffer = ImageBuffer::from_fill(
-            SCREEN_WIDTH, 
-            SCREEN_HEIGHT,
-            Rgba::from([0, 0, 0, 1])
-        );
-        */
-
         // Set up camera.
         let camera_position = Vector3::new(-1.5, 0.0, -2.5);
         let p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
