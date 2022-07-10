@@ -4,16 +4,13 @@ extern crate rand_isaac;
 extern crate stb_image;
 extern crate tri_loader;
 extern crate num_traits;
+extern crate glfw;
 
 
-use rand::prelude::{
-    Rng,
-};
-use cglinalg::{
-    Matrix4x4,
-    Vector3,
-    Magnitude,
-};
+#[allow(clippy::all)]
+mod gl {
+    include!(concat!(env!("OUT_DIR"), "/gl_bindings.rs"));
+}
 
 mod aabb;
 mod backend;
@@ -29,21 +26,41 @@ use crate::image::*;
 use crate::pixel::*;
 use crate::ray::*;
 use crate::scene::*;
+use crate::backend::*;
+
+use cglinalg::{
+    Matrix4x4,
+    Vector3,
+    Magnitude,
+};
+
 use std::io;
+use std::mem;
 use std::fs::{
     File,
 };
 use std::path::{
     Path,
 };
-use backend::*;
+
+use std::ptr;
+
+
+use glfw::{Action, Context, Key};
+use gl::types::{
+    GLuint, 
+    GLfloat
+};
+use std::ffi::{
+    c_void,
+};
 
 
 const SCREEN_WIDTH: usize = 640;
 const SCREEN_HEIGHT: usize = 640;
 
 
-fn render_depth_unity(scene: &Scene) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
+fn render(scene: &Scene) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
     // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
     let mut buffer = ImageBuffer::from_fill(
         SCREEN_WIDTH, 
@@ -84,25 +101,6 @@ fn render_depth_unity(scene: &Scene) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
     buffer
 }
 
-
-extern crate glfw;
-
-
-#[allow(clippy::all)]
-mod gl {
-    include!(concat!(env!("OUT_DIR"), "/gl_bindings.rs"));
-}
-
-use glfw::{Action, Context, Key};
-use gl::types::{
-    GLuint, 
-    GLfloat
-};
-use std::ffi::{
-    c_void,
-};
-use std::ptr;
-use std::mem;
 
 /// Load texture image into the GPU.
 fn send_to_gpu_texture(buffer: &ImageBuffer<Rgba<u8>, Vec<u8>>, wrapping_mode: GLuint) -> Result<GLuint, String> {
@@ -167,7 +165,7 @@ fn main() -> io::Result<()> {
 
     println!("Rendering scene.");
     let now = SystemTime::now();
-    let mut buffer = render_depth_unity(&scene);
+    let mut buffer = render(&scene);
     let elapsed = now.elapsed().unwrap();
     println!("Rendering time = {} s", elapsed.as_secs_f64());
     
