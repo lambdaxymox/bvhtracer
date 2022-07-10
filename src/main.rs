@@ -60,45 +60,67 @@ const SCREEN_WIDTH: usize = 640;
 const SCREEN_HEIGHT: usize = 640;
 
 
-fn render(scene: &Scene) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
-    // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
-    let mut buffer = ImageBuffer::from_fill(
-        SCREEN_WIDTH, 
-        SCREEN_HEIGHT,
-        Rgba::from([0, 0, 0, 1])
-    );
+struct App {
+    active_scene: Scene,
+    frame_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
+}
 
-    // Set up camera.
-    let camera_position = Vector3::new(-1.5, 0.0, -2.5);
-    let p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
-    let p1 = Vector3::new(1_f32, 1_f32, 2_f32);
-    let p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
+impl App {
+    fn new(active_scene: Scene, width: usize, height: usize) -> Self {
+        let frame_buffer = ImageBuffer::from_fill(
+            SCREEN_WIDTH, 
+            SCREEN_HEIGHT,
+            Rgba::from([0, 0, 0, 1])
+        );
 
-    for row in (0..SCREEN_HEIGHT).step_by(4) {
-        for col in (0..SCREEN_WIDTH).step_by(4) {
-            for v in 0..4 {
-                for u in 0..4 {
-                    let pixel_position = camera_position + p0 + 
-                        (p1 - p0) * ((col + u) as f32 / SCREEN_WIDTH as f32) + 
-                        (p2 - p0) * ((row + v) as f32 / SCREEN_HEIGHT as f32);
-                    let ray_origin = camera_position;
-                    let ray_direction = (pixel_position - ray_origin).normalize();
-                    let ray_t = f32::MAX;
-                    let ray = Ray::new(ray_origin, ray_direction, ray_t);
-                    if let Some(t_intersect) = scene.intersect(&ray) {
-                        let color = 500 - ((t_intersect * 42_f32) as i32);
-                        let c = color * 0x010101;
-                        let r = ((c & 0x00FF0000) >> 16) as u8;
-                        let g = ((c & 0x0000FF00) >> 8) as u8;
-                        let b = (c & 0x000000FF) as u8;
-                        buffer[(col + u, row + v)] = Rgba::new(r, g, b, 255);
+        Self { active_scene, frame_buffer }
+    }
+
+    fn update(&mut self, delta_time: f32) {
+
+    }
+
+    fn render(&mut self) {
+        // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
+        /*
+        let mut buffer = ImageBuffer::from_fill(
+            SCREEN_WIDTH, 
+            SCREEN_HEIGHT,
+            Rgba::from([0, 0, 0, 1])
+        );
+        */
+
+        // Set up camera.
+        let camera_position = Vector3::new(-1.5, 0.0, -2.5);
+        let p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
+        let p1 = Vector3::new(1_f32, 1_f32, 2_f32);
+        let p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
+    
+        for row in (0..SCREEN_HEIGHT).step_by(4) {
+            for col in (0..SCREEN_WIDTH).step_by(4) {
+                for v in 0..4 {
+                    for u in 0..4 {
+                        let pixel_position = camera_position + p0 + 
+                            (p1 - p0) * ((col + u) as f32 / SCREEN_WIDTH as f32) + 
+                            (p2 - p0) * ((row + v) as f32 / SCREEN_HEIGHT as f32);
+                        let ray_origin = camera_position;
+                        let ray_direction = (pixel_position - ray_origin).normalize();
+                        let ray_t = f32::MAX;
+                        let ray = Ray::new(ray_origin, ray_direction, ray_t);
+                        if let Some(t_intersect) = self.active_scene.intersect(&ray) {
+                            let color = 500 - ((t_intersect * 42_f32) as i32);
+                            let c = color * 0x010101;
+                            let r = ((c & 0x00FF0000) >> 16) as u8;
+                            let g = ((c & 0x0000FF00) >> 8) as u8;
+                            let b = (c & 0x000000FF) as u8;
+                            self.frame_buffer[(col + u, row + v)] = Rgba::new(r, g, b, 255);
+                        }
                     }
                 }
             }
         }
-    }
 
-    buffer
+    }
 }
 
 
@@ -151,6 +173,7 @@ fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle<f32>> {
     }).collect::<Vec<Triangle<_>>>()
 }
 
+
 fn main() -> io::Result<()> {
     use std::time::SystemTime;
 
@@ -163,16 +186,17 @@ fn main() -> io::Result<()> {
     let elapsed = now.elapsed().unwrap();
     println!("BVH building time = {} us", elapsed.as_micros());
 
+    let mut app = App::new(scene, SCREEN_WIDTH, SCREEN_HEIGHT);
     println!("Rendering scene.");
     let now = SystemTime::now();
-    let mut buffer = render(&scene);
+    app.render();
     let elapsed = now.elapsed().unwrap();
     println!("Rendering time = {} s", elapsed.as_secs_f64());
     
     let mut file = File::create("output.ppm").unwrap();
     let mut ppm_encoder = ppm::PpmEncoder::new(&mut file);
-    ppm_encoder.encode(&buffer)?;
-    buffer.flip_vertical();
+    ppm_encoder.encode(&app.frame_buffer)?;
+    app.frame_buffer.flip_vertical();
 
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 
@@ -292,7 +316,7 @@ fn main() -> io::Result<()> {
         vao
     };
 
-    let tex = send_to_gpu_texture(&buffer, gl::REPEAT).unwrap();
+    let tex = send_to_gpu_texture(&app.frame_buffer, gl::REPEAT).unwrap();
 
     // Loop until the user closes the window
     while !window.should_close() {
