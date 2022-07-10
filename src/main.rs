@@ -87,31 +87,36 @@ impl App {
         let p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
         let p1 = Vector3::new(1_f32, 1_f32, 2_f32);
         let p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
-    
-        for row in (0..SCREEN_HEIGHT).step_by(4) {
-            for col in (0..SCREEN_WIDTH).step_by(4) {
-                for v in 0..4 {
-                    for u in 0..4 {
-                        let pixel_position = camera_position + p0 + 
-                            (p1 - p0) * ((col + u) as f32 / SCREEN_WIDTH as f32) + 
-                            (p2 - p0) * ((row + v) as f32 / SCREEN_HEIGHT as f32);
-                        let ray_origin = camera_position;
-                        let ray_direction = (pixel_position - ray_origin).normalize();
-                        let ray_t = f32::MAX;
-                        let ray = Ray::new(ray_origin, ray_direction, ray_t);
-                        if let Some(t_intersect) = self.active_scene.intersect(&ray) {
-                            let color = 500 - ((t_intersect * 42_f32) as i32);
-                            let c = color * 0x010101;
-                            let r = ((c & 0x00FF0000) >> 16) as u8;
-                            let g = ((c & 0x0000FF00) >> 8) as u8;
-                            let b = (c & 0x000000FF) as u8;
-                            self.frame_buffer[(col + u, row + v)] = Rgba::new(r, g, b, 255);
-                        }
+
+        let tile_width = 8;
+        let tile_height = 8;
+        let tile_count_x = 80;
+        let tile_count_y = 80;
+        let tile_count = tile_count_x * tile_count_y;
+        for tile in 0..tile_count {
+            let x = tile % tile_count_x;
+            let y = tile / tile_count_y;
+            for v in 0..tile_height {
+                for u in 0..tile_width {
+                    let pixel_position = camera_position + p0 + 
+                        (p1 - p0) * ((tile_width * x + u) as f32 / SCREEN_WIDTH as f32) + 
+                        (p2 - p0) * ((tile_height * y + v) as f32 / SCREEN_HEIGHT as f32);
+                    let ray_origin = camera_position;
+                    let ray_direction = (pixel_position - ray_origin).normalize();
+                    let ray_t = f32::MAX;
+                    let ray = Ray::new(ray_origin, ray_direction, ray_t);
+                    if let Some(t_intersect) = self.active_scene.intersect(&ray) {
+                        let color = 500 - ((t_intersect * 42_f32) as i32);
+                        // let color = 255 - (((t_intersect - 4_f32) * 180_f32) as i32);
+                        let c = color * 0x010101;
+                        let r = ((c & 0x00FF0000) >> 16) as u8;
+                        let g = ((c & 0x0000FF00) >> 8) as u8;
+                        let b = (c & 0x000000FF) as u8;
+                        self.frame_buffer[(tile_height * x + u, tile_height * y + v)] = Rgba::new(r, g, b, 255);
                     }
                 }
             }
         }
-
     }
 }
 
