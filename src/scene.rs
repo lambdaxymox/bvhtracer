@@ -164,6 +164,89 @@ impl Bvh {
     pub const fn nodes_used(&self) -> usize {
         self.nodes_used
     }
+
+    fn update_node_bounds(&mut self, objects: &[Triangle<f32>], node_idx: usize) {
+        // NOTE: We use local implementations of min and max of vector components here because the
+        // compiler does not seem to want to inline it here.
+        #[inline] fn __min(this: &Vector3<f32>, that: &Vector3<f32>) -> Vector3<f32> { 
+            // this.component_min(that)
+            Vector3::new(
+                f32::min(this.x, that.x),
+                f32::min(this.y, that.y),
+                f32::min(this.z, that.z),
+            )
+        }
+
+        #[inline] fn __max(this: &Vector3<f32>, that: &Vector3<f32>) -> Vector3<f32> {
+            // this.component_max(that)
+            Vector3::new(
+                f32::max(this.x, that.x),
+                f32::max(this.y, that.y),
+                f32::max(this.z, that.z),
+            )
+        }
+
+        let it = self.primitive_iter(objects, &self.nodes[node_idx]);
+        let node = &mut self.nodes[node_idx];
+        node.aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
+        for primitive in it {
+            node.aabb.bounds_min = __min(&node.aabb.bounds_min, &primitive.vertex0);
+            node.aabb.bounds_min = __min(&node.aabb.bounds_min, &primitive.vertex1);
+            node.aabb.bounds_min = __min(&node.aabb.bounds_min, &primitive.vertex2);
+            node.aabb.bounds_max = __max(&node.aabb.bounds_max, &primitive.vertex0);
+            node.aabb.bounds_max = __max(&node.aabb.bounds_max, &primitive.vertex1);
+            node.aabb.bounds_max = __max(&node.aabb.bounds_max, &primitive.vertex2);
+        }
+    }
+
+    pub fn refit(&mut self, objects: &[Triangle<f32>]) {
+        // NOTE: We use local implementations of min and max of vector components here because the
+        // compiler does not seem to want to inline it here.
+        #[inline] fn __min(this: &Vector3<f32>, that: &Vector3<f32>) -> Vector3<f32> { 
+            // this.component_min(that)
+            Vector3::new(
+                f32::min(this.x, that.x),
+                f32::min(this.y, that.y),
+                f32::min(this.z, that.z),
+            )
+        }
+
+        #[inline] fn __max(this: &Vector3<f32>, that: &Vector3<f32>) -> Vector3<f32> {
+            // this.component_max(that)
+            Vector3::new(
+                f32::max(this.x, that.x),
+                f32::max(this.y, that.y),
+                f32::max(this.z, that.z),
+            )
+        }
+
+
+        let nodes_used = self.nodes_used();
+        for i in 0..nodes_used {
+            let node_index = (nodes_used - 1) - i;
+            {
+                let node = &self.nodes[node_index];
+                if node.is_leaf() {
+                    // Leaf node: adjust bounds to contained triangles.
+                    self.update_node_bounds(objects, node_index);
+                    continue;
+                }
+            }
+
+            // Interior node: adjust bounds to child node bounds.
+            let left_child_aabb = { 
+                let node = &self.nodes[node_index];
+                self.nodes[node.left_node()].aabb
+            };
+            let right_child_aabb = {
+                let node = &self.nodes[node_index];
+                self.nodes[node.right_node()].aabb
+            };
+            let mut node = &mut self.nodes[node_index];
+            node.aabb.bounds_min = __min(&left_child_aabb.bounds_min, &right_child_aabb.bounds_min);
+            node.aabb.bounds_max = __max(&left_child_aabb.bounds_max, &right_child_aabb.bounds_max);
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -422,5 +505,72 @@ impl Scene {
     pub fn intersect(&self, ray: &Ray<f32>) -> Option<f32> {
         self.bvh.intersect(&self.objects, ray)
     }
+
+    pub fn refit(&mut self) {
+        self.bvh.refit(&self.objects)
+    }
 }
 
+
+#[cfg(test)]
+mod bvh_tests {
+    use crate::triangle::*;
+    use cglinalg::{
+        Vector3,
+    };
+    
+    fn scene() -> super::Scene {
+        let displacement = Vector3::new(0_f32, 10_f32, 0_f32);
+        let triangle1 = Triangle::new(
+            Vector3::new(0_f32, 1_f32 / 2_f32, 0_f32),
+            Vector3::new(-1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
+            Vector3::new(1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
+        );
+        let triangle2 = Triangle::new(
+            triangle1.vertex0 - displacement,
+            triangle1.vertex1 - displacement,
+            triangle1.vertex2 - displacement
+        );
+        let triangle3 = Triangle::new(
+            triangle1.vertex0 + displacement,
+            triangle1.vertex1 + displacement,
+            triangle1.vertex2 + displacement
+        );
+        let triangles = vec![triangle1, triangle2, triangle3];
+        let builder = super::SceneBuilder::new();
+        
+        builder.with_objects(triangles).build()
+    }
+
+    #[test]
+    fn test_bvh_nodes_used_smaller_than_node_array_length() {
+        let scene = scene();
+        
+        assert!(scene.bvh.nodes.len() > scene.bvh.nodes_used());
+    }
+
+    #[test]
+    fn test_bvh_nodes_used() {
+        let scene = scene();
+        let default_node = super::BvhNode::default();
+        for i in 0..scene.bvh.nodes_used() {
+            assert_ne!(scene.bvh.nodes[i], default_node);
+        }
+    }
+
+    #[test]
+    fn test_bvh_nodes_unused() {
+        let scene = scene();
+        let default_node = super::BvhNode::default();
+        for i in (scene.bvh.nodes_used()..scene.bvh.nodes.len()) {
+            assert_eq!(scene.bvh.nodes[i], default_node);
+        }
+    }
+
+    /// For maximum cache coherence, a BVH node should fill one or two cache lines on a 
+    /// modern microprocessor.
+    #[test]
+    fn test_bvh_node_fits_inside_a_cache_line() {
+        // assert_eq!(std::mem::size_of::<super::BvhNode>(), 32);
+    }
+}

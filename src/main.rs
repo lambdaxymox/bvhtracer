@@ -62,28 +62,63 @@ const SCREEN_HEIGHT: usize = 640;
 
 struct App {
     active_scene: Scene,
+    r: f32,
+    originals: Vec<Triangle<f32>>,
     frame_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
 }
 
 impl App {
     fn new(active_scene: Scene, width: usize, height: usize) -> Self {
+        let r = 0_f32;
+        let originals = active_scene.objects.clone();
         let frame_buffer = ImageBuffer::from_fill(
-            SCREEN_WIDTH, 
-            SCREEN_HEIGHT,
+            width, 
+            height,
             Rgba::from([0, 0, 0, 1])
         );
 
-        Self { active_scene, frame_buffer }
+        Self { active_scene, r, originals, frame_buffer }
     }
 
-    fn update(&mut self, delta_time: f32) {
+    fn animate(&mut self) {
+        self.r += 0.05;
+        if self.r > std::f32::consts::FRAC_2_PI {
+            self.r -= std::f32::consts::FRAC_2_PI;
+        }
+        let a = f32::sin(self.r) * 0.5;
+        for i in 0..self.originals.len() {
+            let o_0 = self.originals[i].vertex0;
+            let s_0 = a * (o_0.y - 0.2) * 0.2;
+            let x_0 = o_0.x * f32::cos(s_0) - o_0.y * f32::sin(s_0);
+            let y_0 = o_0.x * f32::sin(s_0) + o_0.y * f32::cos(s_0);
 
+            let o_1 = self.originals[i].vertex1;
+            let s_1 = a * (o_1.y - 0.2) * 0.2;
+            let x_1 = o_1.x * f32::cos(s_1) - o_1.y * f32::sin(s_1);
+            let y_1 = o_1.x * f32::sin(s_1) + o_1.y * f32::cos(s_1);
+
+            let o_2 = self.originals[i].vertex2;
+            let s_2 = a * (o_2.y - 0.2) * 0.2;
+            let x_2 = o_2.x * f32::cos(s_2) - o_2.y * f32::sin(s_2);
+            let y_2 = o_2.x * f32::sin(s_2) + o_2.y * f32::cos(s_2);
+
+            self.active_scene.objects[i] = Triangle::new(
+                Vector3::new(x_0, y_0, o_0.z),
+                Vector3::new(x_1, y_1, o_1.z),
+                Vector3::new(x_2, y_2, o_2.z),
+            );
+        }
+    }
+
+    fn update(&mut self, elapsed: f64) {
+        self.animate();
+        self.active_scene.refit();
     }
 
     fn render(&mut self) {
         // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
         // Set up camera.
-        let camera_position = Vector3::new(-1.5, 0.0, -2.5);
+        let camera_position = Vector3::new(0.0, 3.5, -4.5);
         let p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
         let p1 = Vector3::new(1_f32, 1_f32, 2_f32);
         let p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
@@ -106,13 +141,14 @@ impl App {
                     let ray_t = f32::MAX;
                     let ray = Ray::new(ray_origin, ray_direction, ray_t);
                     if let Some(t_intersect) = self.active_scene.intersect(&ray) {
-                        let color = 500 - ((t_intersect * 42_f32) as i32);
-                        // let color = 255 - (((t_intersect - 4_f32) * 180_f32) as i32);
+                        let color = 255 - (((t_intersect - 4_f32) * 180_f32) as i32);
                         let c = color * 0x010101;
                         let r = ((c & 0x00FF0000) >> 16) as u8;
                         let g = ((c & 0x0000FF00) >> 8) as u8;
                         let b = (c & 0x000000FF) as u8;
                         self.frame_buffer[(tile_height * x + u, tile_height * y + v)] = Rgba::new(r, g, b, 255);
+                    } else {
+                        self.frame_buffer[(tile_height * x + u, tile_height * y + v)] = Rgba::new(0, 0, 0, 255);
                     }
                 }
             }
@@ -132,8 +168,14 @@ fn send_to_gpu_texture(buffer: &ImageBuffer<Rgba<u8>, Vec<u8>>, wrapping_mode: G
         gl::ActiveTexture(gl::TEXTURE0);
         gl::BindTexture(gl::TEXTURE_2D, tex);
         gl::TexImage2D(
-            gl::TEXTURE_2D, 0, gl::RGBA as i32, buffer.width() as i32, buffer.height() as i32, 0,
-            gl::RGBA, gl::UNSIGNED_BYTE,
+            gl::TEXTURE_2D, 
+            0, 
+            gl::RGBA as i32, 
+            buffer.width() as i32, 
+            buffer.height() as i32, 
+            0,
+            gl::RGBA, 
+            gl::UNSIGNED_BYTE,
             buffer.as_ptr() as *const c_void
         );
         gl::GenerateMipmap(gl::TEXTURE_2D);
@@ -159,6 +201,33 @@ fn send_to_gpu_texture(buffer: &ImageBuffer<Rgba<u8>, Vec<u8>>, wrapping_mode: G
     Ok(tex)
 }
 
+fn update_to_gpu_texture(tex: GLuint, buffer: &ImageBuffer<Rgba<u8>, Vec<u8>>) {
+    // SAFETY: This function does not check whether the texture handle actually exists on the GPU yet.
+    // send_to_gpu_texture should be called first.
+    unsafe {
+        gl::BindTexture(gl::TEXTURE_2D, tex);
+        gl::TexSubImage2D(
+            gl::TEXTURE_2D, 
+            0, 
+            0, 
+            0, 
+            buffer.width() as i32, 
+            buffer.height() as i32,
+            gl::RGBA, 
+            gl::UNSIGNED_BYTE, 
+            buffer.as_ptr() as *const c_void
+        );
+        gl::BindTexture(gl::TEXTURE_2D, 0);
+    }
+    let err = unsafe {
+        gl::GetError()
+    };
+    debug_assert_eq!(err, gl::NO_ERROR);
+    unsafe {
+        gl::GenerateMipmap(gl::TEXTURE_2D);
+    }
+}
+
 fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle<f32>> {
     let loaded_tri_data = tri_loader::load(path).unwrap();
     loaded_tri_data.iter().map(|tri| {
@@ -174,7 +243,7 @@ fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle<f32>> {
 fn main() -> io::Result<()> {
     use std::time::SystemTime;
 
-    let triangles = load_tri_model("assets/unity.tri");
+    let triangles = load_tri_model("assets/bigben.tri");
     let builder = SceneBuilder::new();
 
     println!("Constructing BVH.");
@@ -314,11 +383,11 @@ fn main() -> io::Result<()> {
     };
 
     let tex = send_to_gpu_texture(&app.frame_buffer, gl::REPEAT).unwrap();
-
     // Loop until the user closes the window
     while !window.should_close() {
         let (width, height) = window.get_framebuffer_size();
-        // let time_elapsed = glfw.get_time();
+        let time_elapsed = glfw.get_time();
+        
         // let (scale_x, scale_y) = window.get_content_scale();
         // gui_scale_mat = Matrix4x4::from_affine_nonuniform_scale(scale_x, scale_y, 1_f32);
 
@@ -332,6 +401,13 @@ fn main() -> io::Result<()> {
                 _ => {},
             }
         }
+
+        println!("Updating scene");
+        app.update(time_elapsed);
+        println!("Rerendering scene");
+        app.render();
+        app.frame_buffer.flip_vertical();
+        update_to_gpu_texture(tex, &app.frame_buffer);
        
         unsafe {
             let m_trans_location = gl::GetUniformLocation(shader_program, gl_str("m_trans").as_ptr());
