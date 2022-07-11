@@ -9,11 +9,11 @@ use cglinalg::{
 #[derive(Copy, Clone, Debug, PartialEq)]
 struct Bin {
     bounding_box: Aabb<f32>,
-    primitive_count: usize,
+    primitive_count: u32,
 }
 
 impl Bin {
-    fn new(bounding_box: Aabb<f32>, primitive_count: usize) -> Self {
+    fn new(bounding_box: Aabb<f32>, primitive_count: u32) -> Self {
         Self { bounding_box, primitive_count, }
     }
 }
@@ -27,13 +27,13 @@ impl Default for Bin {
 #[derive(Clone, Debug)]
 struct PrimitiveIter<'a> {
     objects: &'a [Triangle<f32>],
-    primitive_count: usize,
-    base_primitive_index: usize,
-    current_offset: usize,
+    primitive_count: u32,
+    base_primitive_index: u32,
+    current_offset: u32,
 }
 
 impl<'a> PrimitiveIter<'a> {
-    fn new(objects: &'a [Triangle<f32>], primitive_count: usize, base_primitive_index: usize) -> Self {
+    fn new(objects: &'a [Triangle<f32>], primitive_count: u32, base_primitive_index: u32) -> Self {
         Self {
             objects,
             primitive_count,
@@ -49,7 +49,7 @@ impl<'a> Iterator for PrimitiveIter<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_offset < self.primitive_count {
             let current_primitive_index = self.base_primitive_index + self.current_offset;
-            let current_object = &self.objects[current_primitive_index];
+            let current_object = &self.objects[current_primitive_index as usize];
             self.current_offset += 1;
             
             return Some(current_object);
@@ -62,9 +62,9 @@ impl<'a> Iterator for PrimitiveIter<'a> {
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub struct BvhNode {
     aabb: Aabb<f32>,
-    left_node: usize,
-    first_primitive_idx: usize,
-    primitive_count: usize,
+    left_node: u32,
+    first_primitive_index: u32,
+    primitive_count: u32,
 }
 
 impl BvhNode {
@@ -80,32 +80,32 @@ impl BvhNode {
 
     #[inline]
     pub fn left_node(&self) -> usize {
-        self.left_node
+        self.left_node as usize
     }
 
     #[inline]
     pub fn right_node(&self) -> usize {
-        self.left_node + 1
+        (self.left_node + 1) as usize
     }
 }
 
 #[derive(Clone, Debug)]
 pub struct Bvh {
     nodes: Vec<BvhNode>,
-    node_indices: Vec<usize>,
-    root_node_idx: usize,
-    nodes_used: usize,
+    node_indices: Vec<u32>,
+    root_node_index: u32,
+    nodes_used: u32,
 }
 
 impl Bvh {
     fn primitive_iter<'a>(&self, objects: &'a [Triangle<f32>], node: &BvhNode) -> PrimitiveIter<'a> {
-        let base_primitive_index = self.node_indices[node.first_primitive_idx];
+        let base_primitive_index = self.node_indices[node.first_primitive_index as usize];
         
         PrimitiveIter::new(objects, node.primitive_count, base_primitive_index)
     }
 
-    fn intersect_subtree(&self, objects: &[Triangle<f32>], ray: &Ray<f32>, node_idx: usize) -> Option<f32> {    
-        let mut current_node = &self.nodes[node_idx];
+    fn intersect_subtree(&self, objects: &[Triangle<f32>], ray: &Ray<f32>, node_index: u32) -> Option<f32> {    
+        let mut current_node = &self.nodes[node_index as usize];
         let mut stack = vec![];
         let mut closest_ray = *ray;
         loop {
@@ -156,16 +156,16 @@ impl Bvh {
 
 
     pub fn intersect(&self, objects: &[Triangle<f32>], ray: &Ray<f32>) -> Option<f32> {
-        self.intersect_subtree(objects, ray, self.root_node_idx)
+        self.intersect_subtree(objects, ray, self.root_node_index)
     }
 
     /// Returns the number of nodes in the boundary volume hierarchy.
     #[inline]
     pub const fn nodes_used(&self) -> usize {
-        self.nodes_used
+        self.nodes_used as usize
     }
 
-    fn update_node_bounds(&mut self, objects: &[Triangle<f32>], node_idx: usize) {
+    fn update_node_bounds(&mut self, objects: &[Triangle<f32>], node_index: u32) {
         // NOTE: We use local implementations of min and max of vector components here because the
         // compiler does not seem to want to inline it here.
         #[inline] fn __min(this: &Vector3<f32>, that: &Vector3<f32>) -> Vector3<f32> { 
@@ -186,8 +186,8 @@ impl Bvh {
             )
         }
 
-        let it = self.primitive_iter(objects, &self.nodes[node_idx]);
-        let node = &mut self.nodes[node_idx];
+        let it = self.primitive_iter(objects, &self.nodes[node_index as usize]);
+        let node = &mut self.nodes[node_index as usize];
         node.aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
         for primitive in it {
             node.aabb.bounds_min = __min(&node.aabb.bounds_min, &primitive.vertex0);
@@ -226,7 +226,7 @@ impl Bvh {
                 let node = &self.nodes[node_index];
                 if node.is_leaf() {
                     // Leaf node: adjust bounds to contained triangles.
-                    self.update_node_bounds(objects, node_index);
+                    self.update_node_bounds(objects, node_index as u32);
                     continue;
                 }
             }
@@ -256,21 +256,21 @@ impl BvhBuilder {
     pub fn new() -> Self {
         let nodes = vec![];
         let node_indices = vec![];
-        let root_node_idx = 0;
+        let root_node_index = 0;
         let nodes_used = 1;
 
-        let partial_bvh = Bvh { nodes, node_indices, root_node_idx, nodes_used, };
+        let partial_bvh = Bvh { nodes, node_indices, root_node_index, nodes_used, };
 
         Self { partial_bvh, }
     }
 
     fn primitive_iter<'a>(&self, objects: &'a [Triangle<f32>], node: &BvhNode) -> PrimitiveIter<'a> {
-        let base_primitive_index = self.partial_bvh.node_indices[node.first_primitive_idx];
+        let base_primitive_index = self.partial_bvh.node_indices[node.first_primitive_index as usize];
         
-        PrimitiveIter::new(objects, node.primitive_count, base_primitive_index)
+        PrimitiveIter::new(objects, node.primitive_count, base_primitive_index as u32)
     }
 
-    fn update_node_bounds(&mut self, objects: &mut [Triangle<f32>], node_idx: usize) {
+    fn update_node_bounds(&mut self, objects: &mut [Triangle<f32>], node_index: u32) {
         // NOTE: We use local implementations of min and max of vector components here because the
         // compiler does not seem to want to inline it here.
         #[inline] fn __min(this: &Vector3<f32>, that: &Vector3<f32>) -> Vector3<f32> { 
@@ -291,8 +291,8 @@ impl BvhBuilder {
             )
         }
 
-        let it = self.primitive_iter(objects, &self.partial_bvh.nodes[node_idx]);
-        let node = &mut self.partial_bvh.nodes[node_idx];
+        let it = self.primitive_iter(objects, &self.partial_bvh.nodes[node_index as usize]);
+        let node = &mut self.partial_bvh.nodes[node_index as usize];
         node.aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
         for primitive in it {
             node.aabb.bounds_min = __min(&node.aabb.bounds_min, &primitive.vertex0);
@@ -377,14 +377,14 @@ impl BvhBuilder {
         primitive_count * parent_area
     }
 
-    fn subdivide(&mut self, objects: &mut [Triangle<f32>], node_idx: usize) {
+    fn subdivide(&mut self, objects: &mut [Triangle<f32>], node_index: u32) {
         // Terminate recursion.
         let (best_axis, best_position, best_cost) = {
-            let node = &self.partial_bvh.nodes[node_idx];
+            let node = &self.partial_bvh.nodes[node_index as usize];
             self.find_best_split_plane(objects, node)
         };
         let (left_count, i) = {
-            let node = &self.partial_bvh.nodes[node_idx];
+            let node = &self.partial_bvh.nodes[node_index as usize];
             let axis = best_axis as usize;
             let split_position = best_position;
             let no_split_cost = self.calculate_node_cost(node);
@@ -393,19 +393,19 @@ impl BvhBuilder {
             }
 
             // In-place partition.
-            let mut i = node.first_primitive_idx;
+            let mut i = node.first_primitive_index;
             let mut j = i + node.primitive_count - 1;
             while i <= j {
-                if objects[i].centroid[axis] < split_position {
+                if objects[i as usize].centroid[axis] < split_position {
                     i += 1;
                 } else {
-                    objects.swap(i, j);
+                    objects.swap(i as usize, j as usize);
                     j -= 1;
                 }
             }
 
             // Abort split if one of the sides is empty.
-            let left_count = i - node.first_primitive_idx;
+            let left_count = i - node.first_primitive_index;
             if left_count == 0 || left_count == node.primitive_count {
                 return;
             }
@@ -413,50 +413,50 @@ impl BvhBuilder {
             (left_count, i)
         };
         // Create child nodes.
-        let left_child_idx = {
+        let left_child_index = {
             let nodes_used = self.partial_bvh.nodes_used;
             self.partial_bvh.nodes_used += 1;
             nodes_used
         };
-        let right_child_idx = {
+        let right_child_index = {
             let nodes_used = self.partial_bvh.nodes_used;
             self.partial_bvh.nodes_used += 1;
             nodes_used
         };
         {
-            self.partial_bvh.nodes[left_child_idx].first_primitive_idx = self.partial_bvh.nodes[node_idx].first_primitive_idx;
-            self.partial_bvh.nodes[left_child_idx].primitive_count = left_count;
-            self.partial_bvh.nodes[right_child_idx].first_primitive_idx = i;
-            self.partial_bvh.nodes[right_child_idx].primitive_count = self.partial_bvh.nodes[node_idx].primitive_count - left_count;
+            self.partial_bvh.nodes[left_child_index as usize].first_primitive_index = self.partial_bvh.nodes[node_index as usize].first_primitive_index;
+            self.partial_bvh.nodes[left_child_index as usize].primitive_count = left_count;
+            self.partial_bvh.nodes[right_child_index as usize].first_primitive_index = i;
+            self.partial_bvh.nodes[right_child_index as usize].primitive_count = self.partial_bvh.nodes[node_index as usize].primitive_count - left_count;
         }
         {
-            let node = &mut self.partial_bvh.nodes[node_idx];
-            node.left_node = left_child_idx;
+            let node = &mut self.partial_bvh.nodes[node_index as usize];
+            node.left_node = left_child_index;
             node.primitive_count = 0;
         }
 
-        self.update_node_bounds(objects, left_child_idx);
-        self.update_node_bounds(objects, right_child_idx);
+        self.update_node_bounds(objects, left_child_index);
+        self.update_node_bounds(objects, right_child_index);
         // Recurse
-        self.subdivide(objects, left_child_idx);
-        self.subdivide(objects, right_child_idx);
+        self.subdivide(objects, left_child_index);
+        self.subdivide(objects, right_child_index);
     }
 
     pub fn build_for(mut self, objects: &mut [Triangle<f32>]) -> Bvh {
         // Populate the triangle index array.
         for i in 0..objects.len() {
-            self.partial_bvh.node_indices.push(i);
+            self.partial_bvh.node_indices.push(i as u32);
         }
 
         self.partial_bvh.nodes = vec![BvhNode::default(); 2 * objects.len()];
         
-        let root_node_idx = self.partial_bvh.root_node_idx;
-        let mut root_node: &mut BvhNode = &mut self.partial_bvh.nodes[root_node_idx];
+        let root_node_index = self.partial_bvh.root_node_index;
+        let mut root_node: &mut BvhNode = &mut self.partial_bvh.nodes[root_node_index as usize];
         root_node.left_node = 0;
-        root_node.primitive_count = objects.len();
+        root_node.primitive_count = objects.len() as u32;
 
-        self.update_node_bounds(objects, self.partial_bvh.root_node_idx);
-        self.subdivide(objects, self.partial_bvh.root_node_idx);
+        self.update_node_bounds(objects, self.partial_bvh.root_node_index);
+        self.subdivide(objects, self.partial_bvh.root_node_index);
 
         self.partial_bvh
     }
