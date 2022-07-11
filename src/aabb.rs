@@ -6,6 +6,7 @@ use cglinalg::{
 use crate::ray::*;
 
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub struct Aabb<S> 
 where
