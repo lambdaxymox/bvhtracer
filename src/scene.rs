@@ -107,7 +107,7 @@ impl Default for BranchOrLeafData {
 pub struct BvhNode {
     aabb: Aabb<f32>,
     primitive_count: u32,
-    left_first: BranchOrLeafData,
+    _left_first: BranchOrLeafData,
 }
 
 impl BvhNode {
