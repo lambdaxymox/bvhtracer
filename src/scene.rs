@@ -220,10 +220,8 @@ impl Bvh {
             )
         }
 
-
-        let nodes_used = self.nodes_used();
-        for i in 0..nodes_used {
-            let node_index = (nodes_used - 1) - i;
+        for i in 0..self.nodes_used() {
+            let node_index = (self.nodes_used() - 1) - i;
             {
                 let node = &self.nodes[node_index];
                 if node.is_leaf() {
@@ -520,23 +518,22 @@ mod bvh_tests {
     };
     
     fn scene() -> super::Scene {
-        let displacement = Vector3::new(0_f32, 10_f32, 0_f32);
-        let triangle1 = Triangle::new(
+        let displacement_x = Vector3::new(5_f32, 0_f32, 0_f32);
+        let displacement_y = Vector3::new(0_f32, 5_f32, 0_f32);
+        let triangle0 = Triangle::new(
             Vector3::new(0_f32, 1_f32 / 2_f32, 0_f32),
             Vector3::new(-1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
             Vector3::new(1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
         );
-        let triangle2 = Triangle::new(
-            triangle1.vertex0 - displacement,
-            triangle1.vertex1 - displacement,
-            triangle1.vertex2 - displacement
-        );
-        let triangle3 = Triangle::new(
-            triangle1.vertex0 + displacement,
-            triangle1.vertex1 + displacement,
-            triangle1.vertex2 + displacement
-        );
-        let triangles = vec![triangle1, triangle2, triangle3];
+        let triangles = (-100..100).zip(-100..100).map(|(i, j)| {
+            Triangle::new(
+                triangle0.vertex0 + (i as f32) * displacement_x + (j as f32) * displacement_y,
+                triangle0.vertex1 + (i as f32) * displacement_x + (j as f32) * displacement_y,
+                triangle0.vertex1 + (i as f32) * displacement_x + (j as f32) * displacement_y,
+            )
+        })
+        .collect::<Vec<Triangle<f32>>>();
+        
         let builder = super::SceneBuilder::new();
         
         builder.with_objects(triangles).build()
@@ -562,7 +559,7 @@ mod bvh_tests {
     fn test_bvh_nodes_unused() {
         let scene = scene();
         let default_node = super::BvhNode::default();
-        for i in (scene.bvh.nodes_used()..scene.bvh.nodes.len()) {
+        for i in scene.bvh.nodes_used()..scene.bvh.nodes.len() {
             assert_eq!(scene.bvh.nodes[i], default_node);
         }
     }
@@ -573,4 +570,27 @@ mod bvh_tests {
     fn test_bvh_node_fits_inside_a_cache_line() {
         // assert_eq!(std::mem::size_of::<super::BvhNode>(), 32);
     }
+
+    #[test]
+    fn test_bvh_branch_node_children_always_have_larger_indices_than_parents() {
+        let scene = scene();
+        for node_index in 0..scene.bvh.nodes_used() {
+            let node = &scene.bvh.nodes[node_index];
+            if node.is_branch() {
+                assert!(node.left_node() > node_index);
+                assert!(node.right_node() > node_index);
+            }
+        }
+    }
+
+    #[test]
+    fn test_branch_nodes_have_no_primitives() {
+        let scene = scene();
+        for i in 0..scene.bvh.nodes_used() {
+            if scene.bvh.nodes[i].is_branch() {
+                assert_eq!(scene.bvh.nodes[i].primitive_count, 0);
+            }
+        }
+    }
 }
+
