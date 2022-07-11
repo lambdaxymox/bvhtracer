@@ -5,6 +5,8 @@ use cglinalg::{
     Vector3,
 };
 
+use std::fmt;
+
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 struct Bin {
@@ -59,6 +61,122 @@ impl<'a> Iterator for PrimitiveIter<'a> {
     }
 }
 
+#[repr(C)]
+#[derive(Copy, Clone, Debug, PartialEq, Default)]
+struct BvhLeafNode {
+    aabb: Aabb<f32>,
+    primitive_count: u32,
+    first_primitive_index: u32,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, PartialEq, Default)]
+struct BvhBranchNode {
+    aabb: Aabb<f32>,
+    primitive_count: u32,
+    left_node: u32,
+}
+
+impl BvhBranchNode {
+    #[inline]
+    pub fn left_node(&self) -> usize {
+        self.left_node as usize
+    }
+
+    #[inline]
+    pub fn right_node(&self) -> usize {
+        (self.left_node + 1) as usize
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+union BranchOrLeafData {
+    left_node: u32,
+    first_primitive_index: u32,
+}
+
+impl Default for BranchOrLeafData {
+    fn default() -> Self {
+        BranchOrLeafData { first_primitive_index: 0 }
+    }
+}
+
+#[derive(Copy, Clone, Default)]
+pub struct BvhNode {
+    aabb: Aabb<f32>,
+    primitive_count: u32,
+    left_first: BranchOrLeafData,
+}
+
+impl BvhNode {
+    #[inline]
+    pub fn is_leaf(&self) -> bool {
+        self.primitive_count > 0
+    }
+
+    #[inline]
+    pub fn is_branch(&self) -> bool {
+        self.primitive_count == 0
+    }
+
+    #[inline]
+    const fn as_leaf(&self) -> &BvhLeafNode {
+        use std::mem;
+        unsafe { 
+            mem::transmute::<&BvhNode, &BvhLeafNode>(self)
+        }
+    }
+
+    #[inline]
+    const fn as_branch(&self) -> &BvhBranchNode {
+        use std::mem;
+        unsafe { 
+            mem::transmute::<&BvhNode, &BvhBranchNode>(self)
+        }
+    }
+
+    #[inline]
+    fn as_mut_leaf(&mut self) -> &mut BvhLeafNode {
+        use std::mem;
+        unsafe { 
+            mem::transmute::<&mut BvhNode, &mut BvhLeafNode>(self)
+        }
+    }
+
+    #[inline]
+    fn as_mut_branch(&mut self) -> &mut BvhBranchNode {
+        use std::mem;
+        unsafe { 
+            mem::transmute::<&mut BvhNode, &mut BvhBranchNode>(self)
+        }
+    }
+}
+
+impl fmt::Debug for BvhNode {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        if self.is_leaf() {
+            <BvhLeafNode as fmt::Debug>::fmt(self.as_leaf(), formatter)
+        } else {
+            <BvhBranchNode as fmt::Debug>::fmt(self.as_branch(), formatter)
+        }
+    }
+}
+
+impl PartialEq for BvhNode {
+    fn eq(&self, other: &Self) -> bool {
+        if self.is_leaf() && other.is_leaf() {
+            return self.as_leaf() == other.as_leaf();
+        }
+
+        if self.is_branch() && other.is_branch() {
+            return self.as_branch() == other.as_branch();
+        }
+
+        false
+    }
+}
+/*
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub struct BvhNode {
     aabb: Aabb<f32>,
@@ -88,6 +206,7 @@ impl BvhNode {
         (self.left_node + 1) as usize
     }
 }
+*/
 
 #[derive(Clone, Debug)]
 pub struct Bvh {
@@ -99,7 +218,7 @@ pub struct Bvh {
 
 impl Bvh {
     fn primitive_iter<'a>(&self, objects: &'a [Triangle<f32>], node: &BvhNode) -> PrimitiveIter<'a> {
-        let base_primitive_index = self.node_indices[node.first_primitive_index as usize];
+        let base_primitive_index = self.node_indices[node.as_leaf().first_primitive_index as usize];
         
         PrimitiveIter::new(objects, node.primitive_count, base_primitive_index)
     }
@@ -123,8 +242,8 @@ impl Bvh {
                 }
             } else {
                 let (closest_child, closest_dist, farthest_child, farthest_dist) = {
-                    let left_child = &self.nodes[current_node.left_node()];
-                    let right_child = &self.nodes[current_node.right_node()];
+                    let left_child = &self.nodes[current_node.as_branch().left_node()];
+                    let right_child = &self.nodes[current_node.as_branch().right_node()];
                     let left_child_dist = left_child.aabb.intersect(&closest_ray);
                     let right_child_dist = right_child.aabb.intersect(&closest_ray);
                     if left_child_dist.unwrap_or(f32::MAX) < right_child_dist.unwrap_or(f32::MAX) {
@@ -234,11 +353,11 @@ impl Bvh {
             // Interior node: adjust bounds to child node bounds.
             let left_child_aabb = { 
                 let node = &self.nodes[node_index];
-                self.nodes[node.left_node()].aabb
+                self.nodes[node.as_branch().left_node()].aabb
             };
             let right_child_aabb = {
                 let node = &self.nodes[node_index];
-                self.nodes[node.right_node()].aabb
+                self.nodes[node.as_branch().right_node()].aabb
             };
             let mut node = &mut self.nodes[node_index];
             node.aabb.bounds_min = __min(&left_child_aabb.bounds_min, &right_child_aabb.bounds_min);
@@ -265,7 +384,7 @@ impl BvhBuilder {
     }
 
     fn primitive_iter<'a>(&self, objects: &'a [Triangle<f32>], node: &BvhNode) -> PrimitiveIter<'a> {
-        let base_primitive_index = self.partial_bvh.node_indices[node.first_primitive_index as usize];
+        let base_primitive_index = self.partial_bvh.node_indices[node.as_leaf().first_primitive_index as usize];
         
         PrimitiveIter::new(objects, node.primitive_count, base_primitive_index as u32)
     }
@@ -393,7 +512,7 @@ impl BvhBuilder {
             }
 
             // In-place partition.
-            let mut i = node.first_primitive_index;
+            let mut i = node.as_leaf().first_primitive_index;
             let mut j = i + node.primitive_count - 1;
             while i <= j {
                 if objects[i as usize].centroid[axis] < split_position {
@@ -405,7 +524,7 @@ impl BvhBuilder {
             }
 
             // Abort split if one of the sides is empty.
-            let left_count = i - node.first_primitive_index;
+            let left_count = i - node.as_leaf().first_primitive_index;
             if left_count == 0 || left_count == node.primitive_count {
                 return;
             }
@@ -424,14 +543,14 @@ impl BvhBuilder {
             nodes_used
         };
         {
-            self.partial_bvh.nodes[left_child_index as usize].first_primitive_index = self.partial_bvh.nodes[node_index as usize].first_primitive_index;
+            self.partial_bvh.nodes[left_child_index as usize].as_mut_leaf().first_primitive_index = self.partial_bvh.nodes[node_index as usize].as_leaf().first_primitive_index;
             self.partial_bvh.nodes[left_child_index as usize].primitive_count = left_count;
-            self.partial_bvh.nodes[right_child_index as usize].first_primitive_index = i;
+            self.partial_bvh.nodes[right_child_index as usize].as_mut_leaf().first_primitive_index = i;
             self.partial_bvh.nodes[right_child_index as usize].primitive_count = self.partial_bvh.nodes[node_index as usize].primitive_count - left_count;
         }
         {
             let node = &mut self.partial_bvh.nodes[node_index as usize];
-            node.left_node = left_child_index;
+            node.as_mut_branch().left_node = left_child_index;
             node.primitive_count = 0;
         }
 
@@ -452,7 +571,7 @@ impl BvhBuilder {
         
         let root_node_index = self.partial_bvh.root_node_index;
         let mut root_node: &mut BvhNode = &mut self.partial_bvh.nodes[root_node_index as usize];
-        root_node.left_node = 0;
+        root_node.as_mut_branch().left_node = 0;
         root_node.primitive_count = objects.len() as u32;
 
         self.update_node_bounds(objects, self.partial_bvh.root_node_index);
@@ -568,7 +687,7 @@ mod bvh_tests {
     /// modern microprocessor.
     #[test]
     fn test_bvh_node_fits_inside_a_cache_line() {
-        // assert_eq!(std::mem::size_of::<super::BvhNode>(), 32);
+        assert_eq!(std::mem::size_of::<super::BvhNode>(), 32);
     }
 
     #[test]
@@ -577,8 +696,9 @@ mod bvh_tests {
         for node_index in 0..scene.bvh.nodes_used() {
             let node = &scene.bvh.nodes[node_index];
             if node.is_branch() {
-                assert!(node.left_node() > node_index);
-                assert!(node.right_node() > node_index);
+                assert!(node.as_branch().left_node() > node_index);
+                assert!(node.as_branch().right_node() > node_index);
+                assert!(node.as_branch().left_node() < node.as_branch().right_node());
             }
         }
     }
