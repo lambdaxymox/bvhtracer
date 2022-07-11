@@ -9,6 +9,28 @@ use std::fmt;
 use std::ops;
 
 
+// NOTE: We use local implementations of min and max of vector components here because the
+// compiler does not seem to want to inline it here.
+#[inline] 
+fn __min(this: &Vector3<f32>, that: &Vector3<f32>) -> Vector3<f32> { 
+    // this.component_min(that)
+    Vector3::new(
+        f32::min(this.x, that.x),
+        f32::min(this.y, that.y),
+        f32::min(this.z, that.z),
+    )
+}
+
+#[inline] 
+fn __max(this: &Vector3<f32>, that: &Vector3<f32>) -> Vector3<f32> {
+    // this.component_max(that)
+    Vector3::new(
+        f32::max(this.x, that.x),
+        f32::max(this.y, that.y),
+        f32::max(this.z, that.z),
+    )
+}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 struct Bin {
     bounding_box: Aabb<f32>,
@@ -281,26 +303,6 @@ impl Bvh {
     }
 
     fn update_node_bounds(&mut self, objects: &[Triangle<f32>], node_index: u32) {
-        // NOTE: We use local implementations of min and max of vector components here because the
-        // compiler does not seem to want to inline it here.
-        #[inline] fn __min(this: &Vector3<f32>, that: &Vector3<f32>) -> Vector3<f32> { 
-            // this.component_min(that)
-            Vector3::new(
-                f32::min(this.x, that.x),
-                f32::min(this.y, that.y),
-                f32::min(this.z, that.z),
-            )
-        }
-
-        #[inline] fn __max(this: &Vector3<f32>, that: &Vector3<f32>) -> Vector3<f32> {
-            // this.component_max(that)
-            Vector3::new(
-                f32::max(this.x, that.x),
-                f32::max(this.y, that.y),
-                f32::max(this.z, that.z),
-            )
-        }
-
         let it = self.primitive_iter(objects, &self.nodes[node_index]);
         let node = &mut self.nodes[node_index];
         node.aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
@@ -315,26 +317,6 @@ impl Bvh {
     }
 
     pub fn refit(&mut self, objects: &[Triangle<f32>]) {
-        // NOTE: We use local implementations of min and max of vector components here because the
-        // compiler does not seem to want to inline it here.
-        #[inline] fn __min(this: &Vector3<f32>, that: &Vector3<f32>) -> Vector3<f32> { 
-            // this.component_min(that)
-            Vector3::new(
-                f32::min(this.x, that.x),
-                f32::min(this.y, that.y),
-                f32::min(this.z, that.z),
-            )
-        }
-
-        #[inline] fn __max(this: &Vector3<f32>, that: &Vector3<f32>) -> Vector3<f32> {
-            // this.component_max(that)
-            Vector3::new(
-                f32::max(this.x, that.x),
-                f32::max(this.y, that.y),
-                f32::max(this.z, that.z),
-            )
-        }
-
         for i in 0..self.nodes_used {
             let node_index = (self.nodes_used - 1) - i;
             {
@@ -386,26 +368,6 @@ impl BvhBuilder {
     }
 
     fn update_node_bounds(&mut self, objects: &mut [Triangle<f32>], node_index: u32) {
-        // NOTE: We use local implementations of min and max of vector components here because the
-        // compiler does not seem to want to inline it here.
-        #[inline] fn __min(this: &Vector3<f32>, that: &Vector3<f32>) -> Vector3<f32> { 
-            // this.component_min(that)
-            Vector3::new(
-                f32::min(this.x, that.x),
-                f32::min(this.y, that.y),
-                f32::min(this.z, that.z),
-            )
-        }
-
-        #[inline] fn __max(this: &Vector3<f32>, that: &Vector3<f32>) -> Vector3<f32> {
-            // this.component_max(that)
-            Vector3::new(
-                f32::max(this.x, that.x),
-                f32::max(this.y, that.y),
-                f32::max(this.z, that.z),
-            )
-        }
-
         let it = self.primitive_iter(objects, &self.partial_bvh.nodes[node_index]);
         let node = &mut self.partial_bvh.nodes[node_index];
         node.aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
