@@ -176,37 +176,6 @@ impl PartialEq for BvhNode {
         false
     }
 }
-/*
-#[derive(Copy, Clone, Debug, PartialEq, Default)]
-pub struct BvhNode {
-    aabb: Aabb<f32>,
-    left_node: u32,
-    first_primitive_index: u32,
-    primitive_count: u32,
-}
-
-impl BvhNode {
-    #[inline]
-    pub fn is_leaf(&self) -> bool {
-        self.primitive_count > 0
-    }
-
-    #[inline]
-    pub fn is_branch(&self) -> bool {
-        self.primitive_count == 0
-    }
-
-    #[inline]
-    pub fn left_node(&self) -> usize {
-        self.left_node as usize
-    }
-
-    #[inline]
-    pub fn right_node(&self) -> usize {
-        (self.left_node + 1) as usize
-    }
-}
-*/
 
 #[derive(Clone, Debug)]
 pub struct Bvh {
