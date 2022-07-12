@@ -6,27 +6,15 @@ extern crate rand_isaac;
 
 
 use bvhtracer::{
-    Ray,
-    Scene,
     SceneBuilder,
     Triangle,
 };
 use cglinalg::{
-    Magnitude,
     Vector3,
-};
-use rand::{
-    Rng, 
-};
-use rand_isaac::{
-    IsaacRng,
 };
 use criterion::{
     criterion_group,
     criterion_main,
-};
-use std::fs::{
-    File,
 };
 use std::path::{
     Path,

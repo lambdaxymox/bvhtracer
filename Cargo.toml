@@ -45,3 +45,7 @@ harness = false
 name = "bench_bvh_build"
 harness = false
 
+[[bench]]
+name = "bench_bvh_refit_rebuild"
+harness = false
+

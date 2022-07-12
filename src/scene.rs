@@ -31,6 +31,7 @@ fn __max(this: &Vector3<f32>, that: &Vector3<f32>) -> Vector3<f32> {
     )
 }
 
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 struct Bin {
     bounding_box: Aabb<f32>,
@@ -609,7 +610,7 @@ mod bvh_tests {
                 triangle0.vertex1 + (i as f32) * displacement_x + (j as f32) * displacement_y,
             )
         })
-        .collect::<Vec<Triangle<f32>>>();
+        .collect::<Vec<Triangle<_>>>();
         
         let builder = super::SceneBuilder::new();
         

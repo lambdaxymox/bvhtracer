@@ -4,6 +4,7 @@ extern crate criterion;
 extern crate rand;
 extern crate rand_isaac;
 
+
 use bvhtracer::{
     Ray,
     Triangle,
@@ -14,10 +15,7 @@ use cglinalg::{
 };
 use rand::{
     Rng, 
-    prelude::Distribution,
-    distributions::Standard,
 };
-
 use rand_isaac::{
     IsaacRng,
 };
