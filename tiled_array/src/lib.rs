@@ -136,6 +136,32 @@ where
     }
 }
 
+impl<T, const TILE_SIZE: usize> ops::Index<TileIndex> for TiledArray2D<T, TILE_SIZE>
+where
+    T: Copy
+{
+    type Output = Tile<T, TILE_SIZE>;
+    
+    #[inline]
+    fn index(&self, _index: TileIndex) -> &Self::Output {
+        let tile_index = self.tile_width * _index.1 + _index.0;
+
+        &self.data[tile_index]
+    }
+}
+
+impl<T, const TILE_SIZE: usize> ops::IndexMut<TileIndex> for TiledArray2D<T, TILE_SIZE>
+where
+    T: Copy
+{   
+    #[inline]
+    fn index_mut(&mut self, _index: TileIndex) -> &mut Self::Output {
+        let tile_index = self.tile_width * _index.1 + _index.0;
+
+        &mut self.data[tile_index]
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
