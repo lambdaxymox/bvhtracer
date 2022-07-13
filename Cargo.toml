@@ -22,6 +22,9 @@ features = ["libm"]
 [dependencies.tri_loader]
 path = "tri_loader"
 
+[dependencies.tiled_array]
+path = "tiled_array"
+
 [build-dependencies]
 gl_generator = "0.14.0"
 
