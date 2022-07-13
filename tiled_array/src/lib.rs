@@ -93,6 +93,16 @@ where
     pub fn shape_tiles(&self) -> (usize, usize) {
         (self.tile_width, self.tile_height)
     }
+
+    #[inline]
+    fn len_elements(&self) -> usize {
+        self.data.len() * TILE_SIZE * TILE_SIZE
+    }
+
+    #[inline]
+    fn len_tiles(&self) -> usize {
+        self.data.len()
+    }
 }
 
 impl<T, const TILE_SIZE: usize> AsRef<[T]> for TiledArray2D<T, TILE_SIZE> {
