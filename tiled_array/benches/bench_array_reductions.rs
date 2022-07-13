@@ -25,7 +25,7 @@ fn sum_vec(vec: &Vec<u32>) -> u32 {
 
 fn sum_array(array: &TiledArray2D<u32, TILE_SIZE>) -> u32 {
     let mut total = 0;
-    for tile in array.data.iter() {
+    for tile in array.tile_iter() {
         for i in 0..TILE_SIZE {
             for j in 0..TILE_SIZE {
                 total += tile[i][j];

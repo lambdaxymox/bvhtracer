@@ -1,4 +1,5 @@
 use std::ops;
+use std::slice;
 
 
 type Tile<T, const TILE_SIZE: usize> = [[T; TILE_SIZE]; TILE_SIZE];
@@ -20,11 +21,88 @@ impl TileEntry {
 }
 
 #[derive(Clone, PartialEq, Eq)]
-pub struct TiledArray2D<T, const TILE_SIZE: usize> {
+struct TileMap2D {
     tiles_x: Vec<TileEntry>,
     tiles_y: Vec<TileEntry>,
-    tile_width: usize,
-    tile_height: usize,
+    width_tiles: usize,
+    height_tiles: usize,
+}
+
+impl TileMap2D {
+    fn with_min_capacity(min_capacity_x: usize, min_capacity_y: usize, tile_size: usize) -> Self {
+        let tile_count_x = min_capacity_x / tile_size;
+        let tile_count_y = min_capacity_y / tile_size;
+        let remainder_x = min_capacity_x % tile_size;
+        let remainder_y = min_capacity_y % tile_size;
+        let padded_tile_count_x = if remainder_x != 0 { tile_count_x + 1 } else { tile_count_x };
+        let padded_tile_count_y = if remainder_y != 0 { tile_count_y + 1 } else { tile_count_y };
+        let tile_element_count = tile_size * tile_size;
+        let padded_capacity = padded_tile_count_x * padded_tile_count_y;
+        let padded_element_width = padded_tile_count_x * tile_size;
+        let padded_element_height = padded_tile_count_y * tile_size;
+
+        let mut tiles_x = vec![];
+        for col in 0..padded_element_width {
+            let tile_index = col / tile_size;
+            let index = tile_index;
+            let offset = col % tile_size;
+            let entry = TileEntry::new(index, offset);
+            
+            tiles_x.push(entry);
+        }
+
+        let mut tiles_y = vec![];
+        for row in 0..padded_element_height {
+            let tile_index = row / tile_size;
+            let index = padded_tile_count_x * tile_index;
+            let offset = row % tile_size;
+            let entry = TileEntry::new(index, offset);
+            
+            tiles_y.push(entry);
+        }
+
+        Self {
+            tiles_x,
+            tiles_y,
+            width_tiles: padded_tile_count_x,
+            height_tiles: padded_tile_count_y,
+        }
+    }
+
+    #[inline]
+    fn width_tiles(&self) -> usize {
+        self.width_tiles
+    }
+
+    #[inline]
+    fn height_tiles(&self) -> usize {
+        self.height_tiles
+    }
+
+    #[inline]
+    fn width(&self) -> usize {
+        self.tiles_x.len()
+    }
+
+    #[inline]
+    fn height(&self) -> usize {
+        self.tiles_y.len()
+    }
+
+    #[inline]
+    fn get_unchecked(&self, index: (usize, usize)) -> (usize, usize, usize) {
+        let tile_x = self.tiles_x[index.1];
+        let tile_y = self.tiles_y[index.0];
+        // let tile_index = self.tile_width * tile_y.index + tile_x.index;
+        let tile_index = tile_x.index + tile_y.index;
+
+        (tile_index, tile_y.offset, tile_x.offset)
+    }
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct TiledArray2D<T, const TILE_SIZE: usize> {
+    tile_map: TileMap2D,
     data: Vec<Tile<T, TILE_SIZE>>,
 }
 
@@ -33,47 +111,11 @@ where
     T: Copy,
 {
     pub fn with_min_capacity(min_capacity_x: usize, min_capacity_y: usize, default_value: T) -> Self {
-        let tile_count_x = min_capacity_x / TILE_SIZE;
-        let tile_count_y = min_capacity_y / TILE_SIZE;
-        let remainder_x = min_capacity_x % TILE_SIZE;
-        let remainder_y = min_capacity_y % TILE_SIZE;
-        let padded_tile_count_x = if remainder_x != 0 { tile_count_x + 1 } else { tile_count_x };
-        let padded_tile_count_y = if remainder_y != 0 { tile_count_y + 1 } else { tile_count_y };
-        let tile_element_count = TILE_SIZE * TILE_SIZE;
-        let padded_capacity = padded_tile_count_x * padded_tile_count_y;
-        let padded_element_width = padded_tile_count_x * TILE_SIZE;
-        let padded_element_height = padded_tile_count_y * TILE_SIZE;
-
-        let mut tiles_x = vec![];
-        for col in 0..padded_element_width {
-            let tile_index = col / TILE_SIZE;
-            let index = tile_index;
-            let offset = col % TILE_SIZE;
-            let entry = TileEntry::new(index, offset);
-            
-            tiles_x.push(entry);
-        }
-
-        let mut tiles_y = vec![];
-        for row in 0..padded_element_height {
-            let tile_index = row / TILE_SIZE;
-            let index = padded_tile_count_x * tile_index;
-            let offset = row % TILE_SIZE;
-            let entry = TileEntry::new(index, offset);
-            
-            tiles_y.push(entry);
-        }
-        
+        let tile_map = TileMap2D::with_min_capacity(min_capacity_x, min_capacity_y, TILE_SIZE);
         let default_array = [[default_value; TILE_SIZE]; TILE_SIZE];
-        let data = vec![default_array; padded_capacity];
+        let data = vec![default_array; tile_map.width_tiles() * tile_map.height_tiles()];
 
-        Self { 
-            tiles_x, 
-            tiles_y, 
-            tile_width: padded_tile_count_x, 
-            tile_height: padded_tile_count_y, 
-            data 
-        }
+        Self { tile_map, data }
     }
 
     #[inline]
@@ -88,22 +130,38 @@ where
 
     #[inline]
     pub fn shape_elements(&self) -> (usize, usize) {
-        (self.tile_width * TILE_SIZE, self.tile_height * TILE_SIZE)
+        // (self.tile_width * TILE_SIZE, self.tile_height * TILE_SIZE)
+        (self.tile_map.width(), self.tile_map.height())
     }
 
     #[inline]
     pub fn shape_tiles(&self) -> (usize, usize) {
-        (self.tile_width, self.tile_height)
+        // (self.tile_width, self.tile_height)
+        (self.tile_map.width_tiles(), self.tile_map.height_tiles())
+    }
+
+    #[inline]
+    pub fn width_tiles(&self) -> usize {
+        // self.tile_width * TILE_SIZE
+        self.tile_map.width_tiles()
+    }
+
+    #[inline]
+    pub fn height_tiles(&self) -> usize {
+        // self.tile_height * TILE_SIZE
+        self.tile_map.height_tiles()
     }
 
     #[inline]
     pub fn width_elements(&self) -> usize {
-        self.tile_width * TILE_SIZE
+        // self.tile_width * TILE_SIZE
+        self.tile_map.width()
     }
 
     #[inline]
     pub fn height_elements(&self) -> usize {
-        self.tile_height * TILE_SIZE
+        // self.tile_height * TILE_SIZE
+        self.tile_map.height()
     }
 
     #[inline]
@@ -116,6 +174,33 @@ where
         self.data.len()
     }
 }
+
+pub struct TileIter<'a, T, const TILE_SIZE: usize> {
+    iter: slice::Iter<'a, Tile<T, TILE_SIZE>>,
+}
+
+impl<'a, T, const TILE_SIZE: usize> Iterator for TileIter<'a, T, TILE_SIZE> {
+    type Item = &'a Tile<T, TILE_SIZE>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+}
+
+impl<'a, T, const TILE_SIZE: usize> DoubleEndedIterator for TileIter<'a, T, TILE_SIZE> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back()
+    }
+}
+
+impl<T, const TILE_SIZE: usize> TiledArray2D<T, TILE_SIZE> {
+    pub fn tile_iter(&self) -> TileIter<T, TILE_SIZE> {
+        TileIter {
+            iter: self.data.iter(),
+        }
+    }
+}
+
 
 impl<T, const TILE_SIZE: usize> AsRef<[T]> for TiledArray2D<T, TILE_SIZE> {
     #[inline]
@@ -141,12 +226,9 @@ where
     
     #[inline]
     fn index(&self, _index: (usize, usize)) -> &Self::Output {
-        let tile_x = self.tiles_x[_index.1];
-        let tile_y = self.tiles_y[_index.0];
-        // let tile_index = self.tile_width * tile_y.index + tile_x.index;
-        let tile_index = tile_x.index + tile_y.index;
+        let (tile_index, offset_row, offset_col) = self.tile_map.get_unchecked(_index);
 
-        &self.data[tile_index][tile_y.offset][tile_x.offset]
+        &self.data[tile_index][offset_row][offset_col]
     }
 }
 
@@ -156,12 +238,9 @@ where
 {   
     #[inline]
     fn index_mut(&mut self, _index: (usize, usize)) -> &mut Self::Output {
-        let tile_x = self.tiles_x[_index.1];
-        let tile_y = self.tiles_y[_index.0];
-        // let tile_index = self.tile_width * tile_y.index + tile_x.index;
-        let tile_index = tile_x.index + tile_y.index;
+        let (tile_index, offset_row, offset_col) = self.tile_map.get_unchecked(_index);
 
-        &mut self.data[tile_index][tile_y.offset][tile_x.offset]
+        &mut self.data[tile_index][offset_row][offset_col]
     }
 }
 
@@ -173,7 +252,7 @@ where
     
     #[inline]
     fn index(&self, _index: TileIndex) -> &Self::Output {
-        let tile_index = self.tile_width * _index.1 + _index.0;
+        let tile_index = self.width_tiles() * _index.1 + _index.0;
 
         &self.data[tile_index]
     }
@@ -185,7 +264,7 @@ where
 {   
     #[inline]
     fn index_mut(&mut self, _index: TileIndex) -> &mut Self::Output {
-        let tile_index = self.tile_width * _index.1 + _index.0;
+        let tile_index = self.width_tiles() * _index.1 + _index.0;
 
         &mut self.data[tile_index]
     }
