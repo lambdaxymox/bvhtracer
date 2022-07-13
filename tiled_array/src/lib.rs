@@ -40,24 +40,25 @@ where
         let padded_tile_count_x = if remainder_x != 0 { tile_count_x + 1 } else { tile_count_x };
         let padded_tile_count_y = if remainder_y != 0 { tile_count_y + 1 } else { tile_count_y };
         let tile_element_count = TILE_SIZE * TILE_SIZE;
-        // let padded_capacity = padded_tile_count_x * padded_tile_count_y * tile_element_count;
         let padded_capacity = padded_tile_count_x * padded_tile_count_y;
         let padded_element_width = padded_tile_count_x * TILE_SIZE;
         let padded_element_height = padded_tile_count_y * TILE_SIZE;
 
         let mut tiles_x = vec![];
-        for i in 0..padded_element_width {
-            let index = i / TILE_SIZE;
-            let offset = i % TILE_SIZE;
+        for col in 0..padded_element_width {
+            let tile_index = col / TILE_SIZE;
+            let index = tile_index;
+            let offset = col % TILE_SIZE;
             let entry = TileEntry::new(index, offset);
             
             tiles_x.push(entry);
         }
 
         let mut tiles_y = vec![];
-        for j in 0..padded_element_height {
-            let index = j / TILE_SIZE;
-            let offset = j % TILE_SIZE;
+        for row in 0..padded_element_height {
+            let tile_index = row / TILE_SIZE;
+            let index = padded_tile_count_x * tile_index;
+            let offset = row % TILE_SIZE;
             let entry = TileEntry::new(index, offset);
             
             tiles_y.push(entry);
@@ -142,7 +143,8 @@ where
     fn index(&self, _index: (usize, usize)) -> &Self::Output {
         let tile_x = self.tiles_x[_index.1];
         let tile_y = self.tiles_y[_index.0];
-        let tile_index = self.tile_width * tile_y.index + tile_x.index;
+        // let tile_index = self.tile_width * tile_y.index + tile_x.index;
+        let tile_index = tile_x.index + tile_y.index;
 
         &self.data[tile_index][tile_y.offset][tile_x.offset]
     }
@@ -156,7 +158,8 @@ where
     fn index_mut(&mut self, _index: (usize, usize)) -> &mut Self::Output {
         let tile_x = self.tiles_x[_index.1];
         let tile_y = self.tiles_y[_index.0];
-        let tile_index = self.tile_width * tile_y.index + tile_x.index;
+        // let tile_index = self.tile_width * tile_y.index + tile_x.index;
+        let tile_index = tile_x.index + tile_y.index;
 
         &mut self.data[tile_index][tile_y.offset][tile_x.offset]
     }
