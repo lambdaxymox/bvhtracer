@@ -4,7 +4,7 @@ use std::ops;
 type Tile<T, const TILE_SIZE: usize> = [[T; TILE_SIZE]; TILE_SIZE];
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
-struct TileIndex(usize, usize);
+pub struct TileIndex(usize, usize);
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
@@ -88,6 +88,11 @@ where
     pub fn shape_elements(&self) -> (usize, usize) {
         (self.tile_width * TILE_SIZE, self.tile_height * TILE_SIZE)
     }
+
+    #[inline]
+    pub fn shape_tiles(&self) -> (usize, usize) {
+        (self.tile_width, self.tile_height)
+    }
 }
 
 impl<T, const TILE_SIZE: usize> AsRef<[T]> for TiledArray2D<T, TILE_SIZE> {
@@ -166,6 +171,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::{
+        TileIndex,
         TiledArray2D,
     };
 
@@ -228,6 +234,36 @@ mod tests {
                 assert_eq!(result[(i, j)], (i, j));
             }
         }
+    }
+
+    #[test]
+    fn test_tile_indexing() {
+        const TILE_SIZE: usize = 4;
+        let min_capacity_x = 12;
+        let min_capacity_y = 8;
+        let mut result: TiledArray2D<_, TILE_SIZE> = super::TiledArray2D::with_min_capacity(min_capacity_x, min_capacity_y, 0);
+        let (width_tiles, height_tiles) = result.shape_tiles();
+        for tile_x in 0..width_tiles {
+            for tile_y in 0..height_tiles {
+                let value = width_tiles * tile_y + tile_x;
+                eprintln!("{}", value);
+                for i in 0..TILE_SIZE { 
+                    for j in 0..TILE_SIZE {
+                        result[TileIndex(tile_x, tile_y)][i][j] = value;
+                    }
+                }
+            }
+        }
+        let expected = vec![
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+            3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+            4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+            5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+        ];
+
+        assert_eq!(result.as_slice(), expected);
     }
 }
 
