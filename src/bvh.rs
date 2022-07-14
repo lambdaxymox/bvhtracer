@@ -343,6 +343,14 @@ impl Bvh {
             node.aabb.bounds_max = __max(&left_child_aabb.bounds_max, &right_child_aabb.bounds_max);
         }
     }
+
+    /// Returns the bounding box for the boundary volume hierarchy. 
+    /// 
+    /// This bounding box should enclose the entire model that the BVH is 
+    /// associated with.
+    pub fn bounds(&self) -> Aabb<f32> {
+        self.nodes[0].aabb
+    }
 }
 
 #[derive(Clone, Debug)]

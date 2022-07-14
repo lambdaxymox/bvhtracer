@@ -20,8 +20,15 @@ impl<S> Aabb<S>
 where
     S: SimdScalarFloat
 {
-    pub fn new(b_min: Vector3<S>, b_max: Vector3<S>) -> Self {
-        Self { bounds_min: b_min, bounds_max: b_max, }
+    pub fn new(bounds_min: Vector3<S>, bounds_max: Vector3<S>) -> Self {
+        Self { bounds_min, bounds_max, }
+    }
+
+    pub fn new_empty() -> Self {
+        Self { 
+            bounds_min: Vector3::from_fill(S::max_value()), 
+            bounds_max: Vector3::from_fill(-S::max_value()) 
+        }
     }
 
     pub fn grow(&mut self, position: &Vector3<S>) {

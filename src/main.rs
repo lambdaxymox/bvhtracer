@@ -63,16 +63,16 @@ const SCREEN_HEIGHT: usize = 640;
 
 
 struct App {
-    active_scene: Model,
+    active_scene: Scene,
     r: f32,
     originals: Vec<Triangle<f32>>,
     frame_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
 }
 
 impl App {
-    fn new(active_scene: Model, width: usize, height: usize) -> Self {
+    fn new(active_scene: Scene, width: usize, height: usize) -> Self {
         let r = 0_f32;
-        let originals = active_scene.mesh.clone();
+        let originals = active_scene.objects[0].model().mesh.clone();
         let frame_buffer = ImageBuffer::from_fill(
             width, 
             height,
@@ -104,7 +104,7 @@ impl App {
             let x_2 = o_2.x * f32::cos(s_2) - o_2.y * f32::sin(s_2);
             let y_2 = o_2.x * f32::sin(s_2) + o_2.y * f32::cos(s_2);
 
-            self.active_scene.mesh[i] = Triangle::new(
+            self.active_scene.objects[0].model_mut().mesh[i] = Triangle::new(
                 Vector3::new(x_0, y_0, o_0.z),
                 Vector3::new(x_1, y_1, o_1.z),
                 Vector3::new(x_2, y_2, o_2.z),
@@ -114,14 +114,13 @@ impl App {
 
     fn update(&mut self, elapsed: f64) {
         self.animate();
-        self.active_scene.refit();
+        self.active_scene.objects[0].model_mut().refit();
     }
 
     fn render(&mut self) {
         // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
         // Set up camera.
-        // let camera_position = Vector3::new(0.0, 3.5, -4.5);
-        let camera_position = Vector3::zero();
+        let camera_position = Vector3::new(0.0, 3.5, -4.5);
         let p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
         let p1 = Vector3::new(1_f32, 1_f32, 2_f32);
         let p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
@@ -143,7 +142,7 @@ impl App {
                     let ray_direction = (pixel_position - ray_origin).normalize();
                     let ray_t = f32::MAX;
                     let ray = Ray::new(ray_origin, ray_direction, ray_t);
-                    if let Some(t_intersect) = self.active_scene.intersect(&ray) {
+                    if let Some(t_intersect) = self.active_scene.objects[0].intersect(&ray) {
                         let color = 255 - (((t_intersect - 4_f32) * 180_f32) as i32);
                         let c = color * 0x010101;
                         let r = ((c & 0x00FF0000) >> 16) as u8;
@@ -242,20 +241,31 @@ fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle<f32>> {
     }).collect::<Vec<Triangle<_>>>()
 }
 
-
-fn main() -> io::Result<()> {
+fn build_bigben_scene() -> Scene {
     use std::time::SystemTime;
-
     let mesh = load_tri_model("assets/bigben.tri");
-    let builder = ModelBuilder::new();
-
+    let model_builder = ModelBuilder::new();
     println!("Constructing BVH.");
     let now = SystemTime::now();
-    let scene = builder.with_mesh(mesh).build();
+    let model = model_builder.with_mesh(mesh).build();
     let elapsed = now.elapsed().unwrap();
     println!("BVH building time = {} us", elapsed.as_micros());
 
-    let mut app = App::new(scene, SCREEN_WIDTH, SCREEN_HEIGHT);
+    let object = SceneObjectBuilder::new(model)
+        .build();
+    let scene = SceneBuilder::new()
+        .with_object(object)
+        .build();
+
+    scene
+}
+
+
+fn main() -> io::Result<()> {
+    use std::time::SystemTime;
+    let active_scene = build_bigben_scene();
+
+    let mut app = App::new(active_scene, SCREEN_WIDTH, SCREEN_HEIGHT);
     println!("Rendering scene.");
     let now = SystemTime::now();
     app.render();
