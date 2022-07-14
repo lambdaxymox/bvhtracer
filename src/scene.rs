@@ -52,16 +52,16 @@ impl Default for Bin {
 
 #[derive(Clone, Debug)]
 struct PrimitiveIter<'a> {
-    objects: &'a [Triangle<f32>],
+    primitives: &'a [Triangle<f32>],
     primitive_count: u32,
     base_primitive_index: u32,
     current_offset: u32,
 }
 
 impl<'a> PrimitiveIter<'a> {
-    fn new(objects: &'a [Triangle<f32>], primitive_count: u32, base_primitive_index: u32) -> Self {
+    fn new(primitives: &'a [Triangle<f32>], primitive_count: u32, base_primitive_index: u32) -> Self {
         Self {
-            objects,
+            primitives,
             primitive_count,
             base_primitive_index,
             current_offset: 0,
@@ -75,7 +75,7 @@ impl<'a> Iterator for PrimitiveIter<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_offset < self.primitive_count {
             let current_primitive_index = self.base_primitive_index + self.current_offset;
-            let current_object = &self.objects[current_primitive_index as usize];
+            let current_object = &self.primitives[current_primitive_index as usize];
             self.current_offset += 1;
             
             return Some(current_object);
@@ -236,19 +236,19 @@ pub struct Bvh {
 }
 
 impl Bvh {
-    fn primitive_iter<'a>(&self, objects: &'a [Triangle<f32>], node: &BvhNode) -> PrimitiveIter<'a> {
+    fn primitive_iter<'a>(&self, mesh: &'a [Triangle<f32>], node: &BvhNode) -> PrimitiveIter<'a> {
         let base_primitive_index = self.node_indices[node.as_leaf().first_primitive_index as usize];
         
-        PrimitiveIter::new(objects, node.primitive_count, base_primitive_index)
+        PrimitiveIter::new(mesh, node.primitive_count, base_primitive_index)
     }
 
-    fn intersect_subtree(&self, objects: &[Triangle<f32>], ray: &Ray<f32>, node_index: u32) -> Option<f32> {    
+    fn intersect_subtree(&self, mesh: &[Triangle<f32>], ray: &Ray<f32>, node_index: u32) -> Option<f32> {    
         let mut current_node = &self.nodes[node_index];
         let mut stack = vec![];
         let mut closest_ray = *ray;
         loop {
             if current_node.is_leaf() {
-                for primitive in self.primitive_iter(objects, current_node) {
+                for primitive in self.primitive_iter(mesh, current_node) {
                     if let Some(t_intersect) = primitive.intersect(&closest_ray) {
                         closest_ray.t = t_intersect;
                     }
@@ -293,8 +293,8 @@ impl Bvh {
     }
 
 
-    pub fn intersect(&self, objects: &[Triangle<f32>], ray: &Ray<f32>) -> Option<f32> {
-        self.intersect_subtree(objects, ray, self.root_node_index)
+    pub fn intersect(&self, mesh: &[Triangle<f32>], ray: &Ray<f32>) -> Option<f32> {
+        self.intersect_subtree(mesh, ray, self.root_node_index)
     }
 
     /// Returns the number of nodes in the boundary volume hierarchy.
@@ -303,8 +303,8 @@ impl Bvh {
         self.nodes_used as usize
     }
 
-    fn update_node_bounds(&mut self, objects: &[Triangle<f32>], node_index: u32) {
-        let it = self.primitive_iter(objects, &self.nodes[node_index]);
+    fn update_node_bounds(&mut self, mesh: &[Triangle<f32>], node_index: u32) {
+        let it = self.primitive_iter(mesh, &self.nodes[node_index]);
         let node = &mut self.nodes[node_index];
         node.aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
         for primitive in it {
@@ -317,14 +317,14 @@ impl Bvh {
         }
     }
 
-    pub fn refit(&mut self, objects: &[Triangle<f32>]) {
+    pub fn refit(&mut self, mesh: &[Triangle<f32>]) {
         for i in 0..self.nodes_used {
             let node_index = (self.nodes_used - 1) - i;
             {
                 let node = &self.nodes[node_index];
                 if node.is_leaf() {
-                    // Leaf node: adjust bounds to contained triangles.
-                    self.update_node_bounds(objects, node_index as u32);
+                    // Leaf node: adjust bounds to contained primitives.
+                    self.update_node_bounds(mesh, node_index as u32);
                     continue;
                 }
             }
@@ -362,14 +362,14 @@ impl BvhBuilder {
         Self { partial_bvh, }
     }
 
-    fn primitive_iter<'a>(&self, objects: &'a [Triangle<f32>], node: &BvhNode) -> PrimitiveIter<'a> {
+    fn primitive_iter<'a>(&self, mesh: &'a [Triangle<f32>], node: &BvhNode) -> PrimitiveIter<'a> {
         let base_primitive_index = self.partial_bvh.node_indices[node.as_leaf().first_primitive_index as usize];
         
-        PrimitiveIter::new(objects, node.primitive_count, base_primitive_index as u32)
+        PrimitiveIter::new(mesh, node.primitive_count, base_primitive_index as u32)
     }
 
-    fn update_node_bounds(&mut self, objects: &mut [Triangle<f32>], node_index: u32) {
-        let it = self.primitive_iter(objects, &self.partial_bvh.nodes[node_index]);
+    fn update_node_bounds(&mut self, mesh: &mut [Triangle<f32>], node_index: u32) {
+        let it = self.primitive_iter(mesh, &self.partial_bvh.nodes[node_index]);
         let node = &mut self.partial_bvh.nodes[node_index];
         node.aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
         for primitive in it {
@@ -382,7 +382,7 @@ impl BvhBuilder {
         }
     }
     
-    fn find_best_split_plane(&self, objects: &[Triangle<f32>], node: &BvhNode) -> (isize, f32, f32) {
+    fn find_best_split_plane(&self, mesh: &[Triangle<f32>], node: &BvhNode) -> (isize, f32, f32) {
         const BIN_COUNT: usize = 8;
         let mut best_axis = -1;
         let mut best_position = 0_f32;
@@ -390,7 +390,7 @@ impl BvhBuilder {
         for axis in 0..3 {
             let mut bounds_min = 1e30;
             let mut bounds_max = 1e-30;
-            for primitive in self.primitive_iter(objects, node) {
+            for primitive in self.primitive_iter(mesh, node) {
                 bounds_min = f32::min(bounds_min, primitive.centroid[axis]);
                 bounds_max = f32::max(bounds_max, primitive.centroid[axis]);
             }
@@ -400,7 +400,7 @@ impl BvhBuilder {
 
             let mut bins = [Bin::default(); BIN_COUNT];
             let scale = (BIN_COUNT as f32) / (bounds_max - bounds_min);
-            for primitive in self.primitive_iter(objects, node) {
+            for primitive in self.primitive_iter(mesh, node) {
                 let possible_bin_index = ((primitive.centroid[axis] - bounds_min) * scale) as usize;
                 let bin_index = usize::min(BIN_COUNT - 1, possible_bin_index);
                 bins[bin_index].primitive_count += 1;
@@ -455,11 +455,11 @@ impl BvhBuilder {
         primitive_count * parent_area
     }
 
-    fn subdivide(&mut self, objects: &mut [Triangle<f32>], node_index: u32) {
+    fn subdivide(&mut self, mesh: &mut [Triangle<f32>], node_index: u32) {
         // Terminate recursion.
         let (best_axis, best_position, best_cost) = {
             let node = &self.partial_bvh.nodes[node_index];
-            self.find_best_split_plane(objects, node)
+            self.find_best_split_plane(mesh, node)
         };
         let (left_count, i) = {
             let node = &self.partial_bvh.nodes[node_index];
@@ -474,10 +474,10 @@ impl BvhBuilder {
             let mut i = node.as_leaf().first_primitive_index;
             let mut j = i + node.primitive_count - 1;
             while i <= j {
-                if objects[i as usize].centroid[axis] < split_position {
+                if mesh[i as usize].centroid[axis] < split_position {
                     i += 1;
                 } else {
-                    objects.swap(i as usize, j as usize);
+                    mesh.swap(i as usize, j as usize);
                     j -= 1;
                 }
             }
@@ -513,28 +513,28 @@ impl BvhBuilder {
             node.primitive_count = 0;
         }
 
-        self.update_node_bounds(objects, left_child_index);
-        self.update_node_bounds(objects, right_child_index);
+        self.update_node_bounds(mesh, left_child_index);
+        self.update_node_bounds(mesh, right_child_index);
         // Recurse
-        self.subdivide(objects, left_child_index);
-        self.subdivide(objects, right_child_index);
+        self.subdivide(mesh, left_child_index);
+        self.subdivide(mesh, right_child_index);
     }
 
-    pub fn build_for(mut self, objects: &mut [Triangle<f32>]) -> Bvh {
+    pub fn build_for(mut self, mesh: &mut [Triangle<f32>]) -> Bvh {
         // Populate the triangle index array.
-        for i in 0..objects.len() {
+        for i in 0..mesh.len() {
             self.partial_bvh.node_indices.push(i as u32);
         }
 
-        self.partial_bvh.nodes = BvhNodeArray(vec![BvhNode::default(); 2 * objects.len()]);
+        self.partial_bvh.nodes = BvhNodeArray(vec![BvhNode::default(); 2 * mesh.len()]);
         
         let root_node_index = self.partial_bvh.root_node_index;
         let mut root_node: &mut BvhNode = &mut self.partial_bvh.nodes[root_node_index];
         root_node.as_mut_branch().left_node = 0;
-        root_node.primitive_count = objects.len() as u32;
+        root_node.primitive_count = mesh.len() as u32;
 
-        self.update_node_bounds(objects, self.partial_bvh.root_node_index);
-        self.subdivide(objects, self.partial_bvh.root_node_index);
+        self.update_node_bounds(mesh, self.partial_bvh.root_node_index);
+        self.subdivide(mesh, self.partial_bvh.root_node_index);
 
         self.partial_bvh
     }
@@ -542,48 +542,48 @@ impl BvhBuilder {
 
 
 pub struct SceneBuilder {
-    objects: Vec<Triangle<f32>>,
+    mesh: Vec<Triangle<f32>>,
     bvh_builder: BvhBuilder
 }
 
 impl SceneBuilder {
     pub fn new() -> Self {
         Self {
-            objects: Vec::new(),
+            mesh: Vec::new(),
             bvh_builder: BvhBuilder::new(),
         }
     }
 
-    pub fn with_objects(mut self, objects: Vec<Triangle<f32>>) -> Self {
-        self.objects = objects;
+    pub fn with_mesh(mut self, mesh: Vec<Triangle<f32>>) -> Self {
+        self.mesh = mesh;
 
         self
     }
 
-    pub fn build(mut self) -> Scene {
-        let bvh = self.bvh_builder.build_for(&mut self.objects);
+    pub fn build(mut self) -> Model {
+        let bvh = self.bvh_builder.build_for(&mut self.mesh);
 
-        Scene::new(self.objects, bvh)
+        Model::new(self.mesh, bvh)
     }
 }
 
 
-pub struct Scene {
-    pub objects: Vec<Triangle<f32>>,
+pub struct Model {
+    pub mesh: Vec<Triangle<f32>>,
     pub bvh: Bvh,
 }
 
-impl Scene {
-    pub fn new(objects: Vec<Triangle<f32>>, bvh: Bvh) -> Self {
-        Self { objects, bvh, }
+impl Model {
+    pub fn new(mesh: Vec<Triangle<f32>>, bvh: Bvh) -> Self {
+        Self { mesh, bvh, }
     }
 
     pub fn intersect(&self, ray: &Ray<f32>) -> Option<f32> {
-        self.bvh.intersect(&self.objects, ray)
+        self.bvh.intersect(&self.mesh, ray)
     }
 
     pub fn refit(&mut self) {
-        self.bvh.refit(&self.objects)
+        self.bvh.refit(&self.mesh)
     }
 }
 
@@ -595,7 +595,7 @@ mod bvh_tests {
         Vector3,
     };
     
-    fn scene() -> super::Scene {
+    fn scene() -> super::Model {
         let displacement_x = Vector3::new(5_f32, 0_f32, 0_f32);
         let displacement_y = Vector3::new(0_f32, 5_f32, 0_f32);
         let triangle0 = Triangle::new(
@@ -603,7 +603,7 @@ mod bvh_tests {
             Vector3::new(-1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
             Vector3::new(1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
         );
-        let triangles = (-100..100).zip(-100..100).map(|(i, j)| {
+        let mesh = (-100..100).zip(-100..100).map(|(i, j)| {
             Triangle::new(
                 triangle0.vertex0 + (i as f32) * displacement_x + (j as f32) * displacement_y,
                 triangle0.vertex1 + (i as f32) * displacement_x + (j as f32) * displacement_y,
@@ -614,7 +614,7 @@ mod bvh_tests {
         
         let builder = super::SceneBuilder::new();
         
-        builder.with_objects(triangles).build()
+        builder.with_mesh(mesh).build()
     }
 
     #[test]

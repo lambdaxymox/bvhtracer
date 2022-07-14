@@ -1,7 +1,7 @@
 extern crate bvhtracer;
 
 use bvhtracer::{
-    Scene,
+    Model,
     SceneBuilder,
     Triangle,
     Ray,
@@ -12,16 +12,16 @@ use cglinalg::{
 };
 
 
-fn scene() -> Scene {
+fn scene() -> Model {
     let triangle = Triangle::new(
         Vector3::new(0_f32, 1_f32 / 2_f32, 0_f32),
         Vector3::new(-1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
         Vector3::new(1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
     );
-    let triangles = vec![triangle];
+    let mesh = vec![triangle];
     let builder = SceneBuilder::new();
     
-    builder.with_objects(triangles).build()
+    builder.with_mesh(mesh).build()
 }
 
 #[test]

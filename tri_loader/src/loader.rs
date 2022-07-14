@@ -141,7 +141,7 @@ impl<'a> TriLoader<'a> {
     }
 
     fn parse_object(&mut self) -> Result<Vec<Triangle>, TriLoaderError> {
-        let mut triangles: Vec<Triangle> = vec![];
+        let mut mesh: Vec<Triangle> = vec![];
         loop {
             match self.peek() {
                 Some("\n") => {
@@ -149,7 +149,7 @@ impl<'a> TriLoader<'a> {
                 }
                 Some(_) => {
                     let triangle = self.parse_triangle()?;
-                    triangles.push(triangle);
+                    mesh.push(triangle);
                 }
                 None => {
                     break;
@@ -157,7 +157,7 @@ impl<'a> TriLoader<'a> {
             }
         }
 
-        Ok(triangles)
+        Ok(mesh)
     }
 
     pub fn load(&mut self) -> Result<Vec<Triangle>, TriLoaderError> {

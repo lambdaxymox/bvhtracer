@@ -62,16 +62,16 @@ const SCREEN_HEIGHT: usize = 640;
 
 
 struct App {
-    active_scene: Scene,
+    active_scene: Model,
     r: f32,
     originals: Vec<Triangle<f32>>,
     frame_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
 }
 
 impl App {
-    fn new(active_scene: Scene, width: usize, height: usize) -> Self {
+    fn new(active_scene: Model, width: usize, height: usize) -> Self {
         let r = 0_f32;
-        let originals = active_scene.objects.clone();
+        let originals = active_scene.mesh.clone();
         let frame_buffer = ImageBuffer::from_fill(
             width, 
             height,
@@ -103,7 +103,7 @@ impl App {
             let x_2 = o_2.x * f32::cos(s_2) - o_2.y * f32::sin(s_2);
             let y_2 = o_2.x * f32::sin(s_2) + o_2.y * f32::cos(s_2);
 
-            self.active_scene.objects[i] = Triangle::new(
+            self.active_scene.mesh[i] = Triangle::new(
                 Vector3::new(x_0, y_0, o_0.z),
                 Vector3::new(x_1, y_1, o_1.z),
                 Vector3::new(x_2, y_2, o_2.z),
@@ -119,7 +119,8 @@ impl App {
     fn render(&mut self) {
         // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
         // Set up camera.
-        let camera_position = Vector3::new(0.0, 3.5, -4.5);
+        // let camera_position = Vector3::new(0.0, 3.5, -4.5);
+        let camera_position = Vector3::zero();
         let p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
         let p1 = Vector3::new(1_f32, 1_f32, 2_f32);
         let p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
@@ -244,12 +245,12 @@ fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle<f32>> {
 fn main() -> io::Result<()> {
     use std::time::SystemTime;
 
-    let triangles = load_tri_model("assets/bigben.tri");
+    let mesh = load_tri_model("assets/bigben.tri");
     let builder = SceneBuilder::new();
 
     println!("Constructing BVH.");
     let now = SystemTime::now();
-    let scene = builder.with_objects(triangles).build();
+    let scene = builder.with_mesh(mesh).build();
     let elapsed = now.elapsed().unwrap();
     println!("BVH building time = {} us", elapsed.as_micros());
 

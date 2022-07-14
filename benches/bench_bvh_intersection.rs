@@ -7,7 +7,7 @@ extern crate rand_isaac;
 
 use bvhtracer::{
     Ray,
-    Scene,
+    Model,
     SceneBuilder,
     Triangle,
 };
@@ -44,19 +44,19 @@ fn create_mesh_sphere(x_segments: u32, y_segments: u32) -> Vec<Triangle<f32>> {
         }
     }
 
-    let mut triangles = vec![];
+    let mut mesh = vec![];
     for chunk in vertices.chunks(3) {
-        triangles.push(Triangle::new(chunk[0], chunk[1], chunk[2]));
+        mesh.push(Triangle::new(chunk[0], chunk[1], chunk[2]));
     }
 
-    triangles
+    mesh
 }
 
-fn scene() -> Scene {
-    let triangles = create_mesh_sphere(50, 50);
+fn scene() -> Model {
+    let mesh = create_mesh_sphere(50, 50);
     let builder = SceneBuilder::new();
     
-    builder.with_objects(triangles).build()
+    builder.with_mesh(mesh).build()
 }
 
 fn sample_unit_sphere(rng: &mut IsaacRng) -> Vector3<f32> {

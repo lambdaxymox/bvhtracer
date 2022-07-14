@@ -1,7 +1,7 @@
 extern crate bvhtracer;
 
 use bvhtracer::{
-    Scene,
+    Model,
     SceneBuilder,
     Triangle,
     Ray,
@@ -11,7 +11,7 @@ use cglinalg::{
     Vector3,
 };
 
-fn scene() -> Scene {
+fn scene() -> Model {
     let displacement = Vector3::new(0_f32, 10_f32, 0_f32);
     let triangle1 = Triangle::new(
         Vector3::new(0_f32, 1_f32 / 2_f32, 0_f32),
@@ -28,16 +28,16 @@ fn scene() -> Scene {
         triangle1.vertex1 + displacement,
         triangle1.vertex2 + displacement
     );
-    let triangles = vec![triangle1, triangle2, triangle3];
+    let mesh = vec![triangle1, triangle2, triangle3];
     let builder = SceneBuilder::new();
     
-    builder.with_objects(triangles).build()
+    builder.with_mesh(mesh).build()
 }
 
 #[test]
 fn test_three_triangles_centroids_hit() {
     let scene = scene();
-    for triangle in scene.objects.iter() {
+    for triangle in scene.mesh.iter() {
         let ray_origin = Vector3::new(0_f32, 0_f32, 10_f32);
         let ray_direction = (triangle.centroid - ray_origin).normalize();
         let ray = Ray::from_origin_dir(ray_origin, ray_direction);
