@@ -25,28 +25,8 @@ where
     }
 
     pub fn grow(&mut self, position: &Vector3<S>) {
-        // NOTE: We use local implementations of min and max of vector components here because the
-        // compiler does not seem to want to inline it here.
-        #[inline] fn __min<S: SimdScalarFloat>(this: &Vector3<S>, that: &Vector3<S>) -> Vector3<S> { 
-            // this.component_min(that)
-            Vector3::new(
-                S::min(this.x, that.x),
-                S::min(this.y, that.y),
-                S::min(this.z, that.z),
-            )
-        }
-
-        #[inline] fn __max<S: SimdScalarFloat>(this: &Vector3<S>, that: &Vector3<S>) -> Vector3<S> {
-            // this.component_max(that)
-            Vector3::new(
-                S::max(this.x, that.x),
-                S::max(this.y, that.y),
-                S::max(this.z, that.z),
-            )
-        }
-
-        self.bounds_min = __min(&self.bounds_min, position);
-        self.bounds_max = __max(&self.bounds_max, position);
+        self.bounds_min = Vector3::component_min(&self.bounds_min, position);
+        self.bounds_max = Vector3::component_max(&self.bounds_max, position);
     }
 
     pub fn grow_aabb(&mut self, new_bounding_box: &Aabb<S>) { 
