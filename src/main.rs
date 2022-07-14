@@ -112,11 +112,14 @@ impl App {
         }
     }
 
+    /*
     fn update(&mut self, elapsed: f64) {
         self.animate();
         self.active_scene.objects[0].model_mut().refit();
     }
+    */
 
+    /*
     fn render(&mut self) {
         // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
         // Set up camera.
@@ -152,6 +155,57 @@ impl App {
                     } else {
                         self.frame_buffer[(tile_height * x + u, tile_height * y + v)] = Rgba::new(0, 0, 0, 255);
                     }
+                }
+            }
+        }
+    }
+    */
+    fn update(&mut self, elapsed: f64) {
+    }
+
+    fn render(&mut self) {
+        // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
+        // Set up camera.
+        let camera_position = Vector3::new(0.0, 0.5, -4.5);
+        let p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
+        let p1 = Vector3::new(1_f32, 1_f32, 2_f32);
+        let p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
+
+        let tile_width = 8;
+        let tile_height = 8;
+        let tile_count_x = 80;
+        let tile_count_y = 80;
+        let tile_count = tile_count_x * tile_count_y;
+        for tile in 0..tile_count {
+            let x = tile % tile_count_x;
+            let y = tile / tile_count_y;
+            for v in 0..tile_height {
+                for u in 0..tile_width {
+                    let ray_origin = camera_position;
+                    let pixel_position = ray_origin + p0 + 
+                        (p1 - p0) * ((tile_width * x + u) as f32 / SCREEN_WIDTH as f32) + 
+                        (p2 - p0) * ((tile_height * y + v) as f32 / SCREEN_HEIGHT as f32);
+                    let ray_direction = (pixel_position - ray_origin).normalize();
+                    let mut ray = Ray::new(ray_origin, ray_direction, f32::MAX);
+                    if let Some(t_intersect) = self.active_scene.objects[0].intersect(&ray) {
+                        ray.t = t_intersect;
+                    }
+                    if let Some(t_intersect) = self.active_scene.objects[1].intersect(&ray) {
+                        ray.t = t_intersect;
+                    }
+                    let color = if ray.t < f32::MAX {
+                        let color = 255 - (((ray.t - 3_f32) * 80_f32) as i32);
+                        let c = color * 0x010101;
+                        let r = ((c & 0x00FF0000) >> 16) as u8;
+                        let g = ((c & 0x0000FF00) >> 8) as u8;
+                        let b = (c & 0x000000FF) as u8;
+                        
+                        Rgba::new(r, g, b, 255)
+                    } else {
+                        Rgba::new(0, 0, 0, 255)
+                    };
+
+                    self.frame_buffer[(tile_height * x + u, tile_height * y + v)] = color;
                 }
             }
         }
@@ -242,15 +296,9 @@ fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle<f32>> {
 }
 
 fn build_bigben_scene() -> Scene {
-    use std::time::SystemTime;
     let mesh = load_tri_model("assets/bigben.tri");
     let model_builder = ModelBuilder::new();
-    println!("Constructing BVH.");
-    let now = SystemTime::now();
     let model = model_builder.with_mesh(mesh).build();
-    let elapsed = now.elapsed().unwrap();
-    println!("BVH building time = {} us", elapsed.as_micros());
-
     let object = SceneObjectBuilder::new(model)
         .build();
     let scene = SceneBuilder::new()
@@ -260,10 +308,32 @@ fn build_bigben_scene() -> Scene {
     scene
 }
 
+fn build_armadillo_scene() -> Scene {
+    let mesh = load_tri_model("assets/armadillo.tri");
+    let model_builder = ModelBuilder::new();
+    let model1 = model_builder.with_mesh(mesh).build();
+    let model1_transform = Matrix4x4::from_affine_translation(&Vector3::new(-1.3_f32, 0_f32, 0_f32));
+    let model2 = model1.clone();
+    let model2_transform = Matrix4x4::from_affine_translation(&Vector3::new(1.3_f32, 0_f32, 0_f32));
+    let object1 = SceneObjectBuilder::new(model1)
+        .with_transform(&model1_transform)
+        .build();
+    let object2 = SceneObjectBuilder::new(model2)
+        .with_transform(&model2_transform)
+        .build();
+    let scene = SceneBuilder::new()
+        .with_object(object1)
+        .with_object(object2)
+        .build();
+
+    scene
+}
 
 fn main() -> io::Result<()> {
     use std::time::SystemTime;
-    let active_scene = build_bigben_scene();
+    let now = SystemTime::now();
+    let active_scene = build_armadillo_scene(); // build_bigben_scene();
+    let elapsed = now.elapsed().unwrap();
 
     let mut app = App::new(active_scene, SCREEN_WIDTH, SCREEN_HEIGHT);
     println!("Rendering scene.");
@@ -273,8 +343,8 @@ fn main() -> io::Result<()> {
     println!("Rendering time = {} s", elapsed.as_secs_f64());
     
     let mut file = File::create("output.ppm").unwrap();
-    let mut ppm_encoder = ppm::PpmEncoder::new(&mut file);
-    ppm_encoder.encode(&app.frame_buffer)?;
+    // let mut ppm_encoder = ppm::PpmEncoder::new(&mut file);
+    // ppm_encoder.encode(&app.frame_buffer)?;
     app.frame_buffer.flip_vertical();
 
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();

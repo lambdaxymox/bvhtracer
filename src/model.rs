@@ -11,6 +11,7 @@ use cglinalg::{
 };
 
 
+#[derive(Clone)]
 pub struct Model {
     pub mesh: Vec<Triangle<f32>>,
     pub bvh: Bvh,
