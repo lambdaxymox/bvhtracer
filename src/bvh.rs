@@ -368,7 +368,7 @@ impl BvhBuilder {
         PrimitiveIter::new(mesh, node.primitive_count, base_primitive_index as u32)
     }
 
-    fn update_node_bounds(&mut self, mesh: &mut [Triangle<f32>], node_index: u32) {
+    fn update_node_bounds(&mut self, mesh: &[Triangle<f32>], node_index: u32) {
         let it = self.primitive_iter(mesh, &self.partial_bvh.nodes[node_index]);
         let node = &mut self.partial_bvh.nodes[node_index];
         node.aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
