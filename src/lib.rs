@@ -6,7 +6,8 @@ mod triangle;
 mod image;
 mod pixel;
 mod ray;
-mod scene;
+mod bvh;
+mod model;
 
 
 pub use aabb::*;
@@ -14,5 +15,6 @@ pub use triangle::*;
 pub use image::*;
 pub use pixel::*;
 pub use ray::*;
-pub use scene::*;
+pub use bvh::*;
+pub use model::*;
 

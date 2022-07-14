@@ -541,61 +541,15 @@ impl BvhBuilder {
 }
 
 
-pub struct ModelBuilder {
-    mesh: Vec<Triangle<f32>>,
-    bvh_builder: BvhBuilder
-}
-
-impl ModelBuilder {
-    pub fn new() -> Self {
-        Self {
-            mesh: Vec::new(),
-            bvh_builder: BvhBuilder::new(),
-        }
-    }
-
-    pub fn with_mesh(mut self, mesh: Vec<Triangle<f32>>) -> Self {
-        self.mesh = mesh;
-
-        self
-    }
-
-    pub fn build(mut self) -> Model {
-        let bvh = self.bvh_builder.build_for(&mut self.mesh);
-
-        Model::new(self.mesh, bvh)
-    }
-}
-
-
-pub struct Model {
-    pub mesh: Vec<Triangle<f32>>,
-    pub bvh: Bvh,
-}
-
-impl Model {
-    pub fn new(mesh: Vec<Triangle<f32>>, bvh: Bvh) -> Self {
-        Self { mesh, bvh, }
-    }
-
-    pub fn intersect(&self, ray: &Ray<f32>) -> Option<f32> {
-        self.bvh.intersect(&self.mesh, ray)
-    }
-
-    pub fn refit(&mut self) {
-        self.bvh.refit(&self.mesh)
-    }
-}
-
-
 #[cfg(test)]
 mod bvh_tests {
-    use crate::triangle::*;
+    use super::*;
     use cglinalg::{
         Vector3,
     };
     
-    fn scene() -> super::Model {
+
+    fn bvh() -> Bvh {
         let displacement_x = Vector3::new(5_f32, 0_f32, 0_f32);
         let displacement_y = Vector3::new(0_f32, 5_f32, 0_f32);
         let triangle0 = Triangle::new(
@@ -603,7 +557,7 @@ mod bvh_tests {
             Vector3::new(-1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
             Vector3::new(1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
         );
-        let mesh = (-100..100).zip(-100..100).map(|(i, j)| {
+        let mut mesh = (-100..100).zip(-100..100).map(|(i, j)| {
             Triangle::new(
                 triangle0.vertex0 + (i as f32) * displacement_x + (j as f32) * displacement_y,
                 triangle0.vertex1 + (i as f32) * displacement_x + (j as f32) * displacement_y,
@@ -612,33 +566,33 @@ mod bvh_tests {
         })
         .collect::<Vec<Triangle<_>>>();
         
-        let builder = super::ModelBuilder::new();
+        let builder = BvhBuilder::new();
         
-        builder.with_mesh(mesh).build()
+        builder.build_for(&mut mesh)
     }
 
     #[test]
     fn test_bvh_nodes_used_smaller_than_node_array_length() {
-        let scene = scene();
+        let bvh = bvh();
         
-        assert!(scene.bvh.nodes.len() > scene.bvh.nodes_used());
+        assert!(bvh.nodes.len() > bvh.nodes_used());
     }
 
     #[test]
     fn test_bvh_nodes_used() {
-        let scene = scene();
+        let bvh = bvh();
         let default_node = super::BvhNode::default();
-        for i in 0..scene.bvh.nodes_used() {
-            assert_ne!(scene.bvh.nodes[i as u32], default_node);
+        for i in 0..bvh.nodes_used() {
+            assert_ne!(bvh.nodes[i as u32], default_node);
         }
     }
 
     #[test]
     fn test_bvh_nodes_unused() {
-        let scene = scene();
+        let bvh = bvh();
         let default_node = super::BvhNode::default();
-        for i in scene.bvh.nodes_used()..scene.bvh.nodes.len() {
-            assert_eq!(scene.bvh.nodes[i as u32], default_node);
+        for i in bvh.nodes_used()..bvh.nodes.len() {
+            assert_eq!(bvh.nodes[i as u32], default_node);
         }
     }
 
@@ -651,9 +605,9 @@ mod bvh_tests {
 
     #[test]
     fn test_bvh_branch_node_children_always_have_larger_indices_than_parents() {
-        let scene = scene();
-        for node_index in 0..scene.bvh.nodes_used {
-            let node = &scene.bvh.nodes[node_index];
+        let bvh = bvh();
+        for node_index in 0..bvh.nodes_used {
+            let node = &bvh.nodes[node_index];
             if node.is_branch() {
                 assert!(node.as_branch().left_node() > node_index);
                 assert!(node.as_branch().right_node() > node_index);
@@ -664,10 +618,10 @@ mod bvh_tests {
 
     #[test]
     fn test_branch_nodes_have_no_primitives() {
-        let scene = scene();
-        for i in 0..scene.bvh.nodes_used {
-            if scene.bvh.nodes[i].is_branch() {
-                assert_eq!(scene.bvh.nodes[i].primitive_count, 0);
+        let bvh = bvh();
+        for i in 0..bvh.nodes_used {
+            if bvh.nodes[i].is_branch() {
+                assert_eq!(bvh.nodes[i].primitive_count, 0);
             }
         }
     }

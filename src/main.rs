@@ -20,13 +20,14 @@ mod pixel;
 mod image;
 mod ppm;
 mod ray;
-mod scene;
+mod bvh;
+mod model;
 
 use crate::triangle::*;
 use crate::image::*;
 use crate::pixel::*;
 use crate::ray::*;
-use crate::scene::*;
+use crate::model::*;
 use crate::backend::*;
 
 use cglinalg::{
