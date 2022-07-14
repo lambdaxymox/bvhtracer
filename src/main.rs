@@ -22,13 +22,15 @@ mod ppm;
 mod ray;
 mod bvh;
 mod model;
+mod scene;
 
+use crate::backend::*;
 use crate::triangle::*;
 use crate::image::*;
 use crate::pixel::*;
 use crate::ray::*;
 use crate::model::*;
-use crate::backend::*;
+use crate::scene::*;
 
 use cglinalg::{
     Matrix4x4,
@@ -324,6 +326,7 @@ fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle<f32>> {
     }).collect::<Vec<Triangle<_>>>()
 }
 
+/*
 fn build_bigben_scene() -> Scene {
     let mesh = load_tri_model("assets/bigben.tri");
     let model_builder = ModelBuilder::new();
@@ -336,6 +339,7 @@ fn build_bigben_scene() -> Scene {
 
     scene
 }
+*/
 
 fn build_armadillo_scene() -> Scene {
     let mesh = load_tri_model("assets/armadillo.tri");
@@ -360,18 +364,22 @@ fn build_armadillo_scene() -> Scene {
 
 fn main() -> io::Result<()> {
     use std::time::SystemTime;
+
+    println!("Building scene.");
     let now = SystemTime::now();
-    let active_scene = build_armadillo_scene(); // build_bigben_scene();
+    let active_scene = build_armadillo_scene();
     let elapsed = now.elapsed().unwrap();
+    println!("Scene building time = {} s", elapsed.as_secs_f64());
 
     let mut app = App::new(active_scene, SCREEN_WIDTH, SCREEN_HEIGHT);
+
     println!("Rendering scene.");
     let now = SystemTime::now();
     app.render();
     let elapsed = now.elapsed().unwrap();
     println!("Rendering time = {} s", elapsed.as_secs_f64());
     
-    let mut file = File::create("output.ppm").unwrap();
+    // slet mut file = File::create("output.ppm").unwrap();
     // let mut ppm_encoder = ppm::PpmEncoder::new(&mut file);
     // ppm_encoder.encode(&app.frame_buffer)?;
     app.frame_buffer.flip_vertical();
