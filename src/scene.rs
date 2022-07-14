@@ -127,7 +127,7 @@ impl Default for BranchOrLeafData {
 }
 
 #[derive(Copy, Clone, Default)]
-pub struct BvhNode {
+struct BvhNode {
     aabb: Aabb<f32>,
     primitive_count: u32,
     _left_first: BranchOrLeafData,
@@ -135,12 +135,12 @@ pub struct BvhNode {
 
 impl BvhNode {
     #[inline]
-    pub fn is_leaf(&self) -> bool {
+    fn is_leaf(&self) -> bool {
         self.primitive_count > 0
     }
 
     #[inline]
-    pub fn is_branch(&self) -> bool {
+    fn is_branch(&self) -> bool {
         self.primitive_count == 0
     }
 
