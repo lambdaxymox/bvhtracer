@@ -3,6 +3,7 @@ extern crate rand;
 extern crate rand_isaac;
 extern crate stb_image;
 extern crate tri_loader;
+extern crate tiled_array;
 extern crate num_traits;
 extern crate glfw;
 

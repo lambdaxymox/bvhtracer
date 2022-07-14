@@ -36,8 +36,6 @@ impl TileMap2D {
         let remainder_y = min_capacity_y % tile_size;
         let padded_tile_count_x = if remainder_x != 0 { tile_count_x + 1 } else { tile_count_x };
         let padded_tile_count_y = if remainder_y != 0 { tile_count_y + 1 } else { tile_count_y };
-        let tile_element_count = tile_size * tile_size;
-        let padded_capacity = padded_tile_count_x * padded_tile_count_y;
         let padded_element_width = padded_tile_count_x * tile_size;
         let padded_element_height = padded_tile_count_y * tile_size;
 
@@ -101,12 +99,12 @@ impl TileMap2D {
 }
 
 #[derive(Clone, PartialEq, Eq)]
-pub struct TiledArray2D<T, const TILE_SIZE: usize> {
+pub struct TileArray2D<T, const TILE_SIZE: usize> {
     tile_map: TileMap2D,
     data: Vec<Tile<T, TILE_SIZE>>,
 }
 
-impl<T, const TILE_SIZE: usize> TiledArray2D<T, TILE_SIZE> 
+impl<T, const TILE_SIZE: usize> TileArray2D<T, TILE_SIZE> 
 where
     T: Copy,
 {
@@ -193,7 +191,7 @@ impl<'a, T, const TILE_SIZE: usize> DoubleEndedIterator for TileIter<'a, T, TILE
     }
 }
 
-impl<T, const TILE_SIZE: usize> TiledArray2D<T, TILE_SIZE> {
+impl<T, const TILE_SIZE: usize> TileArray2D<T, TILE_SIZE> {
     pub fn tile_iter(&self) -> TileIter<T, TILE_SIZE> {
         TileIter {
             iter: self.data.iter(),
@@ -202,7 +200,7 @@ impl<T, const TILE_SIZE: usize> TiledArray2D<T, TILE_SIZE> {
 }
 
 
-impl<T, const TILE_SIZE: usize> AsRef<[T]> for TiledArray2D<T, TILE_SIZE> {
+impl<T, const TILE_SIZE: usize> AsRef<[T]> for TileArray2D<T, TILE_SIZE> {
     #[inline]
     fn as_ref(&self) -> &[T] {
         use std::ptr;
@@ -218,7 +216,7 @@ impl<T, const TILE_SIZE: usize> AsRef<[T]> for TiledArray2D<T, TILE_SIZE> {
     }
 }
 
-impl<T, const TILE_SIZE: usize> ops::Index<(usize, usize)> for TiledArray2D<T, TILE_SIZE>
+impl<T, const TILE_SIZE: usize> ops::Index<(usize, usize)> for TileArray2D<T, TILE_SIZE>
 where
     T: Copy
 {
@@ -232,7 +230,7 @@ where
     }
 }
 
-impl<T, const TILE_SIZE: usize> ops::IndexMut<(usize, usize)> for TiledArray2D<T, TILE_SIZE>
+impl<T, const TILE_SIZE: usize> ops::IndexMut<(usize, usize)> for TileArray2D<T, TILE_SIZE>
 where
     T: Copy
 {   
@@ -244,7 +242,7 @@ where
     }
 }
 
-impl<T, const TILE_SIZE: usize> ops::Index<TileIndex> for TiledArray2D<T, TILE_SIZE>
+impl<T, const TILE_SIZE: usize> ops::Index<TileIndex> for TileArray2D<T, TILE_SIZE>
 where
     T: Copy
 {
@@ -258,7 +256,7 @@ where
     }
 }
 
-impl<T, const TILE_SIZE: usize> ops::IndexMut<TileIndex> for TiledArray2D<T, TILE_SIZE>
+impl<T, const TILE_SIZE: usize> ops::IndexMut<TileIndex> for TileArray2D<T, TILE_SIZE>
 where
     T: Copy
 {   
@@ -282,7 +280,7 @@ mod tests {
         let min_capacity_x = 1;
         let min_capacity_y = 1;
         let expected = vec![0; TILE_SIZE * TILE_SIZE];
-        let result: TiledArray2D<_, TILE_SIZE> = TiledArray2D::with_min_capacity(min_capacity_x, min_capacity_y, 0);
+        let result: TileArray2D<_, TILE_SIZE> = TileArray2D::with_min_capacity(min_capacity_x, min_capacity_y, 0);
         
         assert_eq!(result.as_slice(), expected);
     }
@@ -292,7 +290,7 @@ mod tests {
         const TILE_SIZE: usize = 8;
         let min_capacity_x = 1;
         let min_capacity_y = 1;
-        let mut result: TiledArray2D<_, TILE_SIZE> = TiledArray2D::with_min_capacity(min_capacity_x, min_capacity_y, (0, 0));
+        let mut result: TileArray2D<_, TILE_SIZE> = TileArray2D::with_min_capacity(min_capacity_x, min_capacity_y, (0, 0));
         let (width_elements, height_elements) = result.shape_elements();
         for row in 0..height_elements {
             for col in 0..width_elements {
@@ -320,7 +318,7 @@ mod tests {
         let min_capacity_x = 16;
         let min_capacity_y = 24;
         let expected = vec![0; min_capacity_x * min_capacity_y];
-        let result: TiledArray2D<_, TILE_SIZE> = TiledArray2D::with_min_capacity(min_capacity_x, min_capacity_y, 0);
+        let result: TileArray2D<_, TILE_SIZE> = TileArray2D::with_min_capacity(min_capacity_x, min_capacity_y, 0);
         
         assert_eq!(result.as_slice(), expected);
     }
@@ -330,7 +328,7 @@ mod tests {
         const TILE_SIZE: usize = 4;
         let min_capacity_x = 12;
         let min_capacity_y = 8;
-        let mut result: TiledArray2D<_, TILE_SIZE> = TiledArray2D::with_min_capacity(min_capacity_x, min_capacity_y, (0, 0));
+        let mut result: TileArray2D<_, TILE_SIZE> = TileArray2D::with_min_capacity(min_capacity_x, min_capacity_y, (0, 0));
         let (width_elements, height_elements) = result.shape_elements();
         for row in 0..height_elements {
             for col in 0..width_elements {
@@ -355,7 +353,7 @@ mod tests {
         const TILE_SIZE: usize = 4;
         let min_capacity_x = 12;
         let min_capacity_y = 8;
-        let mut result: TiledArray2D<_, TILE_SIZE> = TiledArray2D::with_min_capacity(min_capacity_x, min_capacity_y, 0);
+        let mut result: TileArray2D<_, TILE_SIZE> = TileArray2D::with_min_capacity(min_capacity_x, min_capacity_y, 0);
         let (width_tiles, height_tiles) = result.shape_tiles();
         for tile_x in 0..width_tiles {
             for tile_y in 0..height_tiles {
@@ -384,7 +382,7 @@ mod tests {
         const TILE_SIZE: usize = 4;
         let min_capacity_x = 12;
         let min_capacity_y = 8;
-        let mut result: TiledArray2D<_, TILE_SIZE> = TiledArray2D::with_min_capacity(min_capacity_x, min_capacity_y, 0);
+        let mut result: TileArray2D<_, TILE_SIZE> = TileArray2D::with_min_capacity(min_capacity_x, min_capacity_y, 0);
         let (width_elements, height_elements) = result.shape_elements();
         for row in 0..height_elements {
             for col in 0..width_elements {

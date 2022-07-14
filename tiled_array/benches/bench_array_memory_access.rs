@@ -4,9 +4,7 @@ extern crate rand;
 extern crate rand_isaac;
 
 
-use tiled_array::{
-    TiledArray2D,
-};
+use tiled_array::*;
 use criterion::{
     criterion_group,
     criterion_main,
@@ -23,7 +21,7 @@ fn sum_vec(vec: &Vec<u32>) -> u32 {
     total
 }
 
-fn sum_array_tile_array(array: &TiledArray2D<u32, TILE_SIZE>) -> u32 {
+fn sum_array_tile_array(array: &TileArray2D<u32, TILE_SIZE>) -> u32 {
     let mut total = 0;
     for row in 0..array.height_elements() {
         for col in 0..array.width_elements() {
@@ -34,7 +32,7 @@ fn sum_array_tile_array(array: &TiledArray2D<u32, TILE_SIZE>) -> u32 {
     total
 }
 
-fn sum_array_tile_iter(array: &TiledArray2D<u32, TILE_SIZE>) -> u32 {
+fn sum_array_tile_iter(array: &TileArray2D<u32, TILE_SIZE>) -> u32 {
     let mut total = 0;
     for tile in array.tile_iter() {
         for row in 0..TILE_SIZE {
@@ -63,7 +61,7 @@ fn tiled_array_reduction_vec(bh: &mut criterion::Criterion) {
 }
 
 fn tiled_array_reduction_tile_array(bh: &mut criterion::Criterion) {
-    let mut array: TiledArray2D<_, TILE_SIZE> = TiledArray2D::with_min_capacity(1024, 1024, 0_u32);
+    let mut array: TileArray2D<_, TILE_SIZE> = TileArray2D::with_min_capacity(1024, 1024, 0_u32);
     let (width, height) = array.shape_elements();
     for i in 0..width {
         for j in 0..height {
@@ -77,7 +75,7 @@ fn tiled_array_reduction_tile_array(bh: &mut criterion::Criterion) {
 }
 
 fn tiled_array_reduction_tile_iter(bh: &mut criterion::Criterion) {
-    let mut array: TiledArray2D<_, TILE_SIZE> = TiledArray2D::with_min_capacity(1024, 1024, 0_u32);
+    let mut array: TileArray2D<_, TILE_SIZE> = TileArray2D::with_min_capacity(1024, 1024, 0_u32);
     let (width, height) = array.shape_elements();
     for i in 0..width {
         for j in 0..height {
