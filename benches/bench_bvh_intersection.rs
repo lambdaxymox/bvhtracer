@@ -8,7 +8,7 @@ extern crate rand_isaac;
 use bvhtracer::{
     Ray,
     Model,
-    SceneBuilder,
+    ModelBuilder,
     Triangle,
 };
 use cglinalg::{
@@ -54,7 +54,7 @@ fn create_mesh_sphere(x_segments: u32, y_segments: u32) -> Vec<Triangle<f32>> {
 
 fn scene() -> Model {
     let mesh = create_mesh_sphere(50, 50);
-    let builder = SceneBuilder::new();
+    let builder = ModelBuilder::new();
     
     builder.with_mesh(mesh).build()
 }

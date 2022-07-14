@@ -541,12 +541,12 @@ impl BvhBuilder {
 }
 
 
-pub struct SceneBuilder {
+pub struct ModelBuilder {
     mesh: Vec<Triangle<f32>>,
     bvh_builder: BvhBuilder
 }
 
-impl SceneBuilder {
+impl ModelBuilder {
     pub fn new() -> Self {
         Self {
             mesh: Vec::new(),
@@ -612,7 +612,7 @@ mod bvh_tests {
         })
         .collect::<Vec<Triangle<_>>>();
         
-        let builder = super::SceneBuilder::new();
+        let builder = super::ModelBuilder::new();
         
         builder.with_mesh(mesh).build()
     }

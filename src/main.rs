@@ -246,7 +246,7 @@ fn main() -> io::Result<()> {
     use std::time::SystemTime;
 
     let mesh = load_tri_model("assets/bigben.tri");
-    let builder = SceneBuilder::new();
+    let builder = ModelBuilder::new();
 
     println!("Constructing BVH.");
     let now = SystemTime::now();

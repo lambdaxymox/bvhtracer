@@ -2,7 +2,7 @@ extern crate bvhtracer;
 
 use bvhtracer::{
     Model,
-    SceneBuilder,
+    ModelBuilder,
     Triangle,
     Ray,
 };
@@ -29,7 +29,7 @@ fn scene() -> Model {
         triangle.vertex2 + displacement,
     );
     let mesh = vec![triangle1, triangle2];
-    let builder = SceneBuilder::new();
+    let builder = ModelBuilder::new();
     
     builder.with_mesh(mesh).build()
 }

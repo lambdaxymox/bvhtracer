@@ -6,7 +6,7 @@ extern crate rand_isaac;
 
 
 use bvhtracer::{
-    SceneBuilder,
+    ModelBuilder,
     Triangle,
 };
 use cglinalg::{
@@ -37,7 +37,7 @@ fn bvh_construction(bh: &mut criterion::Criterion) {
     let mut group = bh.benchmark_group("bvh_construction");
     group.sample_size(100);
     group.bench_function("bvh_construction", move |bh| bh.iter(|| {
-        let builder = SceneBuilder::new();
+        let builder = ModelBuilder::new();
         criterion::black_box(builder.with_mesh(mesh.clone()).build())
     }));
     group.finish();

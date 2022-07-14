@@ -7,7 +7,7 @@ extern crate rand_isaac;
 
 use bvhtracer::{
     Model,
-    SceneBuilder,
+    ModelBuilder,
     Triangle,
 };
 use cglinalg::{
@@ -63,7 +63,7 @@ fn animate(scene: &mut Model, r: f32) {
 fn bvh_rebuild(bh: &mut criterion::Criterion) {
     let original_mesh = load_tri_model("assets/bigben.tri");
     let mut group = bh.benchmark_group("bvh_refit");
-    let builder = SceneBuilder::new();
+    let builder = ModelBuilder::new();
     let mut scene = builder
         .with_mesh(original_mesh)
         .build();
@@ -72,7 +72,7 @@ fn bvh_rebuild(bh: &mut criterion::Criterion) {
 
     group.sample_size(100);
     group.bench_function("bvh_rebuild", move |bh| bh.iter(|| {
-        let builder = SceneBuilder::new();
+        let builder = ModelBuilder::new();
         criterion::black_box(builder.with_mesh(animated_mesh.clone()).build())
     }));
     group.finish();
@@ -83,7 +83,7 @@ fn bvh_refit(bh: &mut criterion::Criterion) {
     let mesh = load_tri_model("assets/bigben.tri");
     let mut group = bh.benchmark_group("bvh_refit");
 
-    let builder = SceneBuilder::new();
+    let builder = ModelBuilder::new();
     let mut scene = builder
         .with_mesh(mesh)
         .build();
