@@ -34,6 +34,7 @@ use cglinalg::{
     Matrix4x4,
     Vector3,
     Magnitude,
+    Radians,
 };
 
 use std::io;
@@ -61,7 +62,7 @@ use std::ffi::{
 const SCREEN_WIDTH: usize = 640;
 const SCREEN_HEIGHT: usize = 640;
 
-
+/*
 struct App {
     active_scene: Scene,
     r: f32,
@@ -112,14 +113,11 @@ impl App {
         }
     }
 
-    /*
     fn update(&mut self, elapsed: f64) {
         self.animate();
         self.active_scene.objects[0].model_mut().refit();
     }
-    */
 
-    /*
     fn render(&mut self) {
         // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
         // Set up camera.
@@ -159,8 +157,39 @@ impl App {
             }
         }
     }
-    */
+}
+*/
+
+struct App {
+    active_scene: Scene,
+    angle: f32,
+    frame_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
+}
+    
+impl App {
+    fn new(active_scene: Scene, width: usize, height: usize) -> Self {
+        let angle = 0_f32;
+        let frame_buffer = ImageBuffer::from_fill(
+            width, 
+            height,
+            Rgba::from([0, 0, 0, 1])
+        );
+    
+        Self { active_scene, angle, frame_buffer }
+    }
+
     fn update(&mut self, elapsed: f64) {
+        self.angle += 0.01;
+        if self.angle > std::f32::consts::FRAC_2_PI {
+            self.angle -= std::f32::consts::FRAC_2_PI;
+        }
+        self.active_scene.objects[0].set_transform(
+            &Matrix4x4::from_affine_translation(&Vector3::new(-1.3_f32, 0_f32, 0_f32))
+        );
+        self.active_scene.objects[1].set_transform(&(
+            Matrix4x4::from_affine_translation(&Vector3::new(1.3_f32, 0_f32, 0_f32)) *
+            Matrix4x4::from_affine_angle_y(Radians(self.angle))
+        ));
     }
 
     fn render(&mut self) {

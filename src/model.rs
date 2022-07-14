@@ -70,7 +70,7 @@ pub struct SceneObject {
 }
 
 impl SceneObject {
-    fn set_transform(&mut self, transform: &Matrix4x4<f32>) {
+    pub fn set_transform(&mut self, transform: &Matrix4x4<f32>) {
         let transform_inv = transform.inverse().unwrap();
         let old_bounds = self.model.bounds();
         let mut new_bounds = Aabb::new_empty();
