@@ -23,6 +23,7 @@ mod ray;
 mod bvh;
 mod model;
 mod scene;
+mod tlas;
 
 use crate::backend::*;
 use crate::triangle::*;

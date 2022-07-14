@@ -9,6 +9,7 @@ mod ray;
 mod bvh;
 mod model;
 mod scene;
+mod tlas;
 
 
 pub use aabb::*;
@@ -19,4 +20,5 @@ pub use ray::*;
 pub use bvh::*;
 pub use model::*;
 pub use scene::*;
+pub use tlas::*;
 
