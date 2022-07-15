@@ -12,19 +12,22 @@ use std::rc::{
 };
 
 
+
+// TODO: Rethink some naming and understandability.
 #[derive(Copy, Clone, Debug)]
 struct TlasNode {
     aabb: Aabb<f32>,
-    left_blas: u32,
-    is_leaf: u32,
+    // Upper u16 is the left index, lower u16 is the right index.
+    left_right: u32,
+    blas: u32,
 }
 
 impl Default for TlasNode {
     fn default() -> Self {
         Self {
             aabb: Aabb::new_empty(),
-            left_blas: 0,
-            is_leaf: true as u32,
+            left_right: 0,
+            blas: 0,
         }
     }
 }
@@ -32,17 +35,27 @@ impl Default for TlasNode {
 impl TlasNode {
     #[inline]
     fn is_leaf(&self) -> bool {
-        self.is_leaf == true as u32
+        self.left_right == 0
+    }
+
+    #[inline]
+    fn is_branch(&self) -> bool {
+        self.left_right != 0
     }
 
     #[inline]
     fn left_blas(&self) -> u32 {
-        self.left_blas
+        (self.left_right & 0xFFFF0000) >> 16
     }
 
     #[inline]
     fn right_blas(&self) -> u32 {
-        self.left_blas + 1
+        (self.left_right & 0x0000FFFF)
+    }
+
+    #[inline]
+    fn blas(&self) -> u32 {
+        self.blas
     }
 }
 
@@ -89,13 +102,18 @@ impl Tlas {
         &mut self.blas[index]
     }
 
+    #[inline]
+    pub fn nodes_used(&self) -> usize {
+        self.nodes_used as usize
+    }
+
     pub fn intersect(&self, ray: &Ray<f32>) -> Option<f32> {
         let mut current_node = &self.nodes[0];
         let mut stack = vec![];
         let mut closest_ray = *ray;
         loop {
             if current_node.is_leaf() {
-                if let Some(t_intersect) = self.blas[current_node.left_blas() as usize].intersect(ray) {
+                if let Some(t_intersect) = self.blas[current_node.blas() as usize].intersect(ray) {
                     closest_ray.t = t_intersect;
                 }
 
@@ -137,9 +155,79 @@ impl Tlas {
         if closest_ray.t < f32::MAX { Some(closest_ray.t) } else { None }
     }
 
-    #[inline]
-    pub fn nodes_used(&self) -> usize {
-        self.nodes_used as usize
+    fn find_best_match(&self, list: &[i32], n: i32, a: i32) -> i32 {
+        let mut smallest = f32::MAX;
+        let mut best_b: i32 = -1;
+        for b in 0..n { 
+            if b != a {
+                let bounds_max = Vector3::component_max(
+                    &self.nodes[list[a as usize] as u32].aabb.bounds_max,
+                    &self.nodes[list[b as usize] as u32].aabb.bounds_max,
+                );
+                let bounds_min = Vector3::component_min(
+                    &self.nodes[list[a as usize] as u32].aabb.bounds_min,
+                    &self.nodes[list[b as usize] as u32].aabb.bounds_min,
+                );
+                let extent = bounds_max - bounds_min;
+                let surface_area = extent.x * extent.y + extent.y * extent.z + extent.z * extent.x;
+                if surface_area < smallest {
+                    smallest = surface_area;
+                    best_b = b;
+                }
+            }
+        }
+
+        // assert_ne!(best_b, -1);
+        best_b
+    }
+
+    // TODO: Make this more general. We are currently building TLASes for at most 256 objects.
+    pub fn rebuild(&mut self) {
+        // Assign a Tlasleaf node to each BLAS.
+        let blas_count = self.blas.len();
+        let mut node_index_count = blas_count;
+        let mut node_indices = vec![0_i32; 256];
+        let mut nodes_used = 1;
+        for i in 0..blas_count {
+            node_indices[i] = nodes_used;
+            let bounds_i = self.blas[i].bounds();
+            self.nodes[nodes_used as u32].aabb = bounds_i;
+            self.nodes[nodes_used as u32].blas = i as u32;
+            // Make it a leaf.
+            self.nodes[nodes_used as u32].left_right = 0;
+            nodes_used += 1;
+        }
+
+        // Use agglomerative clustering to build the TLAS.
+        let mut a = 0;
+        let mut b = self.find_best_match(node_indices.as_slice(), node_index_count as i32, a);
+        while node_index_count > 1 {
+            let c = self.find_best_match(node_indices.as_slice(), node_index_count as i32, b);
+            if a == c {
+                let node_index_a = node_indices[a as usize];
+                let node_index_b = node_indices[b as usize];
+                let node_a = self.nodes[node_index_a as u32];
+                let node_b = self.nodes[node_index_b as u32];
+                let new_node = &mut self.nodes[nodes_used as u32];
+                new_node.left_right = (node_index_a + (node_index_b << 16)) as u32;
+                new_node.aabb = Aabb::new(
+                    Vector3::component_min(&node_a.aabb.bounds_min, &node_b.aabb.bounds_min),
+                    Vector3::component_max(&node_a.aabb.bounds_max, &node_b.aabb.bounds_max),
+                );
+
+                node_indices[a as usize] = nodes_used;
+                nodes_used += 1;
+                node_indices[b as usize] = node_indices[node_index_count - 1];
+                
+                node_index_count -= 1;
+                b = self.find_best_match(&node_indices, node_index_count as i32, a);
+            } else {
+                a = b;
+                b = c;
+            }
+        }
+        self.nodes[0] = self.nodes[node_indices[a as usize] as u32];
+        self.nodes_used = nodes_used as u32;
     }
 }
 
@@ -180,33 +268,9 @@ impl TlasBuilder {
         self
     }
 
-    // TODO: Make this more general. We are currently only constructing it for a scene with
-    // two armadillos.
-    pub fn build(mut self) -> Tlas {
-        // Assign a TLASLeaf node to each BLAS.
-        self.partial_tlas.nodes[2].left_blas = 0;
-        self.partial_tlas.nodes[2].aabb = Aabb::new(
-            Vector3::from_fill(-100_f32), 
-            Vector3::from_fill(100_f32),
-        );
-        self.partial_tlas.nodes[2].is_leaf = true as u32;
-        self.partial_tlas.nodes[3].left_blas = 1;
-        self.partial_tlas.nodes[3].aabb = Aabb::new(
-            Vector3::from_fill(-100_f32), 
-            Vector3::from_fill(100_f32),
-        );
-        self.partial_tlas.nodes[3].is_leaf = true as u32;
-        // Create a root node over the two leaf nodes.
-        // NOTE: Node 1 is a filler to get two tlas child nodes to fit into the 
-        // same cache line.
-        self.partial_tlas.nodes[0].left_blas = 2;
-        self.partial_tlas.nodes[0].aabb = Aabb::new(
-            Vector3::from_fill(-100_f32), 
-            Vector3::from_fill(100_f32)
-        );
-        self.partial_tlas.nodes[0].is_leaf = false as u32;
-
-        self.partial_tlas.nodes_used = 4;
+    // TODO: Make this more general. We are currently building TLASes for at most 256 objects.
+    pub fn build(mut self) -> Tlas { 
+        self.partial_tlas.rebuild();
 
         self.partial_tlas
     }

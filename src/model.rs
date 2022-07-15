@@ -4,7 +4,7 @@ use crate::ray::*;
 use crate::bvh::*;
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Model {
     pub mesh: Vec<Triangle<f32>>,
     pub bvh: Bvh,

@@ -163,6 +163,7 @@ impl App {
 }
 */
 
+/*
 struct App {
     active_scene: Scene,
     angle: f32,
@@ -225,6 +226,115 @@ impl App {
                     let color = if ray.t < f32::MAX {
                         let color = 255 - (((ray.t - 3_f32) * 80_f32) as i32);
                         let c = color * 0x010101;
+                        let r = ((c & 0x00FF0000) >> 16) as u8;
+                        let g = ((c & 0x0000FF00) >> 8) as u8;
+                        let b = (c & 0x000000FF) as u8;
+                        
+                        Rgba::new(r, g, b, 255)
+                    } else {
+                        Rgba::new(0, 0, 0, 255)
+                    };
+
+                    self.frame_buffer[(tile_height * x + u, tile_height * y + v)] = color;
+                }
+            }
+        }
+    }
+}
+*/
+
+struct App {
+    active_scene: Scene,
+    frame_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
+    a: Vec<f32>,
+    h: Vec<f32>,
+    s: Vec<f32>,
+}
+
+impl App {
+    fn new(active_scene: Scene, width: usize, height: usize) -> Self {
+        let frame_buffer = ImageBuffer::from_fill(
+            width, 
+            height,
+            Rgba::from([0, 0, 0, 1])
+        );
+        let a = vec![0_f32; 16];
+        let h = vec![
+            5_f32, 4_f32, 3_f32, 2_f32, 1_f32, 5_f32, 4_f32, 3_f32, 
+            0_f32, 0_f32, 0_f32, 0_f32, 0_f32, 0_f32, 0_f32, 0_f32
+        ];
+        let s = vec![0_f32; 16];
+    
+        Self { active_scene, frame_buffer, a, h, s }
+    }
+
+    fn update(&mut self, elapsed: f64) {
+        let mut i = 0;
+        for x in 0..4 {
+            for y in 0..4 {
+                let scale_mat = Matrix4x4::from_affine_scale(0.75);
+                let trans_mat = Matrix4x4::from_affine_translation(
+                    &Vector3::new((x as f32 - 1.5) * 2.5, 0_f32, (y as f32 - 1.5) * 2.5)
+                );
+                let rot_mat = if ((x + y) & 1) == 0 {
+                    Matrix4x4::from_affine_angle_x(Radians(self.a[i])) * Matrix4x4::from_affine_angle_z(Radians(self.a[i]))
+                } else {
+                    Matrix4x4::from_affine_translation(&Vector3::new(0_f32, self.h[i / 2], 0_f32))
+                };
+                self.a[i] += (((i * 13) & 7 + 2) as f32) * 0.005;
+                if self.a[i] > std::f32::consts::FRAC_2_PI {
+                    self.a[i] -= std::f32::consts::FRAC_2_PI;
+                }
+                self.s[i] -= 0.01;
+                self.h[i] += self.s[i];
+                if (self.s[i] < 0_f32) && (self.h[i] < 0_f32) {
+                    self.s[i] = 0.2;
+                }
+
+                let new_transform = trans_mat * rot_mat * scale_mat;
+                self.active_scene.get_mut_unchecked(i).set_transform(&new_transform);
+
+                i += 1;
+            }
+        } 
+
+        self.active_scene.rebuild();
+    }
+
+    fn render(&mut self) {
+        // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
+        // Set up camera.
+        let camera_position = Vector3::new(0.0, 4.5, -8.5);
+        let rot_mat = Matrix4x4::from_affine_angle_x(Radians(0.5));
+        let _p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
+        let _p1 = Vector3::new(1_f32, 1_f32, 2_f32);
+        let _p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
+        let p0 = (rot_mat * _p0.extend(1_f32)).contract();
+        let p1 = (rot_mat * _p1.extend(1_f32)).contract();
+        let p2 = (rot_mat * _p2.extend(1_f32)).contract();
+
+        let tile_width = 8;
+        let tile_height = 8;
+        let tile_count_x = 80;
+        let tile_count_y = 80;
+        let tile_count = tile_count_x * tile_count_y;
+        for tile in 0..tile_count {
+            let x = tile % tile_count_x;
+            let y = tile / tile_count_y;
+            for v in 0..tile_height {
+                for u in 0..tile_width {
+                    let ray_origin = camera_position;
+                    let pixel_position = ray_origin + p0 + 
+                        (p1 - p0) * ((tile_width * x + u) as f32 / SCREEN_WIDTH as f32) + 
+                        (p2 - p0) * ((tile_height * y + v) as f32 / SCREEN_HEIGHT as f32);
+                    let ray_direction = (pixel_position - ray_origin).normalize();
+                    let mut ray = Ray::new(ray_origin, ray_direction, f32::MAX);
+                    if let Some(t_intersect) = self.active_scene.intersect(&ray) {
+                        ray.t = t_intersect
+                    }
+                    let color = if ray.t < f32::MAX {
+                        let _color = 255 - (((ray.t - 3_f32) * 80_f32) as i32) as u32;
+                        let c = _color * 0x010101;
                         let r = ((c & 0x00FF0000) >> 16) as u8;
                         let g = ((c & 0x0000FF00) >> 8) as u8;
                         let b = (c & 0x000000FF) as u8;
@@ -339,7 +449,8 @@ fn build_bigben_scene() -> Scene {
 }
 */
 
-fn build_armadillo_scene() -> Scene {
+/*
+fn build_two_armadillos_scene() -> Scene {
     let mesh = load_tri_model("assets/armadillo.tri");
     let model_builder = ModelBuilder::new();
     let model1 = model_builder.with_mesh(mesh).build();
@@ -363,13 +474,33 @@ fn build_armadillo_scene() -> Scene {
 
     scene
 }
+*/
+
+fn build_many_armadillos_scene() -> Scene {
+    let mesh = load_tri_model("assets/armadillo.tri");
+    let model_builder = ModelBuilder::new();
+    let model = model_builder.with_mesh(mesh).build();
+    let objects = (0..16).map(|_| {
+        let model_i = model.clone();
+        let object_i = SceneObjectBuilder::new(model_i)
+            .with_transform(&Matrix4x4::from_affine_scale(0.75))
+            .build();
+        
+        object_i
+    }).collect::<Vec<_>>();
+    let scene = SceneBuilder::new()
+        .with_objects(objects)
+        .build();
+
+    scene
+}
 
 fn main() -> io::Result<()> {
     use std::time::SystemTime;
 
     println!("Building scene.");
     let now = SystemTime::now();
-    let active_scene = build_armadillo_scene();
+    let active_scene = build_many_armadillos_scene();
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {} s", elapsed.as_secs_f64());
 

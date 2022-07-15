@@ -8,9 +8,9 @@ use cglinalg::{
     Matrix4x4,
     Vector3,
 };
-use std::rc::Rc;
 
 
+#[derive(Clone, Debug)]
 pub struct SceneObject {
     model: Model,
     transform: Matrix4x4<f32>,
@@ -136,8 +136,14 @@ impl Scene {
         self.tlas.get_mut_unchecked(index)
     }
 
+    #[inline]
     pub fn intersect(&self, ray: &Ray<f32>) -> Option<f32> {
         self.tlas.intersect(ray)
+    }
+
+    #[inline]
+    pub fn rebuild(&mut self) {
+        self.tlas.rebuild();
     }
 }
 
@@ -154,6 +160,12 @@ impl SceneBuilder {
 
     pub fn with_object(mut self, object: SceneObject) -> Self {
         self.objects.push(object);
+
+        self
+    }
+
+    pub fn with_objects(mut self, new_objects: Vec<SceneObject>) -> Self {
+        self.objects = new_objects;
 
         self
     }
