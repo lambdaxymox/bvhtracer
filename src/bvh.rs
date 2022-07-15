@@ -294,9 +294,7 @@ impl Bvh {
 
 
     pub fn intersect(&self, mesh: &[Triangle<f32>], ray: &Ray<f32>) -> Option<f32> {
-        let res = self.intersect_subtree(mesh, ray, self.root_node_index);
-
-        res
+        self.intersect_subtree(mesh, ray, self.root_node_index)
     }
 
     /// Returns the number of nodes in the boundary volume hierarchy.
