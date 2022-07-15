@@ -70,7 +70,7 @@ fn aabb_intersection_hit(bh: &mut criterion::Criterion) {
     let ray = gen_hitting_ray();
 
     bh.bench_function("aabb_intersection_hit", move |bh| bh.iter(|| {
-        aabb.intersect(&ray)
+        criterion::black_box(aabb.intersect(&ray))
     }));
 }
 
@@ -82,7 +82,7 @@ fn aabb_intersection_miss(bh: &mut criterion::Criterion) {
     let ray = gen_missing_ray();
 
     bh.bench_function("aabb_intersection_miss", move |bh| bh.iter(|| {
-        aabb.intersect(&ray)
+        criterion::black_box(aabb.intersect(&ray))
     }));
 }
 

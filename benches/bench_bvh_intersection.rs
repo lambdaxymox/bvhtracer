@@ -73,7 +73,7 @@ fn sample_unit_sphere(rng: &mut IsaacRng) -> Vector3<f32> {
     }
 }
 
-fn gen_ray() -> Ray<f32> {
+fn gen_hitting_ray() -> Ray<f32> {
     use rand::SeedableRng;
     let mut rng = IsaacRng::seed_from_u64(0);
     let sphere_radius = 10_f32;
@@ -84,11 +84,31 @@ fn gen_ray() -> Ray<f32> {
     Ray::from_origin_dir(ray_origin, ray_direction)
 }
 
+fn gen_missing_ray() -> Ray<f32> {
+    use rand::SeedableRng;
+    let mut rng = IsaacRng::seed_from_u64(0);
+    let sphere_radius = 10_f32;
+    let sample = sample_unit_sphere(&mut rng);
+    let ray_direction = sample;
+    let ray_origin = sample * sphere_radius;
+
+    Ray::from_origin_dir(ray_origin, ray_direction)
+}
+
 fn bvh_intersection_hit(bh: &mut criterion::Criterion) {
     let scene = scene();
-    let ray = gen_ray();
+    let ray = gen_hitting_ray();
 
     bh.bench_function("bvh_intersection_hit", move |bh| bh.iter(|| {
+        scene.intersect(&ray)
+    }));
+}
+
+fn bvh_intersection_miss(bh: &mut criterion::Criterion) {
+    let scene = scene();
+    let ray = gen_missing_ray();
+
+    bh.bench_function("bvh_intersection_miss", move |bh| bh.iter(|| {
         scene.intersect(&ray)
     }));
 }
@@ -97,6 +117,7 @@ fn bvh_intersection_hit(bh: &mut criterion::Criterion) {
 criterion_group!(
     bvh_intersection_benchmarks,
     bvh_intersection_hit,
+    bvh_intersection_miss,
 );
 criterion_main!(bvh_intersection_benchmarks);
 
