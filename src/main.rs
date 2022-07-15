@@ -186,10 +186,10 @@ impl App {
         if self.angle > std::f32::consts::FRAC_2_PI {
             self.angle -= std::f32::consts::FRAC_2_PI;
         }
-        self.active_scene.objects[0].set_transform(
+        self.active_scene.get_mut_unchecked(0).set_transform(
             &Matrix4x4::from_affine_translation(&Vector3::new(-1.3_f32, 0_f32, 0_f32))
         );
-        self.active_scene.objects[1].set_transform(&(
+        self.active_scene.get_mut_unchecked(1).set_transform(&(
             Matrix4x4::from_affine_translation(&Vector3::new(1.3_f32, 0_f32, 0_f32)) *
             Matrix4x4::from_affine_angle_y(Radians(self.angle))
         ));
@@ -219,11 +219,8 @@ impl App {
                         (p2 - p0) * ((tile_height * y + v) as f32 / SCREEN_HEIGHT as f32);
                     let ray_direction = (pixel_position - ray_origin).normalize();
                     let mut ray = Ray::new(ray_origin, ray_direction, f32::MAX);
-                    if let Some(t_intersect) = self.active_scene.objects[0].intersect(&ray) {
-                        ray.t = t_intersect;
-                    }
-                    if let Some(t_intersect) = self.active_scene.objects[1].intersect(&ray) {
-                        ray.t = t_intersect;
+                    if let Some(t_intersect) = self.active_scene.intersect(&ray) {
+                        ray.t = t_intersect
                     }
                     let color = if ray.t < f32::MAX {
                         let color = 255 - (((ray.t - 3_f32) * 80_f32) as i32);
@@ -346,9 +343,13 @@ fn build_armadillo_scene() -> Scene {
     let mesh = load_tri_model("assets/armadillo.tri");
     let model_builder = ModelBuilder::new();
     let model1 = model_builder.with_mesh(mesh).build();
-    let model1_transform = Matrix4x4::from_affine_translation(&Vector3::new(-1.3_f32, 0_f32, 0_f32));
+    let model1_transform = Matrix4x4::from_affine_translation(
+        &Vector3::new(-1.3_f32, 0_f32, 0_f32)
+    );
     let model2 = model1.clone();
-    let model2_transform = Matrix4x4::from_affine_translation(&Vector3::new(1.3_f32, 0_f32, 0_f32));
+    let model2_transform = Matrix4x4::from_affine_translation(
+        &Vector3::new(1.3_f32, 0_f32, 0_f32)
+    );
     let object1 = SceneObjectBuilder::new(model1)
         .with_transform(&model1_transform)
         .build();

@@ -1,5 +1,6 @@
 use crate::aabb::*;
 use crate::ray::*;
+use crate::tlas::*;
 use crate::model::{
     Model,
 };
@@ -7,6 +8,7 @@ use cglinalg::{
     Matrix4x4,
     Vector3,
 };
+use std::rc::Rc;
 
 
 pub struct SceneObject {
@@ -120,10 +122,23 @@ impl SceneObjectBuilder {
 }
 
 pub struct Scene {
-    pub objects: Vec<SceneObject>,
+    tlas: Tlas,
 }
 
 impl Scene {
+    #[inline]
+    pub fn get_unchecked(&self, index: usize) -> &SceneObject {
+        self.tlas.get_unchecked(index)
+    }
+
+    #[inline]
+    pub fn get_mut_unchecked(&mut self, index: usize) -> &mut SceneObject {
+        self.tlas.get_mut_unchecked(index)
+    }
+
+    pub fn intersect(&self, ray: &Ray<f32>) -> Option<f32> {
+        self.tlas.intersect(ray)
+    }
 }
 
 pub struct SceneBuilder {
@@ -132,7 +147,9 @@ pub struct SceneBuilder {
 
 impl SceneBuilder {
     pub fn new() -> Self {
-        Self { objects: vec![] }
+        Self { 
+            objects: vec![],
+        }
     }
 
     pub fn with_object(mut self, object: SceneObject) -> Self {
@@ -142,8 +159,12 @@ impl SceneBuilder {
     }
 
     pub fn build(self) -> Scene {
+        let tlas = TlasBuilder::new()
+            .with_objects(self.objects)
+            .build();
+
         Scene {
-            objects: self.objects,
+            tlas,
         }
     }
 }
