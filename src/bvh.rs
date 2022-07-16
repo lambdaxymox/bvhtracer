@@ -7,6 +7,7 @@ use cglinalg::{
 
 use std::fmt;
 use std::ops;
+use std::mem;
 
 
 // NOTE: We use local implementations of min and max of vector components here because the
@@ -146,7 +147,6 @@ impl BvhNode {
 
     #[inline]
     const fn as_leaf(&self) -> &BvhLeafNode {
-        use std::mem;
         unsafe { 
             mem::transmute::<&BvhNode, &BvhLeafNode>(self)
         }
@@ -154,7 +154,6 @@ impl BvhNode {
 
     #[inline]
     const fn as_branch(&self) -> &BvhBranchNode {
-        use std::mem;
         unsafe { 
             mem::transmute::<&BvhNode, &BvhBranchNode>(self)
         }
@@ -162,7 +161,6 @@ impl BvhNode {
 
     #[inline]
     fn as_mut_leaf(&mut self) -> &mut BvhLeafNode {
-        use std::mem;
         unsafe { 
             mem::transmute::<&mut BvhNode, &mut BvhLeafNode>(self)
         }
@@ -170,7 +168,6 @@ impl BvhNode {
 
     #[inline]
     fn as_mut_branch(&mut self) -> &mut BvhBranchNode {
-        use std::mem;
         unsafe { 
             mem::transmute::<&mut BvhNode, &mut BvhBranchNode>(self)
         }
@@ -363,7 +360,10 @@ impl BvhBuilder {
         let nodes = BvhNodeArray(vec![]);
         let node_indices = vec![];
         let root_node_index = 0;
-        let nodes_used = 1;
+        // We set the nodes_used count to 2 to skip node index 1. Every branch node
+        // has two child nodes, and we want them to align nicely in the cache. In order
+        // to do that, we insert a dummy node at index 1, using index 0 for the root.
+        let nodes_used = 2;
 
         let partial_bvh = Bvh { nodes, node_indices, root_node_index, nodes_used, };
 
@@ -589,8 +589,8 @@ mod bvh_tests {
     #[test]
     fn test_bvh_nodes_used() {
         let bvh = bvh();
-        let default_node = super::BvhNode::default();
-        for i in 0..bvh.nodes_used() {
+        let default_node = BvhNode::default();
+        for i in (0..bvh.nodes_used()).filter(|i| *i != 1) {
             assert_ne!(bvh.nodes[i as u32], default_node);
         }
     }
@@ -598,23 +598,16 @@ mod bvh_tests {
     #[test]
     fn test_bvh_nodes_unused() {
         let bvh = bvh();
-        let default_node = super::BvhNode::default();
+        let default_node = BvhNode::default();
         for i in bvh.nodes_used()..bvh.nodes.len() {
             assert_eq!(bvh.nodes[i as u32], default_node);
         }
     }
 
-    /// For maximum cache coherence, a BVH node should fill one or two cache lines on a 
-    /// modern microprocessor.
-    #[test]
-    fn test_bvh_node_fits_inside_a_cache_line() {
-        assert_eq!(std::mem::size_of::<super::BvhNode>(), 32);
-    }
-
     #[test]
     fn test_bvh_branch_node_children_always_have_larger_indices_than_parents() {
         let bvh = bvh();
-        for node_index in 0..bvh.nodes_used {
+        for node_index in (0..bvh.nodes_used).filter(|i| *i != 1) {
             let node = &bvh.nodes[node_index];
             if node.is_branch() {
                 assert!(node.as_branch().left_node() > node_index);
@@ -637,12 +630,144 @@ mod bvh_tests {
     /// The second entry in the BVH hierarchy's table exists to make the left and right nodes
     /// align in the cache, and it never used during the lifetime of the BVH.
     #[test]
-    fn test_second_bvh_entry_should_remain_default() {
+    fn test_second_bvh_entry_should_be_default_node() {
         let bvh = bvh();
         let expected = BvhNode::default();
         let result = bvh.nodes[1];
 
         assert_eq!(result, expected);
+    }
+}
+
+#[cfg(test)]
+mod bvh_node_tests {
+    use super::*;
+    use cglinalg::{
+        Vector3,
+    };
+
+
+    fn leaf_node1() -> BvhNode {
+        let aabb = Aabb::new(
+            Vector3::new(-1_f32, -1_f32, -1_f32),
+            Vector3::new(1_f32, 1_f32, 1_f32),
+        );
+        let node = BvhNode {
+            aabb,
+            primitive_count: 1200,
+            _left_first: BranchOrLeafData {
+                first_primitive_index: 0,
+            },
+        };
+
+        node
+    }
+
+    fn leaf_node2() -> BvhNode {
+        let aabb = Aabb::new(
+            Vector3::new(1_f32, -1_f32, -1_f32),
+            Vector3::new(2_f32, 2_f32, 1_f32),
+        );
+        let node = BvhNode {
+            aabb,
+            primitive_count: 200,
+            _left_first: BranchOrLeafData {
+                first_primitive_index: 0,
+            },
+        };
+
+        node
+    }
+
+    fn branch_node1() -> BvhNode {
+        let aabb = Aabb::new(
+            Vector3::new(-2_f32, -3_f32, -5_f32),
+            Vector3::new(2_f32, 3_f32, 5_f32),
+        );
+        let node = BvhNode {
+            aabb,
+            primitive_count: 0,
+            _left_first: BranchOrLeafData {
+                left_node: 2,
+            }
+        };
+
+        node
+    }
+
+    fn branch_node2() -> BvhNode {
+        let aabb = Aabb::new(
+            Vector3::new(-2_f32, -3_f32, -5_f32),
+            Vector3::new(2_f32, 3_f32, 5_f32),
+        );
+        let node = BvhNode {
+            aabb,
+            primitive_count: 0,
+            _left_first: BranchOrLeafData {
+                left_node: 3,
+            }
+        };
+
+        node
+    }
+
+    /// For maximum cache coherence, a BVH node should fill one or two cache lines on a 
+    /// modern microprocessor.
+    #[test]
+    fn test_bvh_node_fits_inside_a_cache_line() {
+        assert_eq!(std::mem::size_of::<super::BvhNode>(), 32);
+    } 
+
+    #[test]
+    fn test_leaf_node() {
+        let node = leaf_node1();
+
+        assert!(node.is_leaf());
+    }
+
+    #[test]
+    fn test_branch_node() {
+        let node = branch_node1();
+
+        assert!(node.is_branch());
+    }
+
+    #[test]
+    fn test_branch_node_compare_leaf_branch() {
+        let leaf_node = leaf_node1();
+        let branch_node = branch_node1();
+
+        assert_ne!(leaf_node, branch_node);
+    }
+    
+    #[test]
+    fn test_compare_leaf_node_to_self() {
+        let leaf_node = leaf_node1();
+
+        assert_eq!(leaf_node, leaf_node);
+    }
+    
+    #[test]
+    fn test_compare_branch_node_to_self() {
+        let branch_node = branch_node1();
+
+        assert_eq!(branch_node, branch_node);
+    }
+
+    #[test]
+    fn test_compare_branch_node_branch_node() {
+        let branch_node1 = branch_node1();
+        let branch_node2 = branch_node2();
+
+        assert_ne!(branch_node1, branch_node2);
+    }
+
+    #[test]
+    fn test_compare_leaf_node_leaf_node() {
+        let leaf_node1 = leaf_node1();
+        let leaf_node2 = leaf_node2();
+
+        assert_ne!(leaf_node1, leaf_node2);
     }
 }
 

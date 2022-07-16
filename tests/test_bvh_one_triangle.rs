@@ -28,7 +28,7 @@ fn scene() -> Model {
 fn test_one_triangle_should_have_one_volume() {
     let scene = scene();
 
-    assert_eq!(scene.bvh.nodes_used(), 1);
+    assert_eq!(scene.bvh.nodes_used(), 2);
 }
 
 #[test]
