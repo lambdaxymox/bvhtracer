@@ -289,7 +289,6 @@ impl Bvh {
         if closest_ray.t < f32::MAX { Some(closest_ray.t) } else { None }
     }
 
-
     pub fn intersect(&self, mesh: &[Triangle<f32>], ray: &Ray<f32>) -> Option<f32> {
         self.intersect_subtree(mesh, ray, self.root_node_index)
     }

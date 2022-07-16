@@ -170,7 +170,7 @@ fn test_triangle_intersection_vertex_miss3() {
 }
 
 #[test]
-fn test_triangle_closest_t() {
+fn test_triangle_closest_t1() {
     let scene = scene();
     let ray_origin = Vector3::new(0_f32, 0_f32, 5_f32);
     let scene_origin = Vector3::zero();
@@ -180,11 +180,32 @@ fn test_triangle_closest_t() {
     let result = scene.intersect(&ray).unwrap();
 
     assert!(result < ray_t);
+}
 
+#[test]
+fn test_triangle_closest_t2() {
+    let scene = scene();
+    let ray_origin = Vector3::new(0_f32, 0_f32, 5_f32);
+    let scene_origin = Vector3::zero();
+    let ray_direction = (scene_origin - ray_origin).normalize();
     let ray_t = 100_f32;
     let ray = Ray::new(ray_origin, ray_direction, ray_t);
     let result = scene.intersect(&ray).unwrap();
 
     assert!(result < ray_t);
+}
+
+
+#[test]
+fn test_triangle_closest_t3() {
+    let scene = scene();
+    let ray_origin = Vector3::new(0_f32, 0_f32, 5_f32);
+    let scene_origin = Vector3::zero();
+    let ray_direction = (scene_origin - ray_origin).normalize();
+    let ray_t = 0.01_f32;
+    let ray = Ray::new(ray_origin, ray_direction, ray_t);
+    let result = scene.intersect(&ray).unwrap();
+
+    assert!(result <= ray_t);
 }
 
