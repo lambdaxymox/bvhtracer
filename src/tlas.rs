@@ -1,3 +1,4 @@
+use crate::aabb;
 use crate::aabb::*;
 use crate::ray::*;
 use crate::scene::{
@@ -177,7 +178,6 @@ impl Tlas {
             }
         }
 
-        // assert_ne!(best_b, -1);
         best_b
     }
 

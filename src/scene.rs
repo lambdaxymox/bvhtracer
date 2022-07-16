@@ -8,11 +8,14 @@ use cglinalg::{
     Matrix4x4,
     Vector3,
 };
+use std::rc::{
+    Rc,
+};
 
 
 #[derive(Clone, Debug)]
 pub struct SceneObject {
-    model: Model,
+    model: Rc<Model>,
     transform: Matrix4x4<f32>,
     transform_inv: Matrix4x4<f32>,
     bounds: Aabb<f32>,
@@ -52,7 +55,7 @@ impl SceneObject {
             direction_model_space.contract()
         }; 
         let ray_model_space = Ray::new(ray_model_space_origin, ray_model_space_direction, ray.t);
-        
+    
         self.model.intersect(&ray_model_space)
     }
 
@@ -66,22 +69,23 @@ impl SceneObject {
     pub fn model(&self) -> &Model {
         &self.model
     }
-
+    /*
     #[inline]
     pub fn model_mut(&mut self) -> &mut Model {
         &mut self.model
     }
+    */
 }
 
 pub struct SceneObjectBuilder {
-    model: Model,
+    model: Rc<Model>,
     transform: Matrix4x4<f32>,
     transform_inv: Matrix4x4<f32>,
     bounds: Aabb<f32>,
 }
 
 impl SceneObjectBuilder {
-    pub fn new(model: Model) -> Self {
+    pub fn new(model: Rc<Model>) -> Self {
         Self { 
             model, 
             transform: Matrix4x4::identity(), 

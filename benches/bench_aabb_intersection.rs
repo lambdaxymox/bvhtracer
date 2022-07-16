@@ -16,15 +16,14 @@ use cglinalg::{
 use rand::{
     Rng, 
 };
-
 use rand_isaac::{
     IsaacRng,
 };
-
 use criterion::{
     criterion_group,
     criterion_main,
 };
+
 
 fn sample_unit_sphere(rng: &mut IsaacRng) -> Vector3<f32> {
     loop {

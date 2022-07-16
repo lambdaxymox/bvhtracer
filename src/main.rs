@@ -34,10 +34,17 @@ use crate::model::*;
 use crate::scene::*;
 
 use cglinalg::{
+    Magnitude,
     Matrix4x4,
     Vector3,
-    Magnitude,
     Radians,
+};
+use rand::{
+    Rng,
+    SeedableRng, 
+};
+use rand_isaac::{
+    IsaacRng,
 };
 
 use std::io;
@@ -48,9 +55,10 @@ use std::fs::{
 use std::path::{
     Path,
 };
-
 use std::ptr;
-
+use std::rc::{
+    Rc,
+};
 
 use glfw::{Action, Context, Key};
 use gl::types::{
@@ -242,7 +250,7 @@ impl App {
     }
 }
 */
-
+/*
 struct App {
     active_scene: Scene,
     frame_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
@@ -318,20 +326,43 @@ impl App {
         let tile_count_x = 80;
         let tile_count_y = 80;
         let tile_count = tile_count_x * tile_count_y;
+
+        let mut rays_traced = 0;
+
+        use std::time::SystemTime;
+        use std::time::Duration;
+        let mut time_spent_ray_tracing = Duration::ZERO;
+        let mut time_spent_intersection_testing = Duration::ZERO;
+
         for tile in 0..tile_count {
             let x = tile % tile_count_x;
             let y = tile / tile_count_y;
             for v in 0..tile_height {
                 for u in 0..tile_width {
+
+                    let total_now = SystemTime::now();
+
+
                     let ray_origin = camera_position;
                     let pixel_position = ray_origin + p0 + 
                         (p1 - p0) * ((tile_width * x + u) as f32 / SCREEN_WIDTH as f32) + 
                         (p2 - p0) * ((tile_height * y + v) as f32 / SCREEN_HEIGHT as f32);
                     let ray_direction = (pixel_position - ray_origin).normalize();
                     let mut ray = Ray::new(ray_origin, ray_direction, f32::MAX);
+
+
+                    
+                    
+                    let now = SystemTime::now();
                     if let Some(t_intersect) = self.active_scene.intersect(&ray) {
                         ray.t = t_intersect
                     }
+                    let elapsed = now.elapsed().unwrap();
+                    time_spent_intersection_testing += elapsed;
+                    
+                    
+                    
+                    
                     let color = if ray.t < f32::MAX {
                         let _color = 255 - (((ray.t - 3_f32) * 80_f32) as i32) as u32;
                         let c = _color * 0x010101;
@@ -345,12 +376,184 @@ impl App {
                     };
 
                     self.frame_buffer[(tile_height * x + u, tile_height * y + v)] = color;
+
+
+                    
+                    let total_elapsed = total_now.elapsed().unwrap();
+                    rays_traced += 1;
+                    time_spent_ray_tracing += total_elapsed;
                 }
             }
         }
+
+        println!("rays_traced = {}", rays_traced);
+        println!("time_spent_ray_tracing = {:?}", time_spent_ray_tracing);
+        println!("time_spent_per_ray = {:?}", time_spent_ray_tracing.checked_div(rays_traced));
+        println!("time_spent_intersection_testing = {:?}", time_spent_intersection_testing);
+        println!("time_spent_intersection_testing_per_ray = {:?}", time_spent_intersection_testing.checked_div(rays_traced));
+    }
+}
+*/
+
+struct AppState {
+    positions: Vec<Vector3<f32>>,
+    directions: Vec<Vector3<f32>>,
+    orientations: Vec<Vector3<f32>>,
+    active_scene: Scene,
+}
+
+impl AppState {
+    fn new(active_scene: Scene) -> Self {
+        let mut rng = IsaacRng::seed_from_u64(0);
+        let mut positions = vec![Vector3::zero(); 256];
+        let mut directions = vec![Vector3::zero(); 256];
+        let mut orientations = vec![Vector3::zero(); 256];
+        for i in 0..256 {
+            positions[i] = Vector3::new(rng.gen(), rng.gen(), rng.gen());
+            positions[i] -= Vector3::new(0.5, 0.5, 0.5);
+            positions[i] *= 4_f32;
+            directions[i] = positions[i].normalize() * 0.05;
+            orientations[i] = Vector3::new(rng.gen(), rng.gen(), rng.gen());
+            orientations[i] *= 2.5;
+        }
+
+        Self { positions, directions, orientations, active_scene }
+    }
+
+    fn update(&mut self, elapsed: f64) {
+        for i in 0..256 {
+            let rot_mat = Matrix4x4::from_affine_angle_x(Radians(self.orientations[i].x)) *
+                Matrix4x4::from_affine_angle_y(Radians(self.orientations[i].y)) *
+                Matrix4x4::from_affine_angle_z(Radians(self.orientations[i].z));
+            let trans_mat = Matrix4x4::from_affine_translation(&self.positions[i]);
+            let new_transform = trans_mat * rot_mat;
+            self.active_scene.get_mut_unchecked(i).set_transform(&new_transform);
+            self.positions[i] += self.directions[i];
+            self.orientations[i] += self.directions[i];
+            if self.positions[i].x < -3_f32 || self.positions[i].x > 3_f32 { 
+                self.directions[i].x *= -1_f32;
+            }
+            if self.positions[i].y < -3_f32 || self.positions[i].y > 3_f32 { 
+                self.directions[i].y *= -1_f32;
+            }
+            if self.positions[i].z < -3_f32 || self.positions[i].z > 3_f32 { 
+                self.directions[i].z *= -1_f32;
+            }
+        }
+
+        self.active_scene.rebuild();
+    }
+
+    fn active_scene(&self) -> &Scene {
+        &self.active_scene
     }
 }
 
+struct App {
+    frame_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
+    state: AppState,
+}
+
+impl App {
+    fn new(active_scene: Scene, width: usize, height: usize) -> Self {
+        let frame_buffer = ImageBuffer::from_fill(
+            width, 
+            height,
+            Rgba::from([0, 0, 0, 1])
+        );
+        let state = AppState::new(active_scene);
+    
+        Self { frame_buffer, state, }
+    }
+
+    fn update(&mut self, elapsed: f64) {
+        self.state.update(elapsed);        
+    }
+
+    fn render(&mut self) {
+        // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
+        // Set up camera.
+        let camera_position = Vector3::new(0.0, 4.5, -8.5);
+        let rot_mat = Matrix4x4::from_affine_angle_x(Radians(0.5));
+        let _p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
+        let _p1 = Vector3::new(1_f32, 1_f32, 2_f32);
+        let _p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
+        let p0 = (rot_mat * _p0.extend(1_f32)).contract();
+        let p1 = (rot_mat * _p1.extend(1_f32)).contract();
+        let p2 = (rot_mat * _p2.extend(1_f32)).contract();
+
+        let tile_width = 8;
+        let tile_height = 8;
+        let tile_count_x = 80;
+        let tile_count_y = 80;
+        let tile_count = tile_count_x * tile_count_y;
+
+        let mut rays_traced = 0;
+
+        use std::time::SystemTime;
+        use std::time::Duration;
+        let mut time_spent_ray_tracing = Duration::ZERO;
+        let mut time_spent_intersection_testing = Duration::ZERO;
+
+        for tile in 0..tile_count {
+            let x = tile % tile_count_x;
+            let y = tile / tile_count_y;
+            for v in 0..tile_height {
+                for u in 0..tile_width {
+
+                    let total_now = SystemTime::now();
+
+
+                    let ray_origin = camera_position;
+                    let pixel_position = ray_origin + p0 + 
+                        (p1 - p0) * ((tile_width * x + u) as f32 / SCREEN_WIDTH as f32) + 
+                        (p2 - p0) * ((tile_height * y + v) as f32 / SCREEN_HEIGHT as f32);
+                    let ray_direction = (pixel_position - ray_origin).normalize();
+                    let mut ray = Ray::new(ray_origin, ray_direction, f32::MAX);
+
+
+                    
+                    
+                    let now = SystemTime::now();
+                    if let Some(t_intersect) = self.state.active_scene().intersect(&ray) {
+                        ray.t = t_intersect
+                    }
+                    let elapsed = now.elapsed().unwrap();
+                    time_spent_intersection_testing += elapsed;
+                    
+                    
+                    
+                    
+                    let color = if ray.t < f32::MAX {
+                        let _color = 255 - (((ray.t - 3_f32) * 80_f32) as i32) as u32;
+                        let c = _color * 0x010101;
+                        let r = ((c & 0x00FF0000) >> 16) as u8;
+                        let g = ((c & 0x0000FF00) >> 8) as u8;
+                        let b = (c & 0x000000FF) as u8;
+                        
+                        Rgba::new(r, g, b, 255)
+                    } else {
+                        Rgba::new(0, 0, 0, 255)
+                    };
+
+                    self.frame_buffer[(tile_height * x + u, tile_height * y + v)] = color;
+
+
+                    
+                    let total_elapsed = total_now.elapsed().unwrap();
+                    rays_traced += 1;
+                    time_spent_ray_tracing += total_elapsed;
+                }
+            }
+        }
+
+        println!("rays_traced = {}", rays_traced);
+        println!("time_spent_ray_tracing = {:?}", time_spent_ray_tracing);
+        println!("time_spent_per_ray = {:?}", time_spent_ray_tracing.checked_div(rays_traced));
+        println!("time_spent_intersection_testing = {:?}", time_spent_intersection_testing);
+        println!("time_spent_intersection_testing_per_ray = {:?}", time_spent_intersection_testing.checked_div(rays_traced));
+    }
+}
 
 /// Load texture image into the GPU.
 fn send_to_gpu_texture(buffer: &ImageBuffer<Rgba<u8>, Vec<u8>>, wrapping_mode: GLuint) -> Result<GLuint, String> {
@@ -475,12 +678,29 @@ fn build_two_armadillos_scene() -> Scene {
     scene
 }
 */
-
-fn build_many_armadillos_scene() -> Scene {
+/*
+fn build_16_armadillos_scene() -> Scene {
     let mesh = load_tri_model("assets/armadillo.tri");
     let model_builder = ModelBuilder::new();
-    let model = model_builder.with_mesh(mesh).build();
+    let model = Rc::new(model_builder.with_mesh(mesh).build());
     let objects = (0..16).map(|_| {
+        let model_i = model.clone();
+
+        SceneObjectBuilder::new(model_i)
+            .with_transform(&Matrix4x4::from_affine_scale(0.75))
+            .build()
+    }).collect::<Vec<_>>();
+    
+    SceneBuilder::new()
+        .with_objects(objects)
+        .build()
+}
+*/
+fn build_256_armadillos_scene() -> Scene {
+    let mesh = load_tri_model("assets/armadillo.tri");
+    let model_builder = ModelBuilder::new();
+    let model = Rc::new(model_builder.with_mesh(mesh).build());
+    let objects = (0..256).map(|_| {
         let model_i = model.clone();
 
         SceneObjectBuilder::new(model_i)
@@ -498,7 +718,7 @@ fn main() -> io::Result<()> {
 
     println!("Building scene.");
     let now = SystemTime::now();
-    let active_scene = build_many_armadillos_scene();
+    let active_scene = build_256_armadillos_scene();
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {} s", elapsed.as_secs_f64());
 
