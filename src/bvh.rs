@@ -160,14 +160,14 @@ impl BvhNode {
     }
 
     #[inline]
-    fn as_mut_leaf(&mut self) -> &mut BvhLeafNode {
+    fn as_leaf_mut(&mut self) -> &mut BvhLeafNode {
         unsafe { 
             mem::transmute::<&mut BvhNode, &mut BvhLeafNode>(self)
         }
     }
 
     #[inline]
-    fn as_mut_branch(&mut self) -> &mut BvhBranchNode {
+    fn as_branch_mut(&mut self) -> &mut BvhBranchNode {
         unsafe { 
             mem::transmute::<&mut BvhNode, &mut BvhBranchNode>(self)
         }
@@ -434,14 +434,14 @@ impl Bvh {
             nodes_used
         };
         {
-            self.nodes[left_child_index].as_mut_leaf().first_primitive_index = self.nodes[node_index].as_leaf().first_primitive_index;
+            self.nodes[left_child_index].as_leaf_mut().first_primitive_index = self.nodes[node_index].as_leaf().first_primitive_index;
             self.nodes[left_child_index].primitive_count = left_count;
-            self.nodes[right_child_index].as_mut_leaf().first_primitive_index = i;
+            self.nodes[right_child_index].as_leaf_mut().first_primitive_index = i;
             self.nodes[right_child_index].primitive_count = self.nodes[node_index].primitive_count - left_count;
         }
         {
             let node = &mut self.nodes[node_index];
-            node.as_mut_branch().left_node = left_child_index;
+            node.as_branch_mut().left_node = left_child_index;
             node.primitive_count = 0;
         }
 
@@ -520,7 +520,7 @@ impl BvhBuilder {
         
         let root_node_index = self.partial_bvh.root_node_index;
         let mut root_node: &mut BvhNode = &mut self.partial_bvh.nodes[root_node_index];
-        root_node.as_mut_branch().left_node = 0;
+        root_node.as_branch_mut().left_node = 0;
         root_node.primitive_count = mesh.len() as u32;
 
         self.partial_bvh.update_node_bounds(mesh, self.partial_bvh.root_node_index);
