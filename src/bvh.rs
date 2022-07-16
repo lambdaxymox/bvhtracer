@@ -454,30 +454,28 @@ impl Bvh {
     }
 
     pub fn refit(&mut self, mesh: &[Triangle<f32>]) {
-        for node_index in (0..self.nodes_used).rev() {
-            if node_index != 1 {
-                {
-                    let node = &self.nodes[node_index];
-                    if node.is_leaf() {
-                        // Leaf node: adjust bounds to contained primitives.
-                        self.update_node_bounds(mesh, node_index as u32);
-                        continue;
-                    }
+        for node_index in (0..self.nodes_used).rev().filter(|i| *i != 1) {
+            {
+                let node = &self.nodes[node_index];
+                if node.is_leaf() {
+                    // Leaf node: adjust bounds to contained primitives.
+                    self.update_node_bounds(mesh, node_index as u32);
+                    continue;
                 }
-
-                // Interior node: adjust bounds to child node bounds.
-                let left_child_aabb = { 
-                    let node = &self.nodes[node_index];
-                    self.nodes[node.as_branch().left_node()].aabb
-                };
-                let right_child_aabb = {
-                    let node = &self.nodes[node_index];
-                    self.nodes[node.as_branch().right_node()].aabb
-                };
-                let mut node = &mut self.nodes[node_index];
-                node.aabb.bounds_min = __min(&left_child_aabb.bounds_min, &right_child_aabb.bounds_min);
-                node.aabb.bounds_max = __max(&left_child_aabb.bounds_max, &right_child_aabb.bounds_max);
             }
+
+            // Interior node: adjust bounds to child node bounds.
+            let left_child_aabb = { 
+                let node = &self.nodes[node_index];
+                self.nodes[node.as_branch().left_node()].aabb
+            };
+            let right_child_aabb = {
+                let node = &self.nodes[node_index];
+                self.nodes[node.as_branch().right_node()].aabb
+            };
+            let mut node = &mut self.nodes[node_index];
+            node.aabb.bounds_min = __min(&left_child_aabb.bounds_min, &right_child_aabb.bounds_min);
+            node.aabb.bounds_max = __max(&left_child_aabb.bounds_max, &right_child_aabb.bounds_max);
         }
     }
 
