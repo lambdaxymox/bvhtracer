@@ -482,17 +482,15 @@ fn build_many_armadillos_scene() -> Scene {
     let model = model_builder.with_mesh(mesh).build();
     let objects = (0..16).map(|_| {
         let model_i = model.clone();
-        let object_i = SceneObjectBuilder::new(model_i)
-            .with_transform(&Matrix4x4::from_affine_scale(0.75))
-            .build();
         
-        object_i
+        SceneObjectBuilder::new(model_i)
+            .with_transform(&Matrix4x4::from_affine_scale(0.75))
+            .build()
     }).collect::<Vec<_>>();
-    let scene = SceneBuilder::new()
+    
+    SceneBuilder::new()
         .with_objects(objects)
-        .build();
-
-    scene
+        .build()
 }
 
 fn main() -> io::Result<()> {

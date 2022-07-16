@@ -301,17 +301,18 @@ impl Bvh {
     }
 
     fn update_node_bounds(&mut self, mesh: &[Triangle<f32>], node_index: u32) {
-        let it = self.primitive_iter(mesh, &self.nodes[node_index]);
-        let node = &mut self.nodes[node_index];
-        node.aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
-        for primitive in it {
-            node.aabb.bounds_min = __min(&node.aabb.bounds_min, &primitive.vertex0);
-            node.aabb.bounds_min = __min(&node.aabb.bounds_min, &primitive.vertex1);
-            node.aabb.bounds_min = __min(&node.aabb.bounds_min, &primitive.vertex2);
-            node.aabb.bounds_max = __max(&node.aabb.bounds_max, &primitive.vertex0);
-            node.aabb.bounds_max = __max(&node.aabb.bounds_max, &primitive.vertex1);
-            node.aabb.bounds_max = __max(&node.aabb.bounds_max, &primitive.vertex2);
+        let mut new_aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
+        for primitive in self.primitive_iter(mesh, &self.nodes[node_index]) {
+            new_aabb.bounds_min = __min(&new_aabb.bounds_min, &primitive.vertex0);
+            new_aabb.bounds_min = __min(&new_aabb.bounds_min, &primitive.vertex1);
+            new_aabb.bounds_min = __min(&new_aabb.bounds_min, &primitive.vertex2);
+            new_aabb.bounds_max = __max(&new_aabb.bounds_max, &primitive.vertex0);
+            new_aabb.bounds_max = __max(&new_aabb.bounds_max, &primitive.vertex1);
+            new_aabb.bounds_max = __max(&new_aabb.bounds_max, &primitive.vertex2);
         }
+
+        let node = &mut self.nodes[node_index];
+        node.aabb = new_aabb;
     }
 
     // TODO: Optimize by finding the longest axis first?
