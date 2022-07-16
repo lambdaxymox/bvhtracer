@@ -261,7 +261,7 @@ impl App {
         let a = vec![0_f32; 16];
         let h = vec![
             5_f32, 4_f32, 3_f32, 2_f32, 1_f32, 5_f32, 4_f32, 3_f32, 
-            0_f32, 0_f32, 0_f32, 0_f32, 0_f32, 0_f32, 0_f32, 0_f32
+            5_f32, 4_f32, 3_f32, 2_f32, 1_f32, 5_f32, 4_f32, 3_f32,
         ];
         let s = vec![0_f32; 16];
     
@@ -482,7 +482,7 @@ fn build_many_armadillos_scene() -> Scene {
     let model = model_builder.with_mesh(mesh).build();
     let objects = (0..16).map(|_| {
         let model_i = model.clone();
-        
+
         SceneObjectBuilder::new(model_i)
             .with_transform(&Matrix4x4::from_affine_scale(0.75))
             .build()

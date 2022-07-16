@@ -60,5 +60,37 @@ where
             None
         }
     }
+
+    #[inline]
+    pub fn intersect_mut(&self, ray: &mut Ray<S>) -> bool {
+        let edge1 = self.vertex1 - self.vertex0;
+        let edge2 = self.vertex2 - self.vertex0;
+        let h = ray.direction.cross(&edge2);
+        let a = edge1.dot(&h);
+        let threshold: S = num_traits::cast(0.0001_f64).unwrap();
+        if a > -threshold && a < threshold {
+            // The ray is parallel to the triangle.
+            return false;
+        }
+        let f = S::one() / a;
+        let s = ray.origin - self.vertex0;
+        let u = f * s.dot(&h);
+        if u < S::zero() || u > S::one() {
+            return false;
+        }
+        let q = s.cross(&edge1);
+        let v = f * ray.direction.dot(&q);
+        if v < S::zero() || u + v > S::one() {
+            return false;
+        }
+        let t = f * edge2.dot(&q);
+        if t > threshold {
+            ray.t = S::min(ray.t, t);
+
+            return true;
+        } else {
+            return false;
+        }
+    }
 }
 

@@ -179,7 +179,7 @@ fn test_triangle_closest_t1() {
     let ray = Ray::new(ray_origin, ray_direction, ray_t);
     let result = scene.intersect(&ray).unwrap();
 
-    assert!(result < ray_t);
+    assert!(result <= ray_t);
 }
 
 #[test]
@@ -192,7 +192,7 @@ fn test_triangle_closest_t2() {
     let ray = Ray::new(ray_origin, ray_direction, ray_t);
     let result = scene.intersect(&ray).unwrap();
 
-    assert!(result < ray_t);
+    assert!(result <= ray_t);
 }
 
 

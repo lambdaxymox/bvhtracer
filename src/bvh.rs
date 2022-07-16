@@ -378,16 +378,15 @@ impl Bvh {
         (best_axis, best_position, best_cost)
     }
 
-    #[inline]
-    fn calculate_node_cost(&self, node: &BvhNode) -> f32 {
-        let extent = node.aabb.extent();
-        let parent_area = extent.x * extent.y + extent.y * extent.z + extent.z * extent.x;
-        let primitive_count = node.primitive_count as f32;
-
-        primitive_count * parent_area
-    }
-
     fn subdivide(&mut self, mesh: &mut [Triangle<f32>], node_index: u32) {
+        #[inline]
+        fn calculate_node_cost(node: &BvhNode) -> f32 {
+            let parent_area = node.aabb.area();
+            let primitive_count = node.primitive_count as f32;
+    
+            primitive_count * parent_area
+        }
+
         // Terminate recursion.
         let (best_axis, best_position, best_cost) = {
             let node = &self.nodes[node_index];
@@ -397,7 +396,7 @@ impl Bvh {
             let node = &self.nodes[node_index];
             let axis = best_axis as usize;
             let split_position = best_position;
-            let no_split_cost = self.calculate_node_cost(node);
+            let no_split_cost = calculate_node_cost(node);
             if best_cost >= no_split_cost {
                 return;
             }

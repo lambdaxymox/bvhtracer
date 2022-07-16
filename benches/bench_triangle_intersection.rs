@@ -76,6 +76,19 @@ fn triangle_intersection_hit(bh: &mut criterion::Criterion) {
     }));
 }
 
+fn triangle_intersection_hit_mut(bh: &mut criterion::Criterion) {
+    let triangle = Triangle::new(
+        Vector3::new(0_f32, 1_f32 / 2_f32, 0_f32),
+        Vector3::new(-1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
+        Vector3::new(1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
+    );
+    let mut ray = gen_hitting_ray();
+
+    bh.bench_function("triangle_intersection_hit_mut", move |bh| bh.iter(|| {
+        criterion::black_box(triangle.intersect_mut(&mut ray))
+    }));
+}
+
 fn triangle_intersection_miss(bh: &mut criterion::Criterion) {
     let triangle = Triangle::new(
         Vector3::new(0_f32, 1_f32 / 2_f32, 0_f32),
@@ -93,6 +106,7 @@ criterion_group!(
     triangle_intersection_benchmarks,
     triangle_intersection_hit,
     triangle_intersection_miss,
+    triangle_intersection_hit_mut,
 );
 criterion_main!(triangle_intersection_benchmarks);
 
