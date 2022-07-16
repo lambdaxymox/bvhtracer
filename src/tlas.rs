@@ -50,7 +50,7 @@ impl TlasNode {
 
     #[inline]
     fn right_blas(&self) -> u32 {
-        (self.left_right & 0x0000FFFF)
+        self.left_right & 0x0000FFFF
     }
 
     #[inline]

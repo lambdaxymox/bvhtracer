@@ -657,8 +657,11 @@ fn main() -> io::Result<()> {
 
         println!("Updating scene");
         app.update(time_elapsed);
-        println!("Rerendering scene");
+        println!("Re-rendering scene");
+        let now = SystemTime::now();
         app.render();
+        let elapsed = now.elapsed().unwrap();
+        println!("Rendering time = {} s", elapsed.as_secs_f64());
         app.frame_buffer.flip_vertical();
         update_to_gpu_texture(tex, &app.frame_buffer);
        
