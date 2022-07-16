@@ -454,8 +454,7 @@ impl Bvh {
     }
 
     pub fn refit(&mut self, mesh: &[Triangle<f32>]) {
-        for i in 0..self.nodes_used {
-            let node_index = (self.nodes_used - 1) - i;
+        for node_index in (0..self.nodes_used).rev() {
             if node_index != 1 {
                 {
                     let node = &self.nodes[node_index];
