@@ -317,27 +317,29 @@ impl Bvh {
     pub fn refit(&mut self, mesh: &[Triangle<f32>]) {
         for i in 0..self.nodes_used {
             let node_index = (self.nodes_used - 1) - i;
-            {
-                let node = &self.nodes[node_index];
-                if node.is_leaf() {
-                    // Leaf node: adjust bounds to contained primitives.
-                    self.update_node_bounds(mesh, node_index as u32);
-                    continue;
+            if node_index != 1 {
+                {
+                    let node = &self.nodes[node_index];
+                    if node.is_leaf() {
+                        // Leaf node: adjust bounds to contained primitives.
+                        self.update_node_bounds(mesh, node_index as u32);
+                        continue;
+                    }
                 }
-            }
 
-            // Interior node: adjust bounds to child node bounds.
-            let left_child_aabb = { 
-                let node = &self.nodes[node_index];
-                self.nodes[node.as_branch().left_node()].aabb
-            };
-            let right_child_aabb = {
-                let node = &self.nodes[node_index];
-                self.nodes[node.as_branch().right_node()].aabb
-            };
-            let mut node = &mut self.nodes[node_index];
-            node.aabb.bounds_min = __min(&left_child_aabb.bounds_min, &right_child_aabb.bounds_min);
-            node.aabb.bounds_max = __max(&left_child_aabb.bounds_max, &right_child_aabb.bounds_max);
+                // Interior node: adjust bounds to child node bounds.
+                let left_child_aabb = { 
+                    let node = &self.nodes[node_index];
+                    self.nodes[node.as_branch().left_node()].aabb
+                };
+                let right_child_aabb = {
+                    let node = &self.nodes[node_index];
+                    self.nodes[node.as_branch().right_node()].aabb
+                };
+                let mut node = &mut self.nodes[node_index];
+                node.aabb.bounds_min = __min(&left_child_aabb.bounds_min, &right_child_aabb.bounds_min);
+                node.aabb.bounds_max = __max(&left_child_aabb.bounds_max, &right_child_aabb.bounds_max);
+            }
         }
     }
 
@@ -557,7 +559,7 @@ mod bvh_tests {
     };
     
 
-    fn bvh() -> Bvh {
+    fn bvh() -> (Bvh, Vec<Triangle<f32>>) {
         let displacement_x = Vector3::new(5_f32, 0_f32, 0_f32);
         let displacement_y = Vector3::new(0_f32, 5_f32, 0_f32);
         let triangle0 = Triangle::new(
@@ -575,20 +577,21 @@ mod bvh_tests {
         .collect::<Vec<Triangle<_>>>();
         
         let builder = BvhBuilder::new();
-        
-        builder.build_for(&mut mesh)
+        let bvh = builder.build_for(&mut mesh);
+
+        (bvh, mesh)
     }
 
     #[test]
     fn test_bvh_nodes_used_smaller_than_node_array_length() {
-        let bvh = bvh();
+        let bvh = bvh().0;
         
         assert!(bvh.nodes.len() > bvh.nodes_used());
     }
 
     #[test]
     fn test_bvh_nodes_used() {
-        let bvh = bvh();
+        let bvh = bvh().0;
         let default_node = BvhNode::default();
         for i in (0..bvh.nodes_used()).filter(|i| *i != 1) {
             assert_ne!(bvh.nodes[i as u32], default_node);
@@ -597,7 +600,7 @@ mod bvh_tests {
 
     #[test]
     fn test_bvh_nodes_unused() {
-        let bvh = bvh();
+        let bvh = bvh().0;
         let default_node = BvhNode::default();
         for i in bvh.nodes_used()..bvh.nodes.len() {
             assert_eq!(bvh.nodes[i as u32], default_node);
@@ -606,7 +609,7 @@ mod bvh_tests {
 
     #[test]
     fn test_bvh_branch_node_children_always_have_larger_indices_than_parents() {
-        let bvh = bvh();
+        let bvh = bvh().0;
         for node_index in (0..bvh.nodes_used).filter(|i| *i != 1) {
             let node = &bvh.nodes[node_index];
             if node.is_branch() {
@@ -619,7 +622,7 @@ mod bvh_tests {
 
     #[test]
     fn test_branch_nodes_have_no_primitives() {
-        let bvh = bvh();
+        let bvh = bvh().0;
         for i in 0..bvh.nodes_used {
             if bvh.nodes[i].is_branch() {
                 assert_eq!(bvh.nodes[i].primitive_count, 0);
@@ -631,8 +634,18 @@ mod bvh_tests {
     /// align in the cache, and it never used during the lifetime of the BVH.
     #[test]
     fn test_second_bvh_entry_should_be_default_node() {
-        let bvh = bvh();
+        let bvh = bvh().0;
         let expected = BvhNode::default();
+        let result = bvh.nodes[1];
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_bvh_refit_should_not_affect_node_position_1() {
+        let (mut bvh, mesh) = bvh();
+        let expected = bvh.nodes[1];
+        bvh.refit(&mesh);
         let result = bvh.nodes[1];
 
         assert_eq!(result, expected);
