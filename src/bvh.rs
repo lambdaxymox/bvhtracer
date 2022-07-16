@@ -198,7 +198,7 @@ impl PartialEq for BvhNode {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 struct BvhNodeArray(Vec<BvhNode>);
 
 impl BvhNodeArray {
@@ -224,7 +224,7 @@ impl ops::IndexMut<u32> for BvhNodeArray {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Bvh {
     nodes: BvhNodeArray,
     node_indices: Vec<u32>,
@@ -390,6 +390,7 @@ impl BvhBuilder {
         }
     }
     
+    // TODO: Optimize by finding the longest axis first?
     fn find_best_split_plane(&self, mesh: &[Triangle<f32>], node: &BvhNode) -> (isize, f32, f32) {
         const BIN_COUNT: usize = 8;
         let mut best_axis = -1;
@@ -407,9 +408,9 @@ impl BvhBuilder {
             }
 
             let mut bins = [Bin::default(); BIN_COUNT];
-            let scale = (BIN_COUNT as f32) / (bounds_max - bounds_min);
+            let bin_scale = (BIN_COUNT as f32) / (bounds_max - bounds_min);
             for primitive in self.primitive_iter(mesh, node) {
-                let possible_bin_index = ((primitive.centroid[axis] - bounds_min) * scale) as usize;
+                let possible_bin_index = ((primitive.centroid[axis] - bounds_min) * bin_scale) as usize;
                 let bin_index = usize::min(BIN_COUNT - 1, possible_bin_index);
                 bins[bin_index].primitive_count += 1;
                 bins[bin_index].bounding_box.grow(&primitive.vertex0);
@@ -449,7 +450,6 @@ impl BvhBuilder {
                 }
             }
         }
-
 
         (best_axis, best_position, best_cost)
     }
@@ -771,3 +771,58 @@ mod bvh_node_tests {
     }
 }
 
+#[cfg(test)]
+mod bvh_tree_one_triangle_tests {
+    use super::*;
+    use cglinalg::{
+        Vector3,
+    };
+
+    fn triangle() -> Triangle<f32> {
+        Triangle::new(
+            Vector3::new(0_f32, 1_f32 / 2_f32, 0_f32),
+            Vector3::new(-1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
+            Vector3::new(1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
+        )
+    }
+
+    fn result_bvh() -> Bvh {
+        let triangle = triangle();
+        let mut mesh = vec![triangle];
+        let builder = BvhBuilder::new();
+        
+        builder.build_for(&mut mesh)
+    }
+
+    fn expected_bvh() -> Bvh {
+        let triangle = triangle();
+        let mut aabb = Aabb::new_empty();
+        aabb.grow(&triangle.vertex0);
+        aabb.grow(&triangle.vertex1);
+        aabb.grow(&triangle.vertex2);
+
+        let root_node = BvhNode {
+            aabb: aabb,
+            primitive_count: 1,
+            _left_first: BranchOrLeafData {
+                first_primitive_index: 0,
+            },
+        };
+        let dummy_node = BvhNode::default();
+        let nodes = BvhNodeArray(vec![root_node, dummy_node]);
+        let node_indices = vec![0];
+        let root_node_index = 0;
+        let nodes_used = 2;
+
+        Bvh { nodes, node_indices, root_node_index, nodes_used, }
+    }
+
+
+    #[test]
+    fn test_bvh_one_triangle() {
+        let result = result_bvh();
+        let expected = expected_bvh();
+
+        assert_eq!(result, expected);
+    }
+}
