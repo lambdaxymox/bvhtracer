@@ -22,22 +22,33 @@ fn top_triangle() -> Triangle<f32> {
 }
 
 fn scene() -> Model {
-    let triangle = top_triangle();
-    let displacement = Vector3::new(0_f32, 0_f32, 1_f32);
+    let top = top_triangle();
     let mesh = (0..100).map(|i| {
+            let displacement = Vector3::new(0_f32, 0_f32, i as f32);
             Triangle::new(
-                triangle.vertex0 - (i as f32) * displacement,
-                triangle.vertex1 - (i as f32) * displacement,
-                triangle.vertex2 - (i as f32) * displacement,            
+                top.vertex0 - displacement,
+                top.vertex1 - displacement,
+                top.vertex2 - displacement,
             )
         })
-        .rev()
         .collect::<Vec<_>>();
     let builder = ModelBuilder::new();
     
     builder.with_mesh(mesh).build()
 }
 
+#[test]
+fn test_scene_stack_xy() {
+    let scene = scene();
+    let top = top_triangle();
+
+    assert!(scene.mesh.iter().all(|triangle| triangle.vertex0.x == top.vertex0.x));
+    assert!(scene.mesh.iter().all(|triangle| triangle.vertex0.y == top.vertex0.y));
+    assert!(scene.mesh.iter().all(|triangle| triangle.vertex1.x == top.vertex1.x));
+    assert!(scene.mesh.iter().all(|triangle| triangle.vertex1.y == top.vertex1.y));
+    assert!(scene.mesh.iter().all(|triangle| triangle.vertex2.x == top.vertex2.x));
+    assert!(scene.mesh.iter().all(|triangle| triangle.vertex2.y == top.vertex2.y));
+}
 
 /// Given a set of triangles that could intersect a ray, the intersection test
 /// should return the closest one to the ray origin.
@@ -54,6 +65,38 @@ fn test_intersection_should_return_closest_point_triangle() {
 
     assert!(result.is_some());
     assert!(expected.is_some());
+    assert_eq!(result, expected);
+}
+
+#[test]
+fn test_intersection_all_primitives_along_ray_should_hit() {
+    let scene = scene();
+    let closest = top_triangle();
+    let ray_origin = Vector3::new(closest.centroid.x, closest.centroid.y, 5_f32);
+    let ray_direction = (closest.centroid - ray_origin).normalize();
+    let ray = Ray::from_origin_dir(ray_origin, ray_direction);
+    let t_intersect_set = scene.mesh.iter()
+        .map(|triangle| { triangle.intersect(&ray) })
+        .collect::<Vec<_>>();
+
+    assert!(t_intersect_set.iter().all(|t_intersect| t_intersect.is_some()));
+}
+
+#[test]
+fn test_intersection_closest_point_should_have_lowest_t() {
+    let scene = scene();
+    let closest = top_triangle();
+    let ray_origin = Vector3::new(closest.centroid.x, closest.centroid.y, 5_f32);
+    let ray_direction = (closest.centroid - ray_origin).normalize();
+    let ray = Ray::from_origin_dir(ray_origin, ray_direction);
+    let expected = closest.intersect(&ray).unwrap();
+    let t_intersect_set = scene.mesh.iter()
+        .map(|triangle| { triangle.intersect(&ray) })
+        .collect::<Vec<_>>();
+    let result = t_intersect_set.iter()
+        .map(|elem| elem.unwrap())
+        .fold(f32::MAX, |elem, acc| f32::min(acc, elem));
+
     assert_eq!(result, expected);
 }
 
