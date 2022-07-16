@@ -633,5 +633,16 @@ mod bvh_tests {
             }
         }
     }
+
+    /// The second entry in the BVH hierarchy's table exists to make the left and right nodes
+    /// align in the cache, and it never used during the lifetime of the BVH.
+    #[test]
+    fn test_second_bvh_entry_should_remain_default() {
+        let bvh = bvh();
+        let expected = BvhNode::default();
+        let result = bvh.nodes[1];
+
+        assert_eq!(result, expected);
+    }
 }
 
