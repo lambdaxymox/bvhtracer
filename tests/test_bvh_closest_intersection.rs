@@ -25,12 +25,14 @@ fn scene() -> Model {
     let triangle = top_triangle();
     let displacement = Vector3::new(0_f32, 0_f32, 1_f32);
     let mesh = (0..100).map(|i| {
-        Triangle::new(
-            triangle.vertex0 - (i as f32) * displacement,
-            triangle.vertex1 - (i as f32) * displacement,
-            triangle.vertex2 - (i as f32) * displacement,            
-        )
-    }).collect::<Vec<_>>();
+            Triangle::new(
+                triangle.vertex0 - (i as f32) * displacement,
+                triangle.vertex1 - (i as f32) * displacement,
+                triangle.vertex2 - (i as f32) * displacement,            
+            )
+        })
+        .rev()
+        .collect::<Vec<_>>();
     let builder = ModelBuilder::new();
     
     builder.with_mesh(mesh).build()
