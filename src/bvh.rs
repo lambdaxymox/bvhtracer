@@ -314,84 +314,6 @@ impl Bvh {
         }
     }
 
-    pub fn refit(&mut self, mesh: &[Triangle<f32>]) {
-        for i in 0..self.nodes_used {
-            let node_index = (self.nodes_used - 1) - i;
-            if node_index != 1 {
-                {
-                    let node = &self.nodes[node_index];
-                    if node.is_leaf() {
-                        // Leaf node: adjust bounds to contained primitives.
-                        self.update_node_bounds(mesh, node_index as u32);
-                        continue;
-                    }
-                }
-
-                // Interior node: adjust bounds to child node bounds.
-                let left_child_aabb = { 
-                    let node = &self.nodes[node_index];
-                    self.nodes[node.as_branch().left_node()].aabb
-                };
-                let right_child_aabb = {
-                    let node = &self.nodes[node_index];
-                    self.nodes[node.as_branch().right_node()].aabb
-                };
-                let mut node = &mut self.nodes[node_index];
-                node.aabb.bounds_min = __min(&left_child_aabb.bounds_min, &right_child_aabb.bounds_min);
-                node.aabb.bounds_max = __max(&left_child_aabb.bounds_max, &right_child_aabb.bounds_max);
-            }
-        }
-    }
-
-    /// Returns the bounding box for the boundary volume hierarchy. 
-    /// 
-    /// This bounding box should enclose the entire model that the BVH is 
-    /// associated with.
-    pub fn bounds(&self) -> Aabb<f32> {
-        self.nodes[0].aabb
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct BvhBuilder {
-    partial_bvh: Bvh,
-}
-
-impl BvhBuilder {
-    pub fn new() -> Self {
-        let nodes = BvhNodeArray(vec![]);
-        let node_indices = vec![];
-        let root_node_index = 0;
-        // We set the nodes_used count to 2 to skip node index 1. Every branch node
-        // has two child nodes, and we want them to align nicely in the cache. In order
-        // to do that, we insert a dummy node at index 1, using index 0 for the root.
-        let nodes_used = 2;
-
-        let partial_bvh = Bvh { nodes, node_indices, root_node_index, nodes_used, };
-
-        Self { partial_bvh, }
-    }
-
-    fn primitive_iter<'a>(&self, mesh: &'a [Triangle<f32>], node: &BvhNode) -> PrimitiveIter<'a> {
-        let base_primitive_index = self.partial_bvh.node_indices[node.as_leaf().first_primitive_index as usize];
-        
-        PrimitiveIter::new(mesh, node.primitive_count, base_primitive_index as u32)
-    }
-
-    fn update_node_bounds(&mut self, mesh: &[Triangle<f32>], node_index: u32) {
-        let it = self.primitive_iter(mesh, &self.partial_bvh.nodes[node_index]);
-        let node = &mut self.partial_bvh.nodes[node_index];
-        node.aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
-        for primitive in it {
-            node.aabb.bounds_min = __min(&node.aabb.bounds_min, &primitive.vertex0);
-            node.aabb.bounds_min = __min(&node.aabb.bounds_min, &primitive.vertex1);
-            node.aabb.bounds_min = __min(&node.aabb.bounds_min, &primitive.vertex2);
-            node.aabb.bounds_max = __max(&node.aabb.bounds_max, &primitive.vertex0);
-            node.aabb.bounds_max = __max(&node.aabb.bounds_max, &primitive.vertex1);
-            node.aabb.bounds_max = __max(&node.aabb.bounds_max, &primitive.vertex2);
-        }
-    }
-    
     // TODO: Optimize by finding the longest axis first?
     fn find_best_split_plane(&self, mesh: &[Triangle<f32>], node: &BvhNode) -> (isize, f32, f32) {
         const BIN_COUNT: usize = 8;
@@ -468,6 +390,219 @@ impl BvhBuilder {
     fn subdivide(&mut self, mesh: &mut [Triangle<f32>], node_index: u32) {
         // Terminate recursion.
         let (best_axis, best_position, best_cost) = {
+            let node = &self.nodes[node_index];
+            self.find_best_split_plane(mesh, node)
+        };
+        let (left_count, i) = {
+            let node = &self.nodes[node_index];
+            let axis = best_axis as usize;
+            let split_position = best_position;
+            let no_split_cost = self.calculate_node_cost(node);
+            if best_cost >= no_split_cost {
+                return;
+            }
+
+            // In-place partition.
+            let mut i = node.as_leaf().first_primitive_index;
+            let mut j = i + node.primitive_count - 1;
+            while i <= j {
+                if mesh[i as usize].centroid[axis] < split_position {
+                    i += 1;
+                } else {
+                    mesh.swap(i as usize, j as usize);
+                    j -= 1;
+                }
+            }
+
+            // Abort split if one of the sides is empty.
+            let left_count = i - node.as_leaf().first_primitive_index;
+            if left_count == 0 || left_count == node.primitive_count {
+                return;
+            }
+
+            (left_count, i)
+        };
+        // Create child nodes.
+        let left_child_index = {
+            let nodes_used = self.nodes_used;
+            self.nodes_used += 1;
+            nodes_used
+        };
+        let right_child_index = {
+            let nodes_used = self.nodes_used;
+            self.nodes_used += 1;
+            nodes_used
+        };
+        {
+            self.nodes[left_child_index].as_mut_leaf().first_primitive_index = self.nodes[node_index].as_leaf().first_primitive_index;
+            self.nodes[left_child_index].primitive_count = left_count;
+            self.nodes[right_child_index].as_mut_leaf().first_primitive_index = i;
+            self.nodes[right_child_index].primitive_count = self.nodes[node_index].primitive_count - left_count;
+        }
+        {
+            let node = &mut self.nodes[node_index];
+            node.as_mut_branch().left_node = left_child_index;
+            node.primitive_count = 0;
+        }
+
+        self.update_node_bounds(mesh, left_child_index);
+        self.update_node_bounds(mesh, right_child_index);
+        // Recurse
+        self.subdivide(mesh, left_child_index);
+        self.subdivide(mesh, right_child_index);
+    }
+
+    pub fn refit(&mut self, mesh: &[Triangle<f32>]) {
+        for i in 0..self.nodes_used {
+            let node_index = (self.nodes_used - 1) - i;
+            if node_index != 1 {
+                {
+                    let node = &self.nodes[node_index];
+                    if node.is_leaf() {
+                        // Leaf node: adjust bounds to contained primitives.
+                        self.update_node_bounds(mesh, node_index as u32);
+                        continue;
+                    }
+                }
+
+                // Interior node: adjust bounds to child node bounds.
+                let left_child_aabb = { 
+                    let node = &self.nodes[node_index];
+                    self.nodes[node.as_branch().left_node()].aabb
+                };
+                let right_child_aabb = {
+                    let node = &self.nodes[node_index];
+                    self.nodes[node.as_branch().right_node()].aabb
+                };
+                let mut node = &mut self.nodes[node_index];
+                node.aabb.bounds_min = __min(&left_child_aabb.bounds_min, &right_child_aabb.bounds_min);
+                node.aabb.bounds_max = __max(&left_child_aabb.bounds_max, &right_child_aabb.bounds_max);
+            }
+        }
+    }
+
+    /// Returns the bounding box for the boundary volume hierarchy. 
+    /// 
+    /// This bounding box should enclose the entire model that the BVH is 
+    /// associated with.
+    pub fn bounds(&self) -> Aabb<f32> {
+        self.nodes[0].aabb
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct BvhBuilder {
+    partial_bvh: Bvh,
+}
+
+impl BvhBuilder {
+    pub fn new() -> Self {
+        let nodes = BvhNodeArray(vec![]);
+        let node_indices = vec![];
+        let root_node_index = 0;
+        // We set the nodes_used count to 2 to skip node index 1. Every branch node
+        // has two child nodes, and we want them to align nicely in the cache. In order
+        // to do that, we insert a dummy node at index 1, using index 0 for the root.
+        let nodes_used = 2;
+
+        let partial_bvh = Bvh { nodes, node_indices, root_node_index, nodes_used, };
+
+        Self { partial_bvh, }
+    }
+
+    /*
+    fn primitive_iter<'a>(&self, mesh: &'a [Triangle<f32>], node: &BvhNode) -> PrimitiveIter<'a> {
+        let base_primitive_index = self.partial_bvh.node_indices[node.as_leaf().first_primitive_index as usize];
+        
+        PrimitiveIter::new(mesh, node.primitive_count, base_primitive_index as u32)
+    }
+    */
+    /*
+    fn update_node_bounds(&mut self, mesh: &[Triangle<f32>], node_index: u32) {
+        self.partial_bvh.update_node_bounds(mesh, node_index);
+    }
+    
+    // TODO: Optimize by finding the longest axis first?
+    fn find_best_split_plane(&self, mesh: &[Triangle<f32>], node: &BvhNode) -> (isize, f32, f32) {
+        self.partial_bvh.find_best_split_plane(mesh, node)
+        /*
+        const BIN_COUNT: usize = 8;
+        let mut best_axis = -1;
+        let mut best_position = 0_f32;
+        let mut best_cost = f32::MAX;
+        for axis in 0..3 {
+            let mut bounds_min = 1e30;
+            let mut bounds_max = 1e-30;
+            for primitive in self.primitive_iter(mesh, node) {
+                bounds_min = f32::min(bounds_min, primitive.centroid[axis]);
+                bounds_max = f32::max(bounds_max, primitive.centroid[axis]);
+            }
+            if bounds_min == bounds_max {
+                continue;
+            }
+
+            let mut bins = [Bin::default(); BIN_COUNT];
+            let bin_scale = (BIN_COUNT as f32) / (bounds_max - bounds_min);
+            for primitive in self.primitive_iter(mesh, node) {
+                let possible_bin_index = ((primitive.centroid[axis] - bounds_min) * bin_scale) as usize;
+                let bin_index = usize::min(BIN_COUNT - 1, possible_bin_index);
+                bins[bin_index].primitive_count += 1;
+                bins[bin_index].bounding_box.grow(&primitive.vertex0);
+                bins[bin_index].bounding_box.grow(&primitive.vertex1);
+                bins[bin_index].bounding_box.grow(&primitive.vertex2);
+            }
+
+            // Assemble the data for calculating the `BIN_COUNT - 1` planes between the `BIN_COUNT` bins.
+            let mut left_area = [0_f32; BIN_COUNT - 1];
+            let mut right_area = [0_f32; BIN_COUNT - 1];
+            let mut left_count = [0; BIN_COUNT - 1];
+            let mut right_count = [0; BIN_COUNT - 1];
+            let mut left_box = Aabb::default();
+            let mut right_box = Aabb::default();
+            let mut left_sum = 0;
+            let mut right_sum = 0;
+            for i in 0..(BIN_COUNT - 1) {
+                left_sum += bins[i].primitive_count;
+                left_count[i] = left_sum;
+                left_box.grow_aabb(&bins[i].bounding_box);
+                left_area[i] = left_box.area();
+    
+                right_sum += bins[BIN_COUNT - 1 - i].primitive_count;
+                right_count[BIN_COUNT - 2 - i] = right_sum;
+                right_box.grow_aabb(&bins[BIN_COUNT - 1 - i].bounding_box);
+                right_area[BIN_COUNT - 2 - i] = right_box.area();
+            }
+
+            // Calculate the SAH cost for the seven planes.
+            let scale = (bounds_max - bounds_min) / (BIN_COUNT as f32);
+            for i in 0..(BIN_COUNT - 1) {
+                let plane_cost = (left_count[i] as f32) * left_area[i] + (right_count[i] as f32) * right_area[i];
+                if plane_cost < best_cost {
+                    best_axis = axis as isize;
+                    best_position = bounds_min + scale * ((i + 1) as f32);
+                    best_cost = plane_cost;
+                }
+            }
+        }
+
+        (best_axis, best_position, best_cost)
+        */
+    }
+
+    #[inline]
+    fn calculate_node_cost(&self, node: &BvhNode) -> f32 {
+        let extent = node.aabb.extent();
+        let parent_area = extent.x * extent.y + extent.y * extent.z + extent.z * extent.x;
+        let primitive_count = node.primitive_count as f32;
+
+        primitive_count * parent_area
+    }
+
+    fn subdivide(&mut self, mesh: &mut [Triangle<f32>], node_index: u32) {
+        self.partial_bvh.subdivide(mesh, node_index)
+        /*
+        // Terminate recursion.
+        let (best_axis, best_position, best_cost) = {
             let node = &self.partial_bvh.nodes[node_index];
             self.find_best_split_plane(mesh, node)
         };
@@ -528,8 +663,9 @@ impl BvhBuilder {
         // Recurse
         self.subdivide(mesh, left_child_index);
         self.subdivide(mesh, right_child_index);
+        */
     }
-
+    */
     pub fn build_for(mut self, mesh: &mut [Triangle<f32>]) -> Bvh {
         // Populate the triangle index array.
         for i in 0..mesh.len() {
@@ -543,8 +679,8 @@ impl BvhBuilder {
         root_node.as_mut_branch().left_node = 0;
         root_node.primitive_count = mesh.len() as u32;
 
-        self.update_node_bounds(mesh, self.partial_bvh.root_node_index);
-        self.subdivide(mesh, self.partial_bvh.root_node_index);
+        self.partial_bvh.update_node_bounds(mesh, self.partial_bvh.root_node_index);
+        self.partial_bvh.subdivide(mesh, self.partial_bvh.root_node_index);
 
         self.partial_bvh
     }
