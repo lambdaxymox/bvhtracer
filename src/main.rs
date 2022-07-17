@@ -204,25 +204,45 @@ impl AppState {
     }
 }
 
-struct Renderer {
 
+struct Camera {
+    position: Vector3<f32>,
+    p0: Vector3<f32>,
+    p1: Vector3<f32>,
+    p2: Vector3<f32>,
+}
+
+impl Camera {
+    fn new() -> Self {
+        Self {
+            position: Vector3::new(0.0, 0.5, -4.5),
+            p0: Vector3::new(-1_f32, 1_f32, 2_f32),
+            p1: Vector3::new(1_f32, 1_f32, 2_f32),
+            p2: Vector3::new(-1_f32, -1_f32, 2_f32),
+        }
+    }
+
+    fn cast_ray(&self, u: f32, v: f32) -> Ray<f32> {
+        let ray_origin = self.position;
+        let pixel_position = ray_origin + self.p0 + (self.p1 - self.p0) * u + (self.p2 - self.p0) * v;
+        let ray_direction = (pixel_position - ray_origin).normalize();
+
+        Ray::from_origin_dir(ray_origin, ray_direction)
+    }
+}
+
+struct Renderer {
+    camera: Camera,
 }
 
 impl Renderer {
     fn new() -> Self {
         Self {  
-
+            camera: Camera::new(),
         }
     }
 
     fn render(&mut self, scene: &Scene, frame_buffer: &mut ImageBuffer<Rgba<u8>, Vec<u8>>) -> usize {
-        // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
-        // Set up camera.
-        let camera_position = Vector3::new(0.0, 0.5, -4.5);
-        let p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
-        let p1 = Vector3::new(1_f32, 1_f32, 2_f32);
-        let p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
-
         let mut rays_traced = 0;
         let tile_width = 8;
         let tile_height = 8;
@@ -234,12 +254,10 @@ impl Renderer {
             let y = tile / tile_count_y;
             for v in 0..tile_height {
                 for u in 0..tile_width {
-                    let ray_origin = camera_position;
-                    let pixel_position = ray_origin + p0 + 
-                        (p1 - p0) * ((tile_width * x + u) as f32 / SCREEN_WIDTH as f32) + 
-                        (p2 - p0) * ((tile_height * y + v) as f32 / SCREEN_HEIGHT as f32);
-                    let ray_direction = (pixel_position - ray_origin).normalize();
-                    let mut ray = Ray::new(ray_origin, ray_direction, f32::MAX);
+                    let mut ray = self.camera.cast_ray(
+                        (tile_width * x + u) as f32 / SCREEN_WIDTH as f32,
+                        (tile_height * y + v) as f32 / SCREEN_HEIGHT as f32,
+                    );
                     if let Some(t_intersect) = scene.intersect(&ray) {
                         ray.t = t_intersect
                     }
