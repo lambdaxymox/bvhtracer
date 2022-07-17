@@ -204,28 +204,18 @@ impl AppState {
     }
 }
 
-struct App {
-    frame_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
-    state: AppState,
+struct Renderer {
+
 }
-    
-impl App {
-    fn new(active_scene: Scene, width: usize, height: usize) -> Self {
-        let frame_buffer = ImageBuffer::from_fill(
-            width, 
-            height,
-            Rgba::from([0, 0, 0, 1])
-        );
-        let state = AppState::new(active_scene);
-    
-        Self { frame_buffer, state, }
+
+impl Renderer {
+    fn new() -> Self {
+        Self {  
+
+        }
     }
 
-    fn update(&mut self, elapsed: f64) {
-        self.state.update(elapsed);
-    }
-
-    fn render(&mut self) {
+    fn render(&mut self, scene: &Scene, frame_buffer: &mut ImageBuffer<Rgba<u8>, Vec<u8>>) -> usize {
         // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
         // Set up camera.
         let camera_position = Vector3::new(0.0, 0.5, -4.5);
@@ -233,6 +223,7 @@ impl App {
         let p1 = Vector3::new(1_f32, 1_f32, 2_f32);
         let p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
 
+        let mut rays_traced = 0;
         let tile_width = 8;
         let tile_height = 8;
         let tile_count_x = 80;
@@ -249,7 +240,7 @@ impl App {
                         (p2 - p0) * ((tile_height * y + v) as f32 / SCREEN_HEIGHT as f32);
                     let ray_direction = (pixel_position - ray_origin).normalize();
                     let mut ray = Ray::new(ray_origin, ray_direction, f32::MAX);
-                    if let Some(t_intersect) = self.state.active_scene().intersect(&ray) {
+                    if let Some(t_intersect) = scene.intersect(&ray) {
                         ray.t = t_intersect
                     }
                     let color = if ray.t < f32::MAX {
@@ -264,10 +255,41 @@ impl App {
                         Rgba::new(0, 0, 0, 255)
                     };
 
-                    self.frame_buffer[(tile_height * x + u, tile_height * y + v)] = color;
+                    frame_buffer[(tile_height * x + u, tile_height * y + v)] = color;
+                    rays_traced += 1;
                 }
             }
         }
+
+        rays_traced
+    }
+}
+
+struct App {
+    frame_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
+    state: AppState,
+    renderer: Renderer,
+}
+    
+impl App {
+    fn new(active_scene: Scene, width: usize, height: usize) -> Self {
+        let frame_buffer = ImageBuffer::from_fill(
+            width, 
+            height,
+            Rgba::from([0, 0, 0, 1])
+        );
+        let state = AppState::new(active_scene);
+        let renderer = Renderer::new();
+    
+        Self { frame_buffer, state, renderer, }
+    }
+
+    fn update(&mut self, elapsed: f64) {
+        self.state.update(elapsed);
+    }
+
+    fn render(&mut self) -> usize {
+        self.renderer.render(self.state.active_scene(), &mut self.frame_buffer)
     }
 }
 
