@@ -35,16 +35,16 @@ where
     pub fn intersect(&self, ray: &Ray<S>) -> Option<S> {
         let edge1 = self.vertex1 - self.vertex0;
         let edge2 = self.vertex2 - self.vertex0;
-        let h = ray.direction.cross(&edge2);
-        let a = edge1.dot(&h);
+        let normal = ray.direction.cross(&edge2);
+        let area = edge1.dot(&normal);
         let threshold: S = num_traits::cast(0.0001_f64).unwrap();
-        if a > -threshold && a < threshold {
+        if area > -threshold && area < threshold {
             // The ray is parallel to the triangle.
             return None;
         }
-        let f = S::one() / a;
+        let f = S::one() / area;
         let s = ray.origin - self.vertex0;
-        let u = f * s.dot(&h);
+        let u = f * s.dot(&normal);
         if u < S::zero() || u > S::one() {
             return None;
         }
@@ -65,16 +65,16 @@ where
     pub fn intersect_mut(&self, ray: &mut Ray<S>) -> bool {
         let edge1 = self.vertex1 - self.vertex0;
         let edge2 = self.vertex2 - self.vertex0;
-        let h = ray.direction.cross(&edge2);
-        let a = edge1.dot(&h);
+        let normal = ray.direction.cross(&edge2);
+        let area = edge1.dot(&normal);
         let threshold: S = num_traits::cast(0.0001_f64).unwrap();
-        if a > -threshold && a < threshold {
+        if area > -threshold && area < threshold {
             // The ray is parallel to the triangle.
             return false;
         }
-        let f = S::one() / a;
+        let f = S::one() / area;
         let s = ray.origin - self.vertex0;
-        let u = f * s.dot(&h);
+        let u = f * s.dot(&normal);
         if u < S::zero() || u > S::one() {
             return false;
         }

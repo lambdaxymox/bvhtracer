@@ -171,23 +171,16 @@ impl App {
 }
 */
 
-/*
-struct App {
-    active_scene: Scene,
+struct AppState {
     angle: f32,
-    frame_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
+    active_scene: Scene,
 }
-    
-impl App {
-    fn new(active_scene: Scene, width: usize, height: usize) -> Self {
+
+impl AppState {
+    fn new(active_scene: Scene) -> Self {
         let angle = 0_f32;
-        let frame_buffer = ImageBuffer::from_fill(
-            width, 
-            height,
-            Rgba::from([0, 0, 0, 1])
-        );
-    
-        Self { active_scene, angle, frame_buffer }
+
+        Self { angle, active_scene }
     }
 
     fn update(&mut self, elapsed: f64) {
@@ -202,6 +195,34 @@ impl App {
             Matrix4x4::from_affine_translation(&Vector3::new(1.3_f32, 0_f32, 0_f32)) *
             Matrix4x4::from_affine_angle_y(Radians(self.angle))
         ));
+
+        self.active_scene.rebuild();
+    }
+
+    fn active_scene(&self) -> &Scene {
+        &self.active_scene
+    }
+}
+
+struct App {
+    frame_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
+    state: AppState,
+}
+    
+impl App {
+    fn new(active_scene: Scene, width: usize, height: usize) -> Self {
+        let frame_buffer = ImageBuffer::from_fill(
+            width, 
+            height,
+            Rgba::from([0, 0, 0, 1])
+        );
+        let state = AppState::new(active_scene);
+    
+        Self { frame_buffer, state, }
+    }
+
+    fn update(&mut self, elapsed: f64) {
+        self.state.update(elapsed);
     }
 
     fn render(&mut self) {
@@ -228,12 +249,12 @@ impl App {
                         (p2 - p0) * ((tile_height * y + v) as f32 / SCREEN_HEIGHT as f32);
                     let ray_direction = (pixel_position - ray_origin).normalize();
                     let mut ray = Ray::new(ray_origin, ray_direction, f32::MAX);
-                    if let Some(t_intersect) = self.active_scene.intersect(&ray) {
+                    if let Some(t_intersect) = self.state.active_scene().intersect(&ray) {
                         ray.t = t_intersect
                     }
                     let color = if ray.t < f32::MAX {
-                        let color = 255 - (((ray.t - 3_f32) * 80_f32) as i32);
-                        let c = color * 0x010101;
+                        let _color = 255 - (((ray.t - 3_f32) * 80_f32) as i32) as u32;
+                        let c = _color * 0x010101;
                         let r = ((c & 0x00FF0000) >> 16) as u8;
                         let g = ((c & 0x0000FF00) >> 8) as u8;
                         let b = (c & 0x000000FF) as u8;
@@ -249,7 +270,7 @@ impl App {
         }
     }
 }
-*/
+
 /*
 struct App {
     active_scene: Scene,
@@ -394,7 +415,7 @@ impl App {
     }
 }
 */
-
+/*
 struct AppState {
     positions: Vec<Vector3<f32>>,
     directions: Vec<Vector3<f32>>,
@@ -554,7 +575,7 @@ impl App {
         println!("time_spent_intersection_testing_per_ray = {:?}", time_spent_intersection_testing.checked_div(rays_traced));
     }
 }
-
+*/
 /// Load texture image into the GPU.
 fn send_to_gpu_texture(buffer: &ImageBuffer<Rgba<u8>, Vec<u8>>, wrapping_mode: GLuint) -> Result<GLuint, String> {
     let mut tex = 0;
@@ -652,32 +673,34 @@ fn build_bigben_scene() -> Scene {
 }
 */
 
-/*
+
 fn build_two_armadillos_scene() -> Scene {
     let mesh = load_tri_model("assets/armadillo.tri");
     let model_builder = ModelBuilder::new();
-    let model1 = model_builder.with_mesh(mesh).build();
+    let model = Rc::new(model_builder.with_mesh(mesh).build());
+    let mut objects = vec![];
     let model1_transform = Matrix4x4::from_affine_translation(
         &Vector3::new(-1.3_f32, 0_f32, 0_f32)
     );
-    let model2 = model1.clone();
     let model2_transform = Matrix4x4::from_affine_translation(
         &Vector3::new(1.3_f32, 0_f32, 0_f32)
     );
+    let model1 = model.clone();
+    let model2 = model.clone();
     let object1 = SceneObjectBuilder::new(model1)
         .with_transform(&model1_transform)
         .build();
     let object2 = SceneObjectBuilder::new(model2)
         .with_transform(&model2_transform)
         .build();
-    let scene = SceneBuilder::new()
-        .with_object(object1)
-        .with_object(object2)
-        .build();
-
-    scene
+    objects.push(object1);
+    objects.push(object2);
+    
+    SceneBuilder::new()
+        .with_objects(objects)
+        .build()
 }
-*/
+
 /*
 fn build_16_armadillos_scene() -> Scene {
     let mesh = load_tri_model("assets/armadillo.tri");
@@ -696,13 +719,13 @@ fn build_16_armadillos_scene() -> Scene {
         .build()
 }
 */
+/*
 fn build_256_armadillos_scene() -> Scene {
     let mesh = load_tri_model("assets/armadillo.tri");
     let model_builder = ModelBuilder::new();
     let model = Rc::new(model_builder.with_mesh(mesh).build());
     let objects = (0..256).map(|_| {
         let model_i = model.clone();
-
         SceneObjectBuilder::new(model_i)
             .with_transform(&Matrix4x4::from_affine_scale(0.75))
             .build()
@@ -712,13 +735,13 @@ fn build_256_armadillos_scene() -> Scene {
         .with_objects(objects)
         .build()
 }
-
+*/
 fn main() -> io::Result<()> {
     use std::time::SystemTime;
 
     println!("Building scene.");
     let now = SystemTime::now();
-    let active_scene = build_256_armadillos_scene();
+    let active_scene = build_two_armadillos_scene();
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {} s", elapsed.as_secs_f64());
 
@@ -875,7 +898,7 @@ fn main() -> io::Result<()> {
 
         println!("Updating scene");
         app.update(time_elapsed);
-        println!("Re-rendering scene");
+        println!("Rendering scene");
         let now = SystemTime::now();
         app.render();
         let elapsed = now.elapsed().unwrap();
