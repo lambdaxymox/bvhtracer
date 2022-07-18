@@ -74,25 +74,19 @@ use std::ffi::{
 const SCREEN_WIDTH: usize = 640;
 const SCREEN_HEIGHT: usize = 640;
 
-/*
-struct App {
+
+struct AppStateBigBenClock {
     active_scene: Scene,
     r: f32,
     originals: Vec<Triangle<f32>>,
-    frame_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
 }
 
-impl App {
-    fn new(active_scene: Scene, width: usize, height: usize) -> Self {
+impl AppStateBigBenClock {
+    fn new(active_scene: Scene) -> Self {
         let r = 0_f32;
-        let originals = active_scene.objects[0].model().mesh.clone();
-        let frame_buffer = ImageBuffer::from_fill(
-            width, 
-            height,
-            Rgba::from([0, 0, 0, 1])
-        );
+        let originals = active_scene.get_unchecked(0).model().mesh.clone();
 
-        Self { active_scene, r, originals, frame_buffer }
+        Self { active_scene, r, originals, }
     }
 
     fn animate(&mut self) {
@@ -117,60 +111,31 @@ impl App {
             let x_2 = o_2.x * f32::cos(s_2) - o_2.y * f32::sin(s_2);
             let y_2 = o_2.x * f32::sin(s_2) + o_2.y * f32::cos(s_2);
 
-            self.active_scene.objects[0].model_mut().mesh[i] = Triangle::new(
+            /*
+            self.active_scene.get_mut_unchecked(0).model_mut().mesh[i] = Triangle::new(
                 Vector3::new(x_0, y_0, o_0.z),
                 Vector3::new(x_1, y_1, o_1.z),
                 Vector3::new(x_2, y_2, o_2.z),
             );
-        }
-    }
-
-    fn update(&mut self, elapsed: f64) {
-        self.animate();
-        self.active_scene.objects[0].model_mut().refit();
-    }
-
-    fn render(&mut self) {
-        // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
-        // Set up camera.
-        let camera_position = Vector3::new(0.0, 3.5, -4.5);
-        let p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
-        let p1 = Vector3::new(1_f32, 1_f32, 2_f32);
-        let p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
-
-        let tile_width = 8;
-        let tile_height = 8;
-        let tile_count_x = 80;
-        let tile_count_y = 80;
-        let tile_count = tile_count_x * tile_count_y;
-        for tile in 0..tile_count {
-            let x = tile % tile_count_x;
-            let y = tile / tile_count_y;
-            for v in 0..tile_height {
-                for u in 0..tile_width {
-                    let pixel_position = camera_position + p0 + 
-                        (p1 - p0) * ((tile_width * x + u) as f32 / SCREEN_WIDTH as f32) + 
-                        (p2 - p0) * ((tile_height * y + v) as f32 / SCREEN_HEIGHT as f32);
-                    let ray_origin = camera_position;
-                    let ray_direction = (pixel_position - ray_origin).normalize();
-                    let ray_t = f32::MAX;
-                    let ray = Ray::new(ray_origin, ray_direction, ray_t);
-                    if let Some(t_intersect) = self.active_scene.objects[0].intersect(&ray) {
-                        let color = 255 - (((t_intersect - 4_f32) * 180_f32) as i32);
-                        let c = color * 0x010101;
-                        let r = ((c & 0x00FF0000) >> 16) as u8;
-                        let g = ((c & 0x0000FF00) >> 8) as u8;
-                        let b = (c & 0x000000FF) as u8;
-                        self.frame_buffer[(tile_height * x + u, tile_height * y + v)] = Rgba::new(r, g, b, 255);
-                    } else {
-                        self.frame_buffer[(tile_height * x + u, tile_height * y + v)] = Rgba::new(0, 0, 0, 255);
-                    }
-                }
-            }
+            */
         }
     }
 }
-*/
+
+impl AppState for AppStateBigBenClock {
+    fn update(&mut self, elapsed: f64) {
+        self.animate();
+        // self.active_scene.get_mut_unchecked(0).model_mut().refit();
+    }
+
+    fn active_scene(&self) -> &Scene {
+        &self.active_scene
+    }
+
+    fn active_scene_mut(&mut self) -> &mut Scene {
+        &mut self.active_scene
+    }
+}
 
 pub trait AppState {
     fn update(&mut self, elapsed: f64);
@@ -222,11 +187,11 @@ impl AppState for AppStateTwoArmadillos {
 struct Renderer {}
 
 impl Renderer {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {}
     }
 
-    fn render(&mut self, scene: &Scene, frame_buffer: &mut ImageBuffer<Rgba<u8>, Vec<u8>>) -> usize {
+    pub fn render(&mut self, scene: &Scene, frame_buffer: &mut ImageBuffer<Rgba<u8>, Vec<u8>>) -> usize {
         let mut rays_traced = 0;
         let tile_width = 8;
         let tile_height = 8;
@@ -294,32 +259,28 @@ impl App {
     }
 }
 
-/*
-struct App {
+
+struct AppStateSixteenArmadillos {
     active_scene: Scene,
-    frame_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
     a: Vec<f32>,
     h: Vec<f32>,
     s: Vec<f32>,
 }
 
-impl App {
-    fn new(active_scene: Scene, width: usize, height: usize) -> Self {
-        let frame_buffer = ImageBuffer::from_fill(
-            width, 
-            height,
-            Rgba::from([0, 0, 0, 1])
-        );
+impl AppStateSixteenArmadillos {
+    fn new(active_scene: Scene) -> Self {
         let a = vec![0_f32; 16];
         let h = vec![
             5_f32, 4_f32, 3_f32, 2_f32, 1_f32, 5_f32, 4_f32, 3_f32, 
             5_f32, 4_f32, 3_f32, 2_f32, 1_f32, 5_f32, 4_f32, 3_f32,
         ];
         let s = vec![0_f32; 16];
-    
-        Self { active_scene, frame_buffer, a, h, s }
-    }
 
+        Self { active_scene, a, h, s }
+    }
+}
+
+impl AppState for AppStateSixteenArmadillos {
     fn update(&mut self, elapsed: f64) {
         let mut i = 0;
         for x in 0..4 {
@@ -353,91 +314,15 @@ impl App {
         self.active_scene.rebuild();
     }
 
-    fn render(&mut self) {
-        // TODO: Put this stuff into an actual camera type, and place data into the scene construction.
-        // Set up camera.
-        let camera_position = Vector3::new(0.0, 4.5, -8.5);
-        let rot_mat = Matrix4x4::from_affine_angle_x(Radians(0.5));
-        let _p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
-        let _p1 = Vector3::new(1_f32, 1_f32, 2_f32);
-        let _p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
-        let p0 = (rot_mat * _p0.extend(1_f32)).contract();
-        let p1 = (rot_mat * _p1.extend(1_f32)).contract();
-        let p2 = (rot_mat * _p2.extend(1_f32)).contract();
+    fn active_scene(&self) -> &Scene {
+        &self.active_scene
+    }
 
-        let tile_width = 8;
-        let tile_height = 8;
-        let tile_count_x = 80;
-        let tile_count_y = 80;
-        let tile_count = tile_count_x * tile_count_y;
-
-        let mut rays_traced = 0;
-
-        use std::time::SystemTime;
-        use std::time::Duration;
-        let mut time_spent_ray_tracing = Duration::ZERO;
-        let mut time_spent_intersection_testing = Duration::ZERO;
-
-        for tile in 0..tile_count {
-            let x = tile % tile_count_x;
-            let y = tile / tile_count_y;
-            for v in 0..tile_height {
-                for u in 0..tile_width {
-
-                    let total_now = SystemTime::now();
-
-
-                    let ray_origin = camera_position;
-                    let pixel_position = ray_origin + p0 + 
-                        (p1 - p0) * ((tile_width * x + u) as f32 / SCREEN_WIDTH as f32) + 
-                        (p2 - p0) * ((tile_height * y + v) as f32 / SCREEN_HEIGHT as f32);
-                    let ray_direction = (pixel_position - ray_origin).normalize();
-                    let mut ray = Ray::new(ray_origin, ray_direction, f32::MAX);
-
-
-                    
-                    
-                    let now = SystemTime::now();
-                    if let Some(t_intersect) = self.active_scene.intersect(&ray) {
-                        ray.t = t_intersect
-                    }
-                    let elapsed = now.elapsed().unwrap();
-                    time_spent_intersection_testing += elapsed;
-                    
-                    
-                    
-                    
-                    let color = if ray.t < f32::MAX {
-                        let _color = 255 - (((ray.t - 3_f32) * 80_f32) as i32) as u32;
-                        let c = _color * 0x010101;
-                        let r = ((c & 0x00FF0000) >> 16) as u8;
-                        let g = ((c & 0x0000FF00) >> 8) as u8;
-                        let b = (c & 0x000000FF) as u8;
-                        
-                        Rgba::new(r, g, b, 255)
-                    } else {
-                        Rgba::new(0, 0, 0, 255)
-                    };
-
-                    self.frame_buffer[(tile_height * x + u, tile_height * y + v)] = color;
-
-
-                    
-                    let total_elapsed = total_now.elapsed().unwrap();
-                    rays_traced += 1;
-                    time_spent_ray_tracing += total_elapsed;
-                }
-            }
-        }
-
-        println!("rays_traced = {}", rays_traced);
-        println!("time_spent_ray_tracing = {:?}", time_spent_ray_tracing);
-        println!("time_spent_per_ray = {:?}", time_spent_ray_tracing.checked_div(rays_traced));
-        println!("time_spent_intersection_testing = {:?}", time_spent_intersection_testing);
-        println!("time_spent_intersection_testing_per_ray = {:?}", time_spent_intersection_testing.checked_div(rays_traced));
+    fn active_scene_mut(&mut self) -> &mut Scene {
+        &mut self.active_scene
     }
 }
-*/
+
 /*
 struct AppState {
     positions: Vec<Vector3<f32>>,
@@ -681,20 +566,30 @@ fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle<f32>> {
     }).collect::<Vec<Triangle<_>>>()
 }
 
-/*
-fn build_bigben_scene() -> Scene {
+
+fn build_bigben_scene() -> Box<AppStateBigBenClock> {
+    let focal_offset = Vector3::new(0_f32, 3.5_f32, 0_f32);
+    let spec = IdentityModelSpec::new(
+        -1_f32, 
+        1_f32, 
+        -1_f32, 
+        1_f32, 
+        2_f32, 
+        -4.5_f32, 
+        focal_offset
+    );
+    let camera = Camera::from_spec(spec);
     let mesh = load_tri_model("assets/bigben.tri");
     let model_builder = ModelBuilder::new();
-    let model = model_builder.with_mesh(mesh).build();
+    let model = Rc::new(model_builder.with_mesh(mesh).build());
     let object = SceneObjectBuilder::new(model)
         .build();
-    let scene = SceneBuilder::new()
+    let scene = SceneBuilder::new(camera)
         .with_object(object)
         .build();
 
-    scene
+    Box::new(AppStateBigBenClock::new(scene))
 }
-*/
 
 
 fn build_two_armadillos_scene() -> Box<AppStateTwoArmadillos> {
@@ -736,8 +631,25 @@ fn build_two_armadillos_scene() -> Box<AppStateTwoArmadillos> {
     Box::new(AppStateTwoArmadillos::new(scene))
 }
 
-/*
-fn build_16_armadillos_scene() -> Scene {
+fn build_sixteen_armadillos_scene() -> Box<AppStateSixteenArmadillos> {
+    let rot_mat = Matrix4x4::from_affine_angle_x(Radians(0.5));
+    let _p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
+    let _p1 = Vector3::new(1_f32, 1_f32, 2_f32);
+    let _p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
+    let p0 = (rot_mat * _p0.extend(1_f32)).contract();
+    let p1 = (rot_mat * _p1.extend(1_f32)).contract();
+    let p2 = (rot_mat * _p2.extend(1_f32)).contract();
+    let focal_offset = Vector3::new(0_f32, 4.5_f32, 0_f32);
+    let spec = IdentityModelSpec::new(
+        p0.x, 
+        p1.x, 
+        p2.y,
+        p0.y,
+        p0.z, 
+        -8.5_f32, 
+        focal_offset
+    );
+    let camera = Camera::from_spec(spec);
     let mesh = load_tri_model("assets/armadillo.tri");
     let model_builder = ModelBuilder::new();
     let model = Rc::new(model_builder.with_mesh(mesh).build());
@@ -748,12 +660,13 @@ fn build_16_armadillos_scene() -> Scene {
             .with_transform(&Matrix4x4::from_affine_scale(0.75))
             .build()
     }).collect::<Vec<_>>();
-    
-    SceneBuilder::new()
+    let scene = SceneBuilder::new(camera)
         .with_objects(objects)
-        .build()
+        .build();
+    
+    Box::new(AppStateSixteenArmadillos::new(scene))
 }
-*/
+
 /*
 fn build_256_armadillos_scene() -> Scene {
     let mesh = load_tri_model("assets/armadillo.tri");
@@ -773,10 +686,9 @@ fn build_256_armadillos_scene() -> Scene {
 */
 fn main() -> io::Result<()> {
     use std::time::SystemTime;
-
     println!("Building scene.");
     let now = SystemTime::now();
-    let state = build_two_armadillos_scene();
+    let state = build_bigben_scene(); // build_two_armadillos_scene();
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {} s", elapsed.as_secs_f64());
 
