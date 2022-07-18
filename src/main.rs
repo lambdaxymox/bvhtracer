@@ -175,7 +175,9 @@ impl App {
 pub trait AppState {
     fn update(&mut self, elapsed: f64);
 
-    fn get_active_scene(&self) -> &Scene;
+    fn active_scene(&self) -> &Scene;
+
+    fn active_scene_mut(&mut self) -> &mut Scene;
 }
 
 struct AppStateTwoArmadillos {
@@ -192,7 +194,7 @@ impl AppStateTwoArmadillos {
 }
 
 impl AppState for AppStateTwoArmadillos {
-    fn update(&mut self, elapsed: f64) {
+    fn update(&mut self, _elapsed: f64) {
         self.angle += 0.01;
         if self.angle > std::f32::consts::FRAC_2_PI {
             self.angle -= std::f32::consts::FRAC_2_PI;
@@ -208,93 +210,20 @@ impl AppState for AppStateTwoArmadillos {
         self.active_scene.rebuild();
     }
 
-    fn get_active_scene(&self) -> &Scene {
+    fn active_scene(&self) -> &Scene {
         &self.active_scene
     }
-}
 
-
-pub struct IdentityModelSpec {
-    left: f32,
-    right: f32,
-    bottom: f32,
-    top: f32,
-    plane: f32,
-    position: f32,
-    /// The offset of the focal point of the camera from the camera's origin.
-    focal_offset: Vector3<f32>,
-}
-
-impl IdentityModelSpec {
-    fn new(
-        left: f32, 
-        right: f32, 
-        bottom: f32, 
-        top: f32,
-        plane: f32,
-        position: f32, 
-        focal_offset: Vector3<f32>) -> Self 
-    {
-        Self { left, right, bottom, top, plane, position, focal_offset, }
+    fn active_scene_mut(&mut self) -> &mut Scene {
+        &mut self.active_scene
     }
 }
 
-struct Camera {
-    position: Vector3<f32>,
-    /// The focal point of the camera, i.e. the location from which we cast rays into the scene 
-    /// from the camera.
-    focal_point: Vector3<f32>,
-    top_left: Vector3<f32>,
-    top_right: Vector3<f32>,
-    bottom_left: Vector3<f32>,
-}
-
-impl Camera {
-    pub fn from_spec(spec: IdentityModelSpec) -> Self {
-        let position_z = spec.position;
-        let position_x = (spec.left + spec.right) / 2_f32; 
-        let position_y = (spec.bottom + spec.top) / 2_f32;
-        let position = Vector3::new(position_x, position_y, position_z);
-        let focal_point = position + spec.focal_offset;
-        let top_left = Vector3::new(spec.left, spec.top, spec.plane);
-        let top_right = Vector3::new(spec.right, spec.top, spec.plane);
-        let bottom_left = Vector3::new(spec.left, spec.bottom, spec.plane);
-        
-
-        Self { position, focal_point, top_left, top_right, bottom_left, }
-    }
-
-    pub fn get_ray_world_space(&self, u: f32, v: f32) -> Ray<f32> {
-        let ray_origin = self.focal_point;
-        let pixel_position = ray_origin + 
-            self.top_left + 
-            (self.top_right - self.top_left) * u + 
-            (self.bottom_left - self.top_left) * v;
-        let ray_direction = (pixel_position - ray_origin).normalize();
-
-        Ray::from_origin_dir(ray_origin, ray_direction)
-    }
-}
-
-struct Renderer {
-    camera: Camera,
-}
+struct Renderer {}
 
 impl Renderer {
     fn new() -> Self {
-        let focal_offset = Vector3::new(0_f32, 0.5_f32, 0_f32);
-        let spec = IdentityModelSpec::new(
-            -1_f32, 
-            1_f32, 
-            -1_f32, 
-            1_f32, 
-            2_f32, 
-            -4.5_f32, 
-            focal_offset
-        );
-        let camera = Camera::from_spec(spec);
-
-        Self { camera, }
+        Self {}
     }
 
     fn render(&mut self, scene: &Scene, frame_buffer: &mut ImageBuffer<Rgba<u8>, Vec<u8>>) -> usize {
@@ -309,7 +238,7 @@ impl Renderer {
             let y = tile / tile_count_y;
             for v in 0..tile_height {
                 for u in 0..tile_width {
-                    let mut ray = self.camera.get_ray_world_space(
+                    let mut ray = scene.active_camera().get_ray_world_space(
                         (tile_width * x + u) as f32 / SCREEN_WIDTH as f32,
                         (tile_height * y + v) as f32 / SCREEN_HEIGHT as f32,
                     );
@@ -361,7 +290,7 @@ impl App {
     }
 
     fn render(&mut self) -> usize {
-        self.renderer.render(self.state.get_active_scene(), &mut self.frame_buffer)
+        self.renderer.render(self.state.active_scene(), &mut self.frame_buffer)
     }
 }
 
@@ -769,6 +698,17 @@ fn build_bigben_scene() -> Scene {
 
 
 fn build_two_armadillos_scene() -> Box<AppStateTwoArmadillos> {
+    let focal_offset = Vector3::new(0_f32, 0.5_f32, 0_f32);
+    let spec = IdentityModelSpec::new(
+        -1_f32, 
+        1_f32, 
+        -1_f32, 
+        1_f32, 
+        2_f32, 
+        -4.5_f32, 
+        focal_offset
+    );
+    let camera = Camera::from_spec(spec);
     let mesh = load_tri_model("assets/armadillo.tri");
     let model_builder = ModelBuilder::new();
     let model = Rc::new(model_builder.with_mesh(mesh).build());
@@ -789,7 +729,7 @@ fn build_two_armadillos_scene() -> Box<AppStateTwoArmadillos> {
         .build();
     objects.push(object1);
     objects.push(object2);
-    let scene = SceneBuilder::new()
+    let scene = SceneBuilder::new(camera)
         .with_objects(objects)
         .build();
 
