@@ -9,6 +9,9 @@ use cglinalg::{
     Matrix4x4,
     Vector3,
 };
+use std::cell::{
+    RefCell,
+};
 use std::rc::{
     Rc,
 };
@@ -73,7 +76,7 @@ impl SceneObject {
     /*
     #[inline]
     pub fn model_mut(&mut self) -> &mut Model {
-        &mut self.model
+        self.model.borrow_mut()
     }
     */
 }
