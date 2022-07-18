@@ -194,12 +194,10 @@ pub struct Scene {
 }
 
 impl Scene {
-    #[inline]
     pub fn get_unchecked(&self, index: usize) -> &SceneObject {
         self.tlas.get_unchecked(index)
     }
 
-    #[inline]
     pub fn get_mut_unchecked(&mut self, index: usize) -> &mut SceneObject {
         self.tlas.get_mut_unchecked(index)
     }
@@ -212,12 +210,10 @@ impl Scene {
         &mut self.active_camera
     }
 
-    #[inline]
     pub fn intersect(&self, ray: &Ray<f32>) -> Option<f32> {
         self.tlas.intersect(ray)
     }
 
-    #[inline]
     pub fn rebuild(&mut self) {
         self.tlas.rebuild();
     }
