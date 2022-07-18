@@ -38,7 +38,7 @@ where
         let normal = ray.direction.cross(&edge2);
         let area = edge1.dot(&normal);
         let threshold: S = num_traits::cast(0.0001_f64).unwrap();
-        if area > -threshold && area < threshold {
+        if S::abs(area) < threshold {
             // The ray is parallel to the triangle.
             return None;
         }
@@ -68,7 +68,7 @@ where
         let normal = ray.direction.cross(&edge2);
         let area = edge1.dot(&normal);
         let threshold: S = num_traits::cast(0.0001_f64).unwrap();
-        if area > -threshold && area < threshold {
+        if S::abs(area) < threshold {
             // The ray is parallel to the triangle.
             return false;
         }

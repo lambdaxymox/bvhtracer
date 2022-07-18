@@ -24,6 +24,7 @@ mod bvh;
 mod model;
 mod scene;
 mod tlas;
+// mod camera;
 
 use crate::backend::*;
 use crate::triangle::*;
@@ -171,18 +172,26 @@ impl App {
 }
 */
 
-struct AppState {
+pub trait AppState {
+    fn update(&mut self, elapsed: f64);
+
+    fn get_active_scene(&self) -> &Scene;
+}
+
+struct AppStateTwoArmadillos {
     angle: f32,
     active_scene: Scene,
 }
 
-impl AppState {
+impl AppStateTwoArmadillos {
     fn new(active_scene: Scene) -> Self {
         let angle = 0_f32;
 
         Self { angle, active_scene }
     }
+}
 
+impl AppState for AppStateTwoArmadillos {
     fn update(&mut self, elapsed: f64) {
         self.angle += 0.01;
         if self.angle > std::f32::consts::FRAC_2_PI {
@@ -199,32 +208,68 @@ impl AppState {
         self.active_scene.rebuild();
     }
 
-    fn active_scene(&self) -> &Scene {
+    fn get_active_scene(&self) -> &Scene {
         &self.active_scene
     }
 }
 
 
+pub struct IdentityModelSpec {
+    left: f32,
+    right: f32,
+    bottom: f32,
+    top: f32,
+    plane: f32,
+    position: f32,
+    /// The offset of the focal point of the camera from the camera's origin.
+    focal_offset: Vector3<f32>,
+}
+
+impl IdentityModelSpec {
+    fn new(
+        left: f32, 
+        right: f32, 
+        bottom: f32, 
+        top: f32,
+        plane: f32,
+        position: f32, 
+        focal_offset: Vector3<f32>) -> Self 
+    {
+        Self { left, right, bottom, top, plane, position, focal_offset, }
+    }
+}
+
 struct Camera {
     position: Vector3<f32>,
-    p0: Vector3<f32>,
-    p1: Vector3<f32>,
-    p2: Vector3<f32>,
+    /// The focal point of the camera, i.e. the location from which we cast rays into the scene 
+    /// from the camera.
+    focal_point: Vector3<f32>,
+    top_left: Vector3<f32>,
+    top_right: Vector3<f32>,
+    bottom_left: Vector3<f32>,
 }
 
 impl Camera {
-    fn new() -> Self {
-        Self {
-            position: Vector3::new(0.0, 0.5, -4.5),
-            p0: Vector3::new(-1_f32, 1_f32, 2_f32),
-            p1: Vector3::new(1_f32, 1_f32, 2_f32),
-            p2: Vector3::new(-1_f32, -1_f32, 2_f32),
-        }
+    pub fn from_spec(spec: IdentityModelSpec) -> Self {
+        let position_z = spec.position;
+        let position_x = (spec.left + spec.right) / 2_f32; 
+        let position_y = (spec.bottom + spec.top) / 2_f32;
+        let position = Vector3::new(position_x, position_y, position_z);
+        let focal_point = position + spec.focal_offset;
+        let top_left = Vector3::new(spec.left, spec.top, spec.plane);
+        let top_right = Vector3::new(spec.right, spec.top, spec.plane);
+        let bottom_left = Vector3::new(spec.left, spec.bottom, spec.plane);
+        
+
+        Self { position, focal_point, top_left, top_right, bottom_left, }
     }
 
-    fn cast_ray(&self, u: f32, v: f32) -> Ray<f32> {
-        let ray_origin = self.position;
-        let pixel_position = ray_origin + self.p0 + (self.p1 - self.p0) * u + (self.p2 - self.p0) * v;
+    pub fn get_ray_world_space(&self, u: f32, v: f32) -> Ray<f32> {
+        let ray_origin = self.focal_point;
+        let pixel_position = ray_origin + 
+            self.top_left + 
+            (self.top_right - self.top_left) * u + 
+            (self.bottom_left - self.top_left) * v;
         let ray_direction = (pixel_position - ray_origin).normalize();
 
         Ray::from_origin_dir(ray_origin, ray_direction)
@@ -237,9 +282,19 @@ struct Renderer {
 
 impl Renderer {
     fn new() -> Self {
-        Self {  
-            camera: Camera::new(),
-        }
+        let focal_offset = Vector3::new(0_f32, 0.5_f32, 0_f32);
+        let spec = IdentityModelSpec::new(
+            -1_f32, 
+            1_f32, 
+            -1_f32, 
+            1_f32, 
+            2_f32, 
+            -4.5_f32, 
+            focal_offset
+        );
+        let camera = Camera::from_spec(spec);
+
+        Self { camera, }
     }
 
     fn render(&mut self, scene: &Scene, frame_buffer: &mut ImageBuffer<Rgba<u8>, Vec<u8>>) -> usize {
@@ -254,7 +309,7 @@ impl Renderer {
             let y = tile / tile_count_y;
             for v in 0..tile_height {
                 for u in 0..tile_width {
-                    let mut ray = self.camera.cast_ray(
+                    let mut ray = self.camera.get_ray_world_space(
                         (tile_width * x + u) as f32 / SCREEN_WIDTH as f32,
                         (tile_height * y + v) as f32 / SCREEN_HEIGHT as f32,
                     );
@@ -285,18 +340,19 @@ impl Renderer {
 
 struct App {
     frame_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
-    state: AppState,
+    state: Box<dyn AppState>,
     renderer: Renderer,
 }
     
 impl App {
-    fn new(active_scene: Scene, width: usize, height: usize) -> Self {
+    fn new(state: Box<dyn AppState>, width: usize, height: usize) -> Self {
         let frame_buffer = ImageBuffer::from_fill(
             width, 
             height,
             Rgba::from([0, 0, 0, 1])
         );
-        let state = AppState::new(active_scene);
+        // let state = AppState::from_scene(active_scene);
+        // let state = Box::new(state);
         let renderer = Renderer::new();
     
         Self { frame_buffer, state, renderer, }
@@ -307,7 +363,7 @@ impl App {
     }
 
     fn render(&mut self) -> usize {
-        self.renderer.render(self.state.active_scene(), &mut self.frame_buffer)
+        self.renderer.render(self.state.get_active_scene(), &mut self.frame_buffer)
     }
 }
 
@@ -714,7 +770,7 @@ fn build_bigben_scene() -> Scene {
 */
 
 
-fn build_two_armadillos_scene() -> Scene {
+fn build_two_armadillos_scene() -> Box<AppStateTwoArmadillos> {
     let mesh = load_tri_model("assets/armadillo.tri");
     let model_builder = ModelBuilder::new();
     let model = Rc::new(model_builder.with_mesh(mesh).build());
@@ -735,10 +791,11 @@ fn build_two_armadillos_scene() -> Scene {
         .build();
     objects.push(object1);
     objects.push(object2);
-    
-    SceneBuilder::new()
+    let scene = SceneBuilder::new()
         .with_objects(objects)
-        .build()
+        .build();
+
+    Box::new(AppStateTwoArmadillos::new(scene))
 }
 
 /*
@@ -781,11 +838,11 @@ fn main() -> io::Result<()> {
 
     println!("Building scene.");
     let now = SystemTime::now();
-    let active_scene = build_two_armadillos_scene();
+    let state = build_two_armadillos_scene();
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {} s", elapsed.as_secs_f64());
 
-    let mut app = App::new(active_scene, SCREEN_WIDTH, SCREEN_HEIGHT);
+    let mut app = App::new(state, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     println!("Rendering scene.");
     let now = SystemTime::now();
