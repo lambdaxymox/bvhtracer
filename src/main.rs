@@ -351,8 +351,6 @@ impl App {
             height,
             Rgba::from([0, 0, 0, 1])
         );
-        // let state = AppState::from_scene(active_scene);
-        // let state = Box::new(state);
         let renderer = Renderer::new();
     
         Self { frame_buffer, state, renderer, }
