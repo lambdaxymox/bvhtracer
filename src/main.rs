@@ -73,71 +73,6 @@ const SCREEN_WIDTH: usize = 640;
 const SCREEN_HEIGHT: usize = 640;
 
 
-struct AppStateBigBenClock {
-    active_scene: Scene,
-    r: f32,
-    originals: Vec<Triangle<f32>>,
-}
-
-impl AppStateBigBenClock {
-    fn new(active_scene: Scene) -> Self {
-        let r = 0_f32;
-        let originals = active_scene.get_unchecked(0)
-            .model()
-            .mesh()
-            .borrow()
-            .clone();
-
-        Self { active_scene, r, originals, }
-    }
-
-    fn animate(&mut self) {
-        self.r += 0.05;
-        if self.r > std::f32::consts::FRAC_2_PI {
-            self.r -= std::f32::consts::FRAC_2_PI;
-        }
-        let a = f32::sin(self.r) * 0.5;
-        let mesh = self.active_scene().get_unchecked(0).model().mesh();
-        for i in 0..self.originals.len() {
-            let o_0 = self.originals[i].vertex0;
-            let s_0 = a * (o_0.y - 0.2) * 0.2;
-            let x_0 = o_0.x * f32::cos(s_0) - o_0.y * f32::sin(s_0);
-            let y_0 = o_0.x * f32::sin(s_0) + o_0.y * f32::cos(s_0);
-
-            let o_1 = self.originals[i].vertex1;
-            let s_1 = a * (o_1.y - 0.2) * 0.2;
-            let x_1 = o_1.x * f32::cos(s_1) - o_1.y * f32::sin(s_1);
-            let y_1 = o_1.x * f32::sin(s_1) + o_1.y * f32::cos(s_1);
-
-            let o_2 = self.originals[i].vertex2;
-            let s_2 = a * (o_2.y - 0.2) * 0.2;
-            let x_2 = o_2.x * f32::cos(s_2) - o_2.y * f32::sin(s_2);
-            let y_2 = o_2.x * f32::sin(s_2) + o_2.y * f32::cos(s_2);
-
-            mesh.borrow_mut()[i] = Triangle::new(
-                Vector3::new(x_0, y_0, o_0.z),
-                Vector3::new(x_1, y_1, o_1.z),
-                Vector3::new(x_2, y_2, o_2.z),
-            );
-        }
-    }
-}
-
-impl AppState for AppStateBigBenClock {
-    fn update(&mut self, elapsed: f64) {
-        self.animate();
-        self.active_scene.get_mut_unchecked(0).model().refit();
-    }
-
-    fn active_scene(&self) -> &Scene {
-        &self.active_scene
-    }
-
-    fn active_scene_mut(&mut self) -> &mut Scene {
-        &mut self.active_scene
-    }
-}
-
 pub trait AppState {
     fn update(&mut self, elapsed: f64);
 
@@ -146,42 +81,30 @@ pub trait AppState {
     fn active_scene_mut(&mut self) -> &mut Scene;
 }
 
-struct AppStateTwoArmadillos {
-    angle: f32,
-    active_scene: Scene,
+struct App {
+    frame_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
+    state: Box<dyn AppState>,
+    renderer: Renderer,
 }
-
-impl AppStateTwoArmadillos {
-    fn new(active_scene: Scene) -> Self {
-        let angle = 0_f32;
-
-        Self { angle, active_scene }
-    }
-}
-
-impl AppState for AppStateTwoArmadillos {
-    fn update(&mut self, _elapsed: f64) {
-        self.angle += 0.01;
-        if self.angle > std::f32::consts::FRAC_2_PI {
-            self.angle -= std::f32::consts::FRAC_2_PI;
-        }
-        self.active_scene.get_mut_unchecked(0).set_transform(
-            &Matrix4x4::from_affine_translation(&Vector3::new(-1.3_f32, 0_f32, 0_f32))
+    
+impl App {
+    fn new(state: Box<dyn AppState>, width: usize, height: usize) -> Self {
+        let frame_buffer = ImageBuffer::from_fill(
+            width, 
+            height,
+            Rgba::from([0, 0, 0, 1])
         );
-        self.active_scene.get_mut_unchecked(1).set_transform(&(
-            Matrix4x4::from_affine_translation(&Vector3::new(1.3_f32, 0_f32, 0_f32)) *
-            Matrix4x4::from_affine_angle_y(Radians(self.angle))
-        ));
-
-        self.active_scene.rebuild();
+        let renderer = Renderer::new();
+    
+        Self { frame_buffer, state, renderer, }
     }
 
-    fn active_scene(&self) -> &Scene {
-        &self.active_scene
+    fn update(&mut self, elapsed: f64) {
+        self.state.update(elapsed);
     }
 
-    fn active_scene_mut(&mut self) -> &mut Scene {
-        &mut self.active_scene
+    fn render(&mut self) -> usize {
+        self.renderer.render(self.state.active_scene(), &mut self.frame_buffer)
     }
 }
 
@@ -233,34 +156,231 @@ impl Renderer {
     }
 }
 
-struct App {
-    frame_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
-    state: Box<dyn AppState>,
-    renderer: Renderer,
+
+struct AppStateBigBenClock {
+    active_scene: Scene,
+    r: f32,
+    originals: Vec<Triangle<f32>>,
 }
-    
-impl App {
-    fn new(state: Box<dyn AppState>, width: usize, height: usize) -> Self {
-        let frame_buffer = ImageBuffer::from_fill(
-            width, 
-            height,
-            Rgba::from([0, 0, 0, 1])
+
+impl AppStateBigBenClock {
+    fn new() -> Self {
+        let focal_offset = Vector3::new(0_f32, 3.5_f32, 0_f32);
+        let spec = IdentityModelSpec::new(
+            -1_f32, 
+            1_f32, 
+            -1_f32, 
+            1_f32, 
+            2_f32, 
+            -4.5_f32, 
+            focal_offset
         );
-        let renderer = Renderer::new();
-    
-        Self { frame_buffer, state, renderer, }
+        let camera = Camera::from_spec(spec);
+        let mesh = load_tri_model("assets/bigben.tri");
+        let model_builder = ModelBuilder::new();
+        let model = model_builder.with_mesh(mesh).build();
+        let object = SceneObjectBuilder::new(model)
+            .build();
+        let active_scene = SceneBuilder::new(camera)
+            .with_object(object)
+            .build();
+        let r = 0_f32;
+        let originals = active_scene.get_unchecked(0)
+            .model()
+            .mesh()
+            .borrow()
+            .clone();
+
+        Self { active_scene, r, originals, }
     }
 
+    fn animate(&mut self) {
+        self.r += 0.05;
+        if self.r > std::f32::consts::FRAC_2_PI {
+            self.r -= std::f32::consts::FRAC_2_PI;
+        }
+        let a = f32::sin(self.r) * 0.5;
+        let mesh = self.active_scene().get_unchecked(0).model().mesh();
+        for i in 0..self.originals.len() {
+            let o_0 = self.originals[i].vertex0;
+            let s_0 = a * (o_0.y - 0.2) * 0.2;
+            let x_0 = o_0.x * f32::cos(s_0) - o_0.y * f32::sin(s_0);
+            let y_0 = o_0.x * f32::sin(s_0) + o_0.y * f32::cos(s_0);
+
+            let o_1 = self.originals[i].vertex1;
+            let s_1 = a * (o_1.y - 0.2) * 0.2;
+            let x_1 = o_1.x * f32::cos(s_1) - o_1.y * f32::sin(s_1);
+            let y_1 = o_1.x * f32::sin(s_1) + o_1.y * f32::cos(s_1);
+
+            let o_2 = self.originals[i].vertex2;
+            let s_2 = a * (o_2.y - 0.2) * 0.2;
+            let x_2 = o_2.x * f32::cos(s_2) - o_2.y * f32::sin(s_2);
+            let y_2 = o_2.x * f32::sin(s_2) + o_2.y * f32::cos(s_2);
+
+            mesh.borrow_mut()[i] = Triangle::new(
+                Vector3::new(x_0, y_0, o_0.z),
+                Vector3::new(x_1, y_1, o_1.z),
+                Vector3::new(x_2, y_2, o_2.z),
+            );
+        }
+    }
+}
+
+/*
+fn build_bigben_scene() -> Box<AppStateBigBenClock> {
+    let focal_offset = Vector3::new(0_f32, 3.5_f32, 0_f32);
+    let spec = IdentityModelSpec::new(
+        -1_f32, 
+        1_f32, 
+        -1_f32, 
+        1_f32, 
+        2_f32, 
+        -4.5_f32, 
+        focal_offset
+    );
+    let camera = Camera::from_spec(spec);
+    let mesh = load_tri_model("assets/bigben.tri");
+    let model_builder = ModelBuilder::new();
+    let model = model_builder.with_mesh(mesh).build();
+    let object = SceneObjectBuilder::new(model)
+        .build();
+    let scene = SceneBuilder::new(camera)
+        .with_object(object)
+        .build();
+
+    Box::new(AppStateBigBenClock::new(scene))
+}
+*/
+
+impl AppState for AppStateBigBenClock {
     fn update(&mut self, elapsed: f64) {
-        self.state.update(elapsed);
+        self.animate();
+        self.active_scene.get_mut_unchecked(0).model().refit();
     }
 
-    fn render(&mut self) -> usize {
-        self.renderer.render(self.state.active_scene(), &mut self.frame_buffer)
+    fn active_scene(&self) -> &Scene {
+        &self.active_scene
+    }
+
+    fn active_scene_mut(&mut self) -> &mut Scene {
+        &mut self.active_scene
     }
 }
 
 
+
+struct AppStateTwoArmadillos {
+    angle: f32,
+    active_scene: Scene,
+}
+
+impl AppStateTwoArmadillos {
+    fn new() -> Self {
+        let focal_offset = Vector3::new(0_f32, 0.5_f32, 0_f32);
+        let spec = IdentityModelSpec::new(
+            -1_f32, 
+            1_f32, 
+            -1_f32, 
+            1_f32, 
+            2_f32, 
+            -4.5_f32, 
+            focal_offset
+        );
+        let camera = Camera::from_spec(spec);
+        let mesh = load_tri_model("assets/armadillo.tri");
+        let model_builder = ModelBuilder::new();
+        let model = model_builder.with_mesh(mesh).build();
+        let mut objects = vec![];
+        let model1_transform = Matrix4x4::from_affine_translation(
+            &Vector3::new(-1.3_f32, 0_f32, 0_f32)
+        );
+        let model2_transform = Matrix4x4::from_affine_translation(
+            &Vector3::new(1.3_f32, 0_f32, 0_f32)
+        );
+        let model1 = model.clone();
+        let model2 = model.clone();
+        let object1 = SceneObjectBuilder::new(model1)
+            .with_transform(&model1_transform)
+            .build();
+        let object2 = SceneObjectBuilder::new(model2)
+            .with_transform(&model2_transform)
+            .build();
+        objects.push(object1);
+        objects.push(object2);
+        let active_scene = SceneBuilder::new(camera)
+            .with_objects(objects)
+            .build();
+        let angle = 0_f32;
+
+        Self { angle, active_scene }
+    }
+}
+
+impl AppState for AppStateTwoArmadillos {
+    fn update(&mut self, _elapsed: f64) {
+        self.angle += 0.01;
+        if self.angle > std::f32::consts::FRAC_2_PI {
+            self.angle -= std::f32::consts::FRAC_2_PI;
+        }
+        self.active_scene.get_mut_unchecked(0).set_transform(
+            &Matrix4x4::from_affine_translation(&Vector3::new(-1.3_f32, 0_f32, 0_f32))
+        );
+        self.active_scene.get_mut_unchecked(1).set_transform(&(
+            Matrix4x4::from_affine_translation(&Vector3::new(1.3_f32, 0_f32, 0_f32)) *
+            Matrix4x4::from_affine_angle_y(Radians(self.angle))
+        ));
+
+        self.active_scene.rebuild();
+    }
+
+    fn active_scene(&self) -> &Scene {
+        &self.active_scene
+    }
+
+    fn active_scene_mut(&mut self) -> &mut Scene {
+        &mut self.active_scene
+    }
+}
+/*
+fn build_two_armadillos_scene() -> Box<AppStateTwoArmadillos> {
+    let focal_offset = Vector3::new(0_f32, 0.5_f32, 0_f32);
+    let spec = IdentityModelSpec::new(
+        -1_f32, 
+        1_f32, 
+        -1_f32, 
+        1_f32, 
+        2_f32, 
+        -4.5_f32, 
+        focal_offset
+    );
+    let camera = Camera::from_spec(spec);
+    let mesh = load_tri_model("assets/armadillo.tri");
+    let model_builder = ModelBuilder::new();
+    let model = model_builder.with_mesh(mesh).build();
+    let mut objects = vec![];
+    let model1_transform = Matrix4x4::from_affine_translation(
+        &Vector3::new(-1.3_f32, 0_f32, 0_f32)
+    );
+    let model2_transform = Matrix4x4::from_affine_translation(
+        &Vector3::new(1.3_f32, 0_f32, 0_f32)
+    );
+    let model1 = model.clone();
+    let model2 = model.clone();
+    let object1 = SceneObjectBuilder::new(model1)
+        .with_transform(&model1_transform)
+        .build();
+    let object2 = SceneObjectBuilder::new(model2)
+        .with_transform(&model2_transform)
+        .build();
+    objects.push(object1);
+    objects.push(object2);
+    let scene = SceneBuilder::new(camera)
+        .with_objects(objects)
+        .build();
+
+    Box::new(AppStateTwoArmadillos::new(scene))
+}
+*/
 struct AppStateSixteenArmadillos {
     active_scene: Scene,
     a: Vec<f32>,
@@ -269,7 +389,36 @@ struct AppStateSixteenArmadillos {
 }
 
 impl AppStateSixteenArmadillos {
-    fn new(active_scene: Scene) -> Self {
+    fn new() -> Self {
+        let rot_mat = Matrix4x4::from_affine_angle_x(Radians(0.5));
+        let _p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
+        let _p1 = Vector3::new(1_f32, 1_f32, 2_f32);
+        let _p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
+        let p0 = (rot_mat * _p0.extend(1_f32)).contract();
+        let p1 = (rot_mat * _p1.extend(1_f32)).contract();
+        let p2 = (rot_mat * _p2.extend(1_f32)).contract();
+        let focal_offset = Vector3::new(0_f32, 4.5_f32, 0_f32);
+        let spec = IdentityModelSpec::new(
+            p0.x, 
+            p1.x, 
+            p2.y,
+            p0.y,
+            p0.z, 
+            -8.5_f32, 
+            focal_offset
+        );
+        let camera = Camera::from_spec(spec);
+        let mesh = load_tri_model("assets/armadillo.tri");
+        let model_builder = ModelBuilder::new();
+        let model = model_builder.with_mesh(mesh).build();
+        let objects = (0..16).map(|_| {
+                SceneObjectBuilder::new(model.clone())
+                    .with_transform(&Matrix4x4::from_affine_scale(0.75))
+                    .build()
+            }).collect::<Vec<_>>();
+        let active_scene = SceneBuilder::new(camera)
+            .with_objects(objects)
+            .build();
         let a = vec![0_f32; 16];
         let h = vec![
             5_f32, 4_f32, 3_f32, 2_f32, 1_f32, 5_f32, 4_f32, 3_f32, 
@@ -323,7 +472,41 @@ impl AppState for AppStateSixteenArmadillos {
         &mut self.active_scene
     }
 }
-
+/*
+fn build_sixteen_armadillos_scene() -> Box<AppStateSixteenArmadillos> {
+    let rot_mat = Matrix4x4::from_affine_angle_x(Radians(0.5));
+    let _p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
+    let _p1 = Vector3::new(1_f32, 1_f32, 2_f32);
+    let _p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
+    let p0 = (rot_mat * _p0.extend(1_f32)).contract();
+    let p1 = (rot_mat * _p1.extend(1_f32)).contract();
+    let p2 = (rot_mat * _p2.extend(1_f32)).contract();
+    let focal_offset = Vector3::new(0_f32, 4.5_f32, 0_f32);
+    let spec = IdentityModelSpec::new(
+        p0.x, 
+        p1.x, 
+        p2.y,
+        p0.y,
+        p0.z, 
+        -8.5_f32, 
+        focal_offset
+    );
+    let camera = Camera::from_spec(spec);
+    let mesh = load_tri_model("assets/armadillo.tri");
+    let model_builder = ModelBuilder::new();
+    let model = model_builder.with_mesh(mesh).build();
+    let objects = (0..16).map(|_| {
+            SceneObjectBuilder::new(model.clone())
+                .with_transform(&Matrix4x4::from_affine_scale(0.75))
+                .build()
+        }).collect::<Vec<_>>();
+    let scene = SceneBuilder::new(camera)
+        .with_objects(objects)
+        .build();
+    
+    Box::new(AppStateSixteenArmadillos::new(scene))
+}
+*/
 
 struct AppState256Armadillos {
     positions: Vec<Vector3<f32>>,
@@ -334,6 +517,36 @@ struct AppState256Armadillos {
 
 impl AppState256Armadillos {
     fn new(active_scene: Scene) -> Self {
+        let rot_mat = Matrix4x4::from_affine_angle_x(Radians(0.5));
+        let _p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
+        let _p1 = Vector3::new(1_f32, 1_f32, 2_f32);
+        let _p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
+        let p0 = (rot_mat * _p0.extend(1_f32)).contract();
+        let p1 = (rot_mat * _p1.extend(1_f32)).contract();
+        let p2 = (rot_mat * _p2.extend(1_f32)).contract();
+        let focal_offset = Vector3::new(0_f32, 4.5_f32, 0_f32);
+        let spec = IdentityModelSpec::new(
+            p0.x, 
+            p1.x, 
+            p2.y,
+            p0.y,
+            p0.z, 
+            -8.5_f32, 
+            focal_offset
+        );
+        let camera = Camera::from_spec(spec);
+        let mesh = load_tri_model("assets/armadillo.tri");
+        let model_builder = ModelBuilder::new();
+        let model = model_builder.with_mesh(mesh).build();
+        let objects = (0..256).map(|_| {
+                SceneObjectBuilder::new(model.clone())
+                    .with_transform(&Matrix4x4::from_affine_scale(0.75))
+                    .build()
+            }).collect::<Vec<_>>();
+        let scene = SceneBuilder::new(camera)
+            .with_objects(objects)
+            .build();
+
         let mut rng = IsaacRng::seed_from_u64(0);
         let mut positions = vec![Vector3::zero(); 256];
         let mut directions = vec![Vector3::zero(); 256];
@@ -384,7 +597,41 @@ impl AppState for AppState256Armadillos {
         &mut self.active_scene
     }
 }
+/*
+fn build_256_armadillos_scene() -> Box<AppState256Armadillos> {
+    let rot_mat = Matrix4x4::from_affine_angle_x(Radians(0.5));
+    let _p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
+    let _p1 = Vector3::new(1_f32, 1_f32, 2_f32);
+    let _p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
+    let p0 = (rot_mat * _p0.extend(1_f32)).contract();
+    let p1 = (rot_mat * _p1.extend(1_f32)).contract();
+    let p2 = (rot_mat * _p2.extend(1_f32)).contract();
+    let focal_offset = Vector3::new(0_f32, 4.5_f32, 0_f32);
+    let spec = IdentityModelSpec::new(
+        p0.x, 
+        p1.x, 
+        p2.y,
+        p0.y,
+        p0.z, 
+        -8.5_f32, 
+        focal_offset
+    );
+    let camera = Camera::from_spec(spec);
+    let mesh = load_tri_model("assets/armadillo.tri");
+    let model_builder = ModelBuilder::new();
+    let model = model_builder.with_mesh(mesh).build();
+    let objects = (0..256).map(|_| {
+            SceneObjectBuilder::new(model.clone())
+                .with_transform(&Matrix4x4::from_affine_scale(0.75))
+                .build()
+        }).collect::<Vec<_>>();
+    let scene = SceneBuilder::new(camera)
+        .with_objects(objects)
+        .build();
 
+    Box::new(AppState256Armadillos::new(scene))
+}
+*/
 
 /// Load texture image into the GPU.
 fn send_to_gpu_texture(buffer: &ImageBuffer<Rgba<u8>, Vec<u8>>, wrapping_mode: GLuint) -> Result<GLuint, String> {
@@ -468,145 +715,11 @@ fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle<f32>> {
     }).collect::<Vec<Triangle<_>>>()
 }
 
-
-fn build_bigben_scene() -> Box<AppStateBigBenClock> {
-    let focal_offset = Vector3::new(0_f32, 3.5_f32, 0_f32);
-    let spec = IdentityModelSpec::new(
-        -1_f32, 
-        1_f32, 
-        -1_f32, 
-        1_f32, 
-        2_f32, 
-        -4.5_f32, 
-        focal_offset
-    );
-    let camera = Camera::from_spec(spec);
-    let mesh = load_tri_model("assets/bigben.tri");
-    let model_builder = ModelBuilder::new();
-    let model = model_builder.with_mesh(mesh).build();
-    let object = SceneObjectBuilder::new(model)
-        .build();
-    let scene = SceneBuilder::new(camera)
-        .with_object(object)
-        .build();
-
-    Box::new(AppStateBigBenClock::new(scene))
-}
-
-
-fn build_two_armadillos_scene() -> Box<AppStateTwoArmadillos> {
-    let focal_offset = Vector3::new(0_f32, 0.5_f32, 0_f32);
-    let spec = IdentityModelSpec::new(
-        -1_f32, 
-        1_f32, 
-        -1_f32, 
-        1_f32, 
-        2_f32, 
-        -4.5_f32, 
-        focal_offset
-    );
-    let camera = Camera::from_spec(spec);
-    let mesh = load_tri_model("assets/armadillo.tri");
-    let model_builder = ModelBuilder::new();
-    let model = model_builder.with_mesh(mesh).build();
-    let mut objects = vec![];
-    let model1_transform = Matrix4x4::from_affine_translation(
-        &Vector3::new(-1.3_f32, 0_f32, 0_f32)
-    );
-    let model2_transform = Matrix4x4::from_affine_translation(
-        &Vector3::new(1.3_f32, 0_f32, 0_f32)
-    );
-    let model1 = model.clone();
-    let model2 = model.clone();
-    let object1 = SceneObjectBuilder::new(model1)
-        .with_transform(&model1_transform)
-        .build();
-    let object2 = SceneObjectBuilder::new(model2)
-        .with_transform(&model2_transform)
-        .build();
-    objects.push(object1);
-    objects.push(object2);
-    let scene = SceneBuilder::new(camera)
-        .with_objects(objects)
-        .build();
-
-    Box::new(AppStateTwoArmadillos::new(scene))
-}
-
-fn build_sixteen_armadillos_scene() -> Box<AppStateSixteenArmadillos> {
-    let rot_mat = Matrix4x4::from_affine_angle_x(Radians(0.5));
-    let _p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
-    let _p1 = Vector3::new(1_f32, 1_f32, 2_f32);
-    let _p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
-    let p0 = (rot_mat * _p0.extend(1_f32)).contract();
-    let p1 = (rot_mat * _p1.extend(1_f32)).contract();
-    let p2 = (rot_mat * _p2.extend(1_f32)).contract();
-    let focal_offset = Vector3::new(0_f32, 4.5_f32, 0_f32);
-    let spec = IdentityModelSpec::new(
-        p0.x, 
-        p1.x, 
-        p2.y,
-        p0.y,
-        p0.z, 
-        -8.5_f32, 
-        focal_offset
-    );
-    let camera = Camera::from_spec(spec);
-    let mesh = load_tri_model("assets/armadillo.tri");
-    let model_builder = ModelBuilder::new();
-    let model = model_builder.with_mesh(mesh).build();
-    let objects = (0..16).map(|_| {
-            SceneObjectBuilder::new(model.clone())
-                .with_transform(&Matrix4x4::from_affine_scale(0.75))
-                .build()
-        }).collect::<Vec<_>>();
-    let scene = SceneBuilder::new(camera)
-        .with_objects(objects)
-        .build();
-    
-    Box::new(AppStateSixteenArmadillos::new(scene))
-}
-
-
-fn build_256_armadillos_scene() -> Box<AppState256Armadillos> {
-    let rot_mat = Matrix4x4::from_affine_angle_x(Radians(0.5));
-    let _p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
-    let _p1 = Vector3::new(1_f32, 1_f32, 2_f32);
-    let _p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
-    let p0 = (rot_mat * _p0.extend(1_f32)).contract();
-    let p1 = (rot_mat * _p1.extend(1_f32)).contract();
-    let p2 = (rot_mat * _p2.extend(1_f32)).contract();
-    let focal_offset = Vector3::new(0_f32, 4.5_f32, 0_f32);
-    let spec = IdentityModelSpec::new(
-        p0.x, 
-        p1.x, 
-        p2.y,
-        p0.y,
-        p0.z, 
-        -8.5_f32, 
-        focal_offset
-    );
-    let camera = Camera::from_spec(spec);
-    let mesh = load_tri_model("assets/armadillo.tri");
-    let model_builder = ModelBuilder::new();
-    let model = model_builder.with_mesh(mesh).build();
-    let objects = (0..256).map(|_| {
-            SceneObjectBuilder::new(model.clone())
-                .with_transform(&Matrix4x4::from_affine_scale(0.75))
-                .build()
-        }).collect::<Vec<_>>();
-    let scene = SceneBuilder::new(camera)
-        .with_objects(objects)
-        .build();
-
-    Box::new(AppState256Armadillos::new(scene))
-}
-
 fn main() -> io::Result<()> {
     use std::time::SystemTime;
     println!("Building scene.");
     let now = SystemTime::now();
-    let state = build_two_armadillos_scene();
+    let state = Box::new(AppStateTwoArmadillos::new());
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {} s", elapsed.as_secs_f64());
 
