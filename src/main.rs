@@ -40,6 +40,11 @@ use cglinalg::{
     Vector3,
     Radians,
 };
+use glfw::{Action, Context, Key};
+use gl::types::{
+    GLuint, 
+    GLfloat
+};
 use rand::{
     Rng,
     SeedableRng, 
@@ -47,7 +52,6 @@ use rand::{
 use rand_isaac::{
     IsaacRng,
 };
-
 use std::io;
 use std::mem;
 use std::fs::{
@@ -59,12 +63,6 @@ use std::path::{
 use std::ptr;
 use std::rc::{
     Rc,
-};
-
-use glfw::{Action, Context, Key};
-use gl::types::{
-    GLuint, 
-    GLfloat
 };
 use std::ffi::{
     c_void,
@@ -84,7 +82,11 @@ struct AppStateBigBenClock {
 impl AppStateBigBenClock {
     fn new(active_scene: Scene) -> Self {
         let r = 0_f32;
-        let originals = active_scene.get_unchecked(0).model().mesh.clone();
+        let originals = active_scene.get_unchecked(0)
+            .model()
+            .mesh()
+            .borrow()
+            .clone();
 
         Self { active_scene, r, originals, }
     }
@@ -95,6 +97,7 @@ impl AppStateBigBenClock {
             self.r -= std::f32::consts::FRAC_2_PI;
         }
         let a = f32::sin(self.r) * 0.5;
+        let mesh = self.active_scene().get_unchecked(0).model().mesh();
         for i in 0..self.originals.len() {
             let o_0 = self.originals[i].vertex0;
             let s_0 = a * (o_0.y - 0.2) * 0.2;
@@ -110,13 +113,12 @@ impl AppStateBigBenClock {
             let s_2 = a * (o_2.y - 0.2) * 0.2;
             let x_2 = o_2.x * f32::cos(s_2) - o_2.y * f32::sin(s_2);
             let y_2 = o_2.x * f32::sin(s_2) + o_2.y * f32::cos(s_2);
-            /*
-            self.active_scene.get_mut_unchecked(0).model_mut().mesh[i] = Triangle::new(
+
+            mesh.borrow_mut()[i] = Triangle::new(
                 Vector3::new(x_0, y_0, o_0.z),
                 Vector3::new(x_1, y_1, o_1.z),
                 Vector3::new(x_2, y_2, o_2.z),
             );
-            */
         }
     }
 }
@@ -124,9 +126,7 @@ impl AppStateBigBenClock {
 impl AppState for AppStateBigBenClock {
     fn update(&mut self, elapsed: f64) {
         self.animate();
-        /*
-        self.active_scene.get_mut_unchecked(0).model_mut().refit();
-        */
+        self.active_scene.get_mut_unchecked(0).model().refit();
     }
 
     fn active_scene(&self) -> &Scene {
@@ -209,7 +209,7 @@ impl Renderer {
                         (tile_height * y + v) as f32 / SCREEN_HEIGHT as f32,
                     );
                     if let Some(t_intersect) = scene.intersect(&ray) {
-                        ray.t = t_intersect
+                        ray.t = t_intersect;
                     }
                     let color = if ray.t < f32::MAX {
                         let _color = 255 - (((ray.t - 3_f32) * 80_f32) as i32) as u32;
@@ -483,7 +483,7 @@ fn build_bigben_scene() -> Box<AppStateBigBenClock> {
     let camera = Camera::from_spec(spec);
     let mesh = load_tri_model("assets/bigben.tri");
     let model_builder = ModelBuilder::new();
-    let model = Rc::new(model_builder.with_mesh(mesh).build());
+    let model = model_builder.with_mesh(mesh).build();
     let object = SceneObjectBuilder::new(model)
         .build();
     let scene = SceneBuilder::new(camera)
@@ -508,7 +508,7 @@ fn build_two_armadillos_scene() -> Box<AppStateTwoArmadillos> {
     let camera = Camera::from_spec(spec);
     let mesh = load_tri_model("assets/armadillo.tri");
     let model_builder = ModelBuilder::new();
-    let model = Rc::new(model_builder.with_mesh(mesh).build());
+    let model = model_builder.with_mesh(mesh).build();
     let mut objects = vec![];
     let model1_transform = Matrix4x4::from_affine_translation(
         &Vector3::new(-1.3_f32, 0_f32, 0_f32)
@@ -554,14 +554,12 @@ fn build_sixteen_armadillos_scene() -> Box<AppStateSixteenArmadillos> {
     let camera = Camera::from_spec(spec);
     let mesh = load_tri_model("assets/armadillo.tri");
     let model_builder = ModelBuilder::new();
-    let model = Rc::new(model_builder.with_mesh(mesh).build());
+    let model = model_builder.with_mesh(mesh).build();
     let objects = (0..16).map(|_| {
-        let model_i = model.clone();
-
-        SceneObjectBuilder::new(model_i)
-            .with_transform(&Matrix4x4::from_affine_scale(0.75))
-            .build()
-    }).collect::<Vec<_>>();
+            SceneObjectBuilder::new(model.clone())
+                .with_transform(&Matrix4x4::from_affine_scale(0.75))
+                .build()
+        }).collect::<Vec<_>>();
     let scene = SceneBuilder::new(camera)
         .with_objects(objects)
         .build();
@@ -591,13 +589,12 @@ fn build_256_armadillos_scene() -> Box<AppState256Armadillos> {
     let camera = Camera::from_spec(spec);
     let mesh = load_tri_model("assets/armadillo.tri");
     let model_builder = ModelBuilder::new();
-    let model = Rc::new(model_builder.with_mesh(mesh).build());
+    let model = model_builder.with_mesh(mesh).build();
     let objects = (0..256).map(|_| {
-        let model_i = model.clone();
-        SceneObjectBuilder::new(model_i)
-            .with_transform(&Matrix4x4::from_affine_scale(0.75))
-            .build()
-    }).collect::<Vec<_>>();
+            SceneObjectBuilder::new(model.clone())
+                .with_transform(&Matrix4x4::from_affine_scale(0.75))
+                .build()
+        }).collect::<Vec<_>>();
     let scene = SceneBuilder::new(camera)
         .with_objects(objects)
         .build();

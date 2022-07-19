@@ -2,7 +2,7 @@ use crate::aabb::*;
 use crate::ray::*;
 use crate::tlas::*;
 use crate::model::{
-    Model,
+    ModelInstance,
 };
 use cglinalg::{
     Magnitude,
@@ -19,7 +19,7 @@ use std::rc::{
 
 #[derive(Clone, Debug)]
 pub struct SceneObject {
-    model: Rc<Model>,
+    model: ModelInstance,
     transform: Matrix4x4<f32>,
     transform_inv: Matrix4x4<f32>,
     bounds: Aabb<f32>,
@@ -70,28 +70,22 @@ impl SceneObject {
     }
 
     #[inline]
-    pub fn model(&self) -> &Model {
-        &self.model
+    pub fn model(&self) -> ModelInstance {
+        self.model.clone()
     }
-    /*
-    #[inline]
-    pub fn model_mut(&mut self) -> &mut Model {
-        self.model.borrow_mut()
-    }
-    */
 }
 
 pub struct SceneObjectBuilder {
-    model: Rc<Model>,
+    model: ModelInstance,
     transform: Matrix4x4<f32>,
     transform_inv: Matrix4x4<f32>,
     bounds: Aabb<f32>,
 }
 
 impl SceneObjectBuilder {
-    pub fn new(model: Rc<Model>) -> Self {
+    pub fn new(model: ModelInstance) -> Self {
         Self { 
-            model, 
+            model,
             transform: Matrix4x4::identity(), 
             transform_inv: Matrix4x4::identity(), 
             bounds: Aabb::new_empty() 

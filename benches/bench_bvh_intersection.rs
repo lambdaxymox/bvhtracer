@@ -7,7 +7,7 @@ extern crate rand_isaac;
 
 use bvhtracer::{
     Ray,
-    Model,
+    ModelInstance,
     ModelBuilder,
     Triangle,
 };
@@ -52,7 +52,7 @@ fn create_mesh_sphere(x_segments: u32, y_segments: u32) -> Vec<Triangle<f32>> {
     mesh
 }
 
-fn scene() -> Model {
+fn scene() -> ModelInstance {
     let mesh = create_mesh_sphere(50, 50);
     let builder = ModelBuilder::new();
     

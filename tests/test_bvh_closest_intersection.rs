@@ -2,7 +2,7 @@ extern crate bvhtracer;
 extern crate cglinalg;
 
 use bvhtracer::{
-    Model,
+    ModelInstance,
     ModelBuilder,
     Triangle,
     Ray,
@@ -21,7 +21,7 @@ fn top_triangle() -> Triangle<f32> {
     )
 }
 
-fn scene() -> Model {
+fn scene() -> ModelInstance {
     let top = top_triangle();
     let mesh = (0..100).map(|i| {
             let displacement = Vector3::new(0_f32, 0_f32, i as f32);
@@ -42,12 +42,12 @@ fn test_scene_stack_xy() {
     let scene = scene();
     let top = top_triangle();
 
-    assert!(scene.mesh.iter().all(|triangle| triangle.vertex0.x == top.vertex0.x));
-    assert!(scene.mesh.iter().all(|triangle| triangle.vertex0.y == top.vertex0.y));
-    assert!(scene.mesh.iter().all(|triangle| triangle.vertex1.x == top.vertex1.x));
-    assert!(scene.mesh.iter().all(|triangle| triangle.vertex1.y == top.vertex1.y));
-    assert!(scene.mesh.iter().all(|triangle| triangle.vertex2.x == top.vertex2.x));
-    assert!(scene.mesh.iter().all(|triangle| triangle.vertex2.y == top.vertex2.y));
+    assert!(scene.mesh().borrow().iter().all(|triangle| triangle.vertex0.x == top.vertex0.x));
+    assert!(scene.mesh().borrow().iter().all(|triangle| triangle.vertex0.y == top.vertex0.y));
+    assert!(scene.mesh().borrow().iter().all(|triangle| triangle.vertex1.x == top.vertex1.x));
+    assert!(scene.mesh().borrow().iter().all(|triangle| triangle.vertex1.y == top.vertex1.y));
+    assert!(scene.mesh().borrow().iter().all(|triangle| triangle.vertex2.x == top.vertex2.x));
+    assert!(scene.mesh().borrow().iter().all(|triangle| triangle.vertex2.y == top.vertex2.y));
 }
 
 /// Given a set of triangles that could intersect a ray, the intersection test
@@ -75,7 +75,8 @@ fn test_intersection_all_primitives_along_ray_should_hit() {
     let ray_origin = Vector3::new(closest.centroid.x, closest.centroid.y, 5_f32);
     let ray_direction = (closest.centroid - ray_origin).normalize();
     let ray = Ray::from_origin_dir(ray_origin, ray_direction);
-    let t_intersect_set = scene.mesh.iter()
+    let mesh = scene.mesh();
+    let t_intersect_set = mesh.borrow().iter()
         .map(|triangle| { triangle.intersect(&ray) })
         .collect::<Vec<_>>();
 
@@ -90,7 +91,8 @@ fn test_intersection_closest_point_should_have_lowest_t() {
     let ray_direction = (closest.centroid - ray_origin).normalize();
     let ray = Ray::from_origin_dir(ray_origin, ray_direction);
     let expected = closest.intersect(&ray).unwrap();
-    let t_intersect_set = scene.mesh.iter()
+    let mesh = scene.mesh();
+    let t_intersect_set = mesh.borrow().iter()
         .map(|triangle| { triangle.intersect(&ray) })
         .collect::<Vec<_>>();
     let result = t_intersect_set.iter()

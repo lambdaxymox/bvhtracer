@@ -1,7 +1,7 @@
 extern crate bvhtracer;
 
 use bvhtracer::{
-    Model,
+    ModelInstance,
     ModelBuilder,
     Triangle,
     Ray,
@@ -11,7 +11,7 @@ use cglinalg::{
     Vector3,
 };
 
-fn scene() -> Model {
+fn scene() -> ModelInstance {
     let displacement = Vector3::new(5_f32, 0_f32, 0_f32);
     let triangle = Triangle::new(
         Vector3::new(0_f32, 1_f32 / 2_f32, 0_f32),
@@ -39,7 +39,8 @@ fn scene() -> Model {
 fn test_two_triangles_intersection_hits1() {
     let scene = scene();
     let ray_origin = Vector3::new(0_f32, 0_f32, 5_f32);
-    let target_origin = scene.mesh[0].centroid;
+    let mesh = scene.mesh();
+    let target_origin = mesh.borrow()[0].centroid;
     let ray_direction = (target_origin - ray_origin).normalize();
     let ray = Ray::from_origin_dir(ray_origin, ray_direction);
     let result = scene.intersect(&ray);
@@ -51,7 +52,8 @@ fn test_two_triangles_intersection_hits1() {
 fn test_two_triangles_intersection_hits2() {
     let scene = scene();
     let ray_origin = Vector3::new(0_f32, 0_f32, 5_f32);
-    let target_origin = scene.mesh[1].centroid;
+    let mesh = scene.mesh();
+    let target_origin = mesh.borrow()[1].centroid;
     let ray_direction = (target_origin - ray_origin).normalize();
     let ray = Ray::from_origin_dir(ray_origin, ray_direction);
     let result = scene.intersect(&ray);

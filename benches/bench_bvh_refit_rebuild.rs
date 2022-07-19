@@ -6,7 +6,7 @@ extern crate rand_isaac;
 
 
 use bvhtracer::{
-    Model,
+    ModelInstance,
     ModelBuilder,
     Triangle,
 };
@@ -33,25 +33,26 @@ fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle<f32>> {
     }).collect::<Vec<Triangle<_>>>()
 }
 
-fn animate(scene: &mut Model, r: f32) {
+fn animate(scene: &mut ModelInstance, r: f32) {
     let a = f32::sin(r) * 0.5;
-    for i in 0..scene.mesh.len() {
-        let o_0 = scene.mesh[i].vertex0;
+    let mesh = scene.mesh();
+    for i in 0..mesh.borrow().len() {
+        let o_0 = mesh.borrow()[i].vertex0;
         let s_0 = a * (o_0.y - 0.2) * 0.2;
         let x_0 = o_0.x * f32::cos(s_0) - o_0.y * f32::sin(s_0);
         let y_0 = o_0.x * f32::sin(s_0) + o_0.y * f32::cos(s_0);
 
-        let o_1 = scene.mesh[i].vertex1;
+        let o_1 = mesh.borrow()[i].vertex1;
         let s_1 = a * (o_1.y - 0.2) * 0.2;
         let x_1 = o_1.x * f32::cos(s_1) - o_1.y * f32::sin(s_1);
         let y_1 = o_1.x * f32::sin(s_1) + o_1.y * f32::cos(s_1);
 
-        let o_2 = scene.mesh[i].vertex2;
+        let o_2 = mesh.borrow()[i].vertex2;
         let s_2 = a * (o_2.y - 0.2) * 0.2;
         let x_2 = o_2.x * f32::cos(s_2) - o_2.y * f32::sin(s_2);
         let y_2 = o_2.x * f32::sin(s_2) + o_2.y * f32::cos(s_2);
 
-        scene.mesh[i] = Triangle::new(
+        mesh.borrow_mut()[i] = Triangle::new(
             Vector3::new(x_0, y_0, o_0.z),
             Vector3::new(x_1, y_1, o_1.z),
             Vector3::new(x_2, y_2, o_2.z),
@@ -68,7 +69,7 @@ fn bvh_rebuild(bh: &mut criterion::Criterion) {
         .with_mesh(original_mesh)
         .build();
     animate(&mut scene, 0.05);
-    let animated_mesh = scene.mesh;
+    let animated_mesh = scene.mesh().borrow().clone();
 
     group.sample_size(100);
     group.bench_function("bvh_rebuild", move |bh| bh.iter(|| {
