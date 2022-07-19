@@ -226,31 +226,6 @@ impl AppStateBigBenClock {
     }
 }
 
-/*
-fn build_bigben_scene() -> Box<AppStateBigBenClock> {
-    let focal_offset = Vector3::new(0_f32, 3.5_f32, 0_f32);
-    let spec = IdentityModelSpec::new(
-        -1_f32, 
-        1_f32, 
-        -1_f32, 
-        1_f32, 
-        2_f32, 
-        -4.5_f32, 
-        focal_offset
-    );
-    let camera = Camera::from_spec(spec);
-    let mesh = load_tri_model("assets/bigben.tri");
-    let model_builder = ModelBuilder::new();
-    let model = model_builder.with_mesh(mesh).build();
-    let object = SceneObjectBuilder::new(model)
-        .build();
-    let scene = SceneBuilder::new(camera)
-        .with_object(object)
-        .build();
-
-    Box::new(AppStateBigBenClock::new(scene))
-}
-*/
 
 impl AppState for AppStateBigBenClock {
     fn update(&mut self, elapsed: f64) {
@@ -341,46 +316,8 @@ impl AppState for AppStateTwoArmadillos {
         &mut self.active_scene
     }
 }
-/*
-fn build_two_armadillos_scene() -> Box<AppStateTwoArmadillos> {
-    let focal_offset = Vector3::new(0_f32, 0.5_f32, 0_f32);
-    let spec = IdentityModelSpec::new(
-        -1_f32, 
-        1_f32, 
-        -1_f32, 
-        1_f32, 
-        2_f32, 
-        -4.5_f32, 
-        focal_offset
-    );
-    let camera = Camera::from_spec(spec);
-    let mesh = load_tri_model("assets/armadillo.tri");
-    let model_builder = ModelBuilder::new();
-    let model = model_builder.with_mesh(mesh).build();
-    let mut objects = vec![];
-    let model1_transform = Matrix4x4::from_affine_translation(
-        &Vector3::new(-1.3_f32, 0_f32, 0_f32)
-    );
-    let model2_transform = Matrix4x4::from_affine_translation(
-        &Vector3::new(1.3_f32, 0_f32, 0_f32)
-    );
-    let model1 = model.clone();
-    let model2 = model.clone();
-    let object1 = SceneObjectBuilder::new(model1)
-        .with_transform(&model1_transform)
-        .build();
-    let object2 = SceneObjectBuilder::new(model2)
-        .with_transform(&model2_transform)
-        .build();
-    objects.push(object1);
-    objects.push(object2);
-    let scene = SceneBuilder::new(camera)
-        .with_objects(objects)
-        .build();
 
-    Box::new(AppStateTwoArmadillos::new(scene))
-}
-*/
+
 struct AppStateSixteenArmadillos {
     active_scene: Scene,
     a: Vec<f32>,
@@ -472,41 +409,7 @@ impl AppState for AppStateSixteenArmadillos {
         &mut self.active_scene
     }
 }
-/*
-fn build_sixteen_armadillos_scene() -> Box<AppStateSixteenArmadillos> {
-    let rot_mat = Matrix4x4::from_affine_angle_x(Radians(0.5));
-    let _p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
-    let _p1 = Vector3::new(1_f32, 1_f32, 2_f32);
-    let _p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
-    let p0 = (rot_mat * _p0.extend(1_f32)).contract();
-    let p1 = (rot_mat * _p1.extend(1_f32)).contract();
-    let p2 = (rot_mat * _p2.extend(1_f32)).contract();
-    let focal_offset = Vector3::new(0_f32, 4.5_f32, 0_f32);
-    let spec = IdentityModelSpec::new(
-        p0.x, 
-        p1.x, 
-        p2.y,
-        p0.y,
-        p0.z, 
-        -8.5_f32, 
-        focal_offset
-    );
-    let camera = Camera::from_spec(spec);
-    let mesh = load_tri_model("assets/armadillo.tri");
-    let model_builder = ModelBuilder::new();
-    let model = model_builder.with_mesh(mesh).build();
-    let objects = (0..16).map(|_| {
-            SceneObjectBuilder::new(model.clone())
-                .with_transform(&Matrix4x4::from_affine_scale(0.75))
-                .build()
-        }).collect::<Vec<_>>();
-    let scene = SceneBuilder::new(camera)
-        .with_objects(objects)
-        .build();
-    
-    Box::new(AppStateSixteenArmadillos::new(scene))
-}
-*/
+
 
 struct AppState256Armadillos {
     positions: Vec<Vector3<f32>>,
@@ -597,41 +500,7 @@ impl AppState for AppState256Armadillos {
         &mut self.active_scene
     }
 }
-/*
-fn build_256_armadillos_scene() -> Box<AppState256Armadillos> {
-    let rot_mat = Matrix4x4::from_affine_angle_x(Radians(0.5));
-    let _p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
-    let _p1 = Vector3::new(1_f32, 1_f32, 2_f32);
-    let _p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
-    let p0 = (rot_mat * _p0.extend(1_f32)).contract();
-    let p1 = (rot_mat * _p1.extend(1_f32)).contract();
-    let p2 = (rot_mat * _p2.extend(1_f32)).contract();
-    let focal_offset = Vector3::new(0_f32, 4.5_f32, 0_f32);
-    let spec = IdentityModelSpec::new(
-        p0.x, 
-        p1.x, 
-        p2.y,
-        p0.y,
-        p0.z, 
-        -8.5_f32, 
-        focal_offset
-    );
-    let camera = Camera::from_spec(spec);
-    let mesh = load_tri_model("assets/armadillo.tri");
-    let model_builder = ModelBuilder::new();
-    let model = model_builder.with_mesh(mesh).build();
-    let objects = (0..256).map(|_| {
-            SceneObjectBuilder::new(model.clone())
-                .with_transform(&Matrix4x4::from_affine_scale(0.75))
-                .build()
-        }).collect::<Vec<_>>();
-    let scene = SceneBuilder::new(camera)
-        .with_objects(objects)
-        .build();
 
-    Box::new(AppState256Armadillos::new(scene))
-}
-*/
 
 /// Load texture image into the GPU.
 fn send_to_gpu_texture(buffer: &ImageBuffer<Rgba<u8>, Vec<u8>>, wrapping_mode: GLuint) -> Result<GLuint, String> {
@@ -719,7 +588,7 @@ fn main() -> io::Result<()> {
     use std::time::SystemTime;
     println!("Building scene.");
     let now = SystemTime::now();
-    let state = Box::new(AppStateTwoArmadillos::new());
+    let state = Box::new(AppStateBigBenClock::new());
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {} s", elapsed.as_secs_f64());
 
@@ -730,10 +599,7 @@ fn main() -> io::Result<()> {
     app.render();
     let elapsed = now.elapsed().unwrap();
     println!("Rendering time = {} s", elapsed.as_secs_f64());
-    
-    // slet mut file = File::create("output.ppm").unwrap();
-    // let mut ppm_encoder = ppm::PpmEncoder::new(&mut file);
-    // ppm_encoder.encode(&app.frame_buffer)?;
+
     app.frame_buffer.flip_vertical();
 
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
