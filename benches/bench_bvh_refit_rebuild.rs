@@ -36,7 +36,8 @@ fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle<f32>> {
 fn animate(scene: &mut ModelInstance, r: f32) {
     let a = f32::sin(r) * 0.5;
     let mesh = scene.mesh();
-    for i in 0..mesh.borrow().len() {
+    let primitive_count = mesh.borrow().len();
+    for i in 0..primitive_count {
         let o_0 = mesh.borrow()[i].vertex0;
         let s_0 = a * (o_0.y - 0.2) * 0.2;
         let x_0 = o_0.x * f32::cos(s_0) - o_0.y * f32::sin(s_0);

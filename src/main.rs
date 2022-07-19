@@ -30,7 +30,6 @@ use crate::backend::*;
 use crate::triangle::*;
 use crate::image::*;
 use crate::pixel::*;
-use crate::ray::*;
 use crate::model::*;
 use crate::scene::*;
 
@@ -54,16 +53,10 @@ use rand_isaac::{
 };
 use std::io;
 use std::mem;
-use std::fs::{
-    File,
-};
 use std::path::{
     Path,
 };
 use std::ptr;
-use std::rc::{
-    Rc,
-};
 use std::ffi::{
     c_void,
 };
@@ -228,7 +221,7 @@ impl AppStateBigBenClock {
 
 
 impl AppState for AppStateBigBenClock {
-    fn update(&mut self, elapsed: f64) {
+    fn update(&mut self, _elapsed: f64) {
         self.animate();
         self.active_scene.get_mut_unchecked(0).model().refit();
     }
@@ -419,7 +412,7 @@ struct AppState256Armadillos {
 }
 
 impl AppState256Armadillos {
-    fn new(active_scene: Scene) -> Self {
+    fn new() -> Self {
         let rot_mat = Matrix4x4::from_affine_angle_x(Radians(0.5));
         let _p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
         let _p1 = Vector3::new(1_f32, 1_f32, 2_f32);
@@ -446,7 +439,7 @@ impl AppState256Armadillos {
                     .with_transform(&Matrix4x4::from_affine_scale(0.75))
                     .build()
             }).collect::<Vec<_>>();
-        let scene = SceneBuilder::new(camera)
+        let active_scene = SceneBuilder::new(camera)
             .with_objects(objects)
             .build();
 
