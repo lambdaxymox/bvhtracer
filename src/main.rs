@@ -1,4 +1,5 @@
 extern crate cglinalg;
+extern crate wavefront_obj;
 extern crate rand;
 extern crate rand_isaac;
 extern crate stb_image;
@@ -182,6 +183,7 @@ impl AppStateBigBenClock {
             .model()
             .mesh()
             .borrow()
+            .primitives
             .clone();
 
         Self { active_scene, r, originals, }
@@ -210,7 +212,7 @@ impl AppStateBigBenClock {
             let x_2 = o_2.x * f32::cos(s_2) - o_2.y * f32::sin(s_2);
             let y_2 = o_2.x * f32::sin(s_2) + o_2.y * f32::cos(s_2);
 
-            mesh.borrow_mut()[i] = Triangle::new(
+            mesh.borrow_mut().primitives[i] = Triangle::new(
                 Vector3::new(x_0, y_0, o_0.z),
                 Vector3::new(x_1, y_1, o_1.z),
                 Vector3::new(x_2, y_2, o_2.z),

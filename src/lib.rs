@@ -1,6 +1,3 @@
-extern crate num_traits;
-
-
 mod aabb;
 mod triangle;
 mod image;

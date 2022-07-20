@@ -10,6 +10,7 @@ use std::cell::{
     RefMut,
     RefCell,
 };
+use std::slice;
 
 
 #[derive(Clone, Debug)]
@@ -37,39 +38,53 @@ impl ModelInstance {
         self.handle.borrow().bounds()
     }
 
-    pub fn mesh(&self) -> Rc<RefCell<Vec<Triangle<f32>>>> {
-        self.handle.borrow().mesh.clone()
+    pub fn mesh(&self) -> Rc<RefCell<Model>> {
+        self.handle.clone()
+    }
+
+    pub fn len(&self) -> usize {
+        self.handle.borrow().len()
     }
 }
 
+/*
+#[derive(Clone, Debug)]
+pub struct MeshInstance {
+    mesh: Rc<RefCell<Vec<Triangle<f32>>>>,
+}
+*/
+
 
 #[derive(Clone, Debug)]
-struct Model {
-    mesh: Rc<RefCell<Vec<Triangle<f32>>>>,
+pub struct Model {
+    pub primitives: Vec<Triangle<f32>>,
     bvh: Bvh,
 }
 
 impl Model {
-    fn new(mesh: Vec<Triangle<f32>>, bvh: Bvh) -> Self {
-        Self { 
-            mesh: Rc::new(RefCell::new(mesh)),
-            bvh, 
-        }
+    pub fn new(primitives: Vec<Triangle<f32>>, bvh: Bvh) -> Self {
+        Self { primitives, bvh, }
     }
 
-    fn intersect(&self, ray: &Ray<f32>) -> Option<f32> {
-        let mesh = self.mesh.borrow();
-        self.bvh.intersect(mesh.as_slice(), ray)
+    pub fn intersect(&self, ray: &Ray<f32>) -> Option<f32> {
+        self.bvh.intersect(&self.primitives, ray)
     }
 
-    fn refit(&mut self) {
-        let mesh = self.mesh.borrow();
-        self.bvh.refit(mesh.as_slice())
+    pub fn refit(&mut self) {
+        self.bvh.refit(&self.primitives)
     }
 
     /// Returns the model space bounds for a model.
-    fn bounds(&self) -> Aabb<f32> {
+    pub fn bounds(&self) -> Aabb<f32> {
         self.bvh.bounds()
+    }
+
+    pub fn primitive_iter(&self) -> slice::Iter<Triangle<f32>> {
+        self.primitives.iter()
+    }
+
+    pub fn len(&self) -> usize {
+        self.primitives.len()
     }
 }
 
