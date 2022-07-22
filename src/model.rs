@@ -57,7 +57,7 @@ pub struct MeshInstance {
 
 #[derive(Clone, Debug)]
 pub struct Model {
-    pub primitives: Vec<Triangle<f32>>,
+    primitives: Vec<Triangle<f32>>,
     bvh: Bvh,
 }
 
@@ -81,6 +81,14 @@ impl Model {
 
     pub fn primitive_iter(&self) -> slice::Iter<Triangle<f32>> {
         self.primitives.iter()
+    }
+
+    pub fn primitives(&self) -> &[Triangle<f32>] {
+        &self.primitives
+    }
+
+    pub fn primitives_mut(&mut self) -> &mut [Triangle<f32>] {
+        &mut self.primitives
     }
 
     pub fn len(&self) -> usize {
