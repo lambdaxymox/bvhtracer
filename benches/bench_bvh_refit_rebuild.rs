@@ -67,7 +67,7 @@ fn bvh_rebuild(bh: &mut criterion::Criterion) {
     let mut group = bh.benchmark_group("bvh_refit");
     let builder = ModelBuilder::new();
     let mut scene = builder
-        .with_mesh(original_mesh)
+        .with_primitives(original_mesh)
         .build();
     animate(&mut scene, 0.05);
     let animated_mesh = scene.mesh()
@@ -80,7 +80,7 @@ fn bvh_rebuild(bh: &mut criterion::Criterion) {
     group.sample_size(100);
     group.bench_function("bvh_rebuild", move |bh| bh.iter(|| {
         let builder = ModelBuilder::new();
-        criterion::black_box(builder.with_mesh(animated_mesh.clone()).build())
+        criterion::black_box(builder.with_primitives(animated_mesh.clone()).build())
     }));
     group.finish();
 }
@@ -92,7 +92,7 @@ fn bvh_refit(bh: &mut criterion::Criterion) {
 
     let builder = ModelBuilder::new();
     let mut scene = builder
-        .with_mesh(mesh)
+        .with_primitives(mesh)
         .build();
     animate(&mut scene, 0.05);
 

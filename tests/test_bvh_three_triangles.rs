@@ -32,14 +32,14 @@ fn scene() -> ModelInstance {
     let mesh = vec![triangle1, triangle2, triangle3];
     let builder = ModelBuilder::new();
     
-    builder.with_mesh(mesh).build()
+    builder.with_primitives(mesh).build()
 }
 
 #[test]
 fn test_three_triangles_centroids_hit() {
     let scene = scene();
     let mesh = scene.mesh();
-    for triangle in mesh.borrow().primitive_iter() {
+    for triangle in mesh.borrow().primitives().iter() {
         let ray_origin = Vector3::new(0_f32, 0_f32, 10_f32);
         let ray_direction = (triangle.centroid - ray_origin).normalize();
         let ray = Ray::from_origin_dir(ray_origin, ray_direction);

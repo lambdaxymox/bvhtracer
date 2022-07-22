@@ -38,7 +38,7 @@ fn bvh_construction(bh: &mut criterion::Criterion) {
     group.sample_size(100);
     group.bench_function("bvh_construction", move |bh| bh.iter(|| {
         let builder = ModelBuilder::new();
-        criterion::black_box(builder.with_mesh(mesh.clone()).build())
+        criterion::black_box(builder.with_primitives(mesh.clone()).build())
     }));
     group.finish();
 }

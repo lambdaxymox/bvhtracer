@@ -56,7 +56,7 @@ fn scene() -> ModelInstance {
     let mesh = create_mesh_sphere(50, 50);
     let builder = ModelBuilder::new();
     
-    builder.with_mesh(mesh).build()
+    builder.with_primitives(mesh).build()
 }
 
 fn sample_unit_sphere(rng: &mut IsaacRng) -> Vector3<f32> {

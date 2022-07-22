@@ -21,7 +21,7 @@ fn scene() -> ModelInstance {
     let mesh = vec![triangle];
     let builder = ModelBuilder::new();
     
-    builder.with_mesh(mesh).build()
+    builder.with_primitives(mesh).build()
 }
 
 /*

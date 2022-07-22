@@ -28,10 +28,10 @@ fn scene() -> ModelInstance {
         triangle.vertex1 + displacement,
         triangle.vertex2 + displacement,
     );
-    let mesh = vec![triangle1, triangle2];
+    let primitives = vec![triangle1, triangle2];
     let builder = ModelBuilder::new();
     
-    builder.with_mesh(mesh).build()
+    builder.with_primitives(primitives).build()
 }
 
 
