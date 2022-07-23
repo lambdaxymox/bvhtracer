@@ -1,7 +1,7 @@
 use std::ops;
 use std::io;
 use crate::pixel::*;
-use crate::image::*;
+use crate::frame_buffer::*;
 
 
 pub struct PpmEncoder<'a, W: 'a> {

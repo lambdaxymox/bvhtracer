@@ -2,6 +2,8 @@ use crate::aabb::*;
 use crate::triangle::*;
 use crate::ray::*;
 use crate::bvh::*;
+use crate::texture::*;
+use crate::mesh::*;
 use cglinalg::{
     Vector2,
     Vector3,
@@ -23,9 +25,9 @@ pub struct ModelInstance {
 }
 
 impl ModelInstance {
-    pub fn new(primitives: Vec<Triangle<f32>>, tex_coords: Vec<Vector2<f32>>, normals: Vec<Vector3<f32>>, bvh: Bvh) -> Self {
+    pub fn new(mesh: Mesh, bvh: Bvh, texture: TextureImage2D) -> Self {
         Self { 
-            handle: Rc::new(RefCell::new(Model::new(primitives, tex_coords, normals, bvh))),
+            handle: Rc::new(RefCell::new(Model::new(mesh, bvh, texture))),
         }
     }
 
@@ -51,33 +53,25 @@ impl ModelInstance {
     }
 }
 
-/*
-#[derive(Clone, Debug)]
-pub struct MeshInstance {
-    mesh: Rc<RefCell<Vec<Triangle<f32>>>>,
-}
-*/
-
 
 #[derive(Clone, Debug)]
 pub struct Model {
-    primitives: Vec<Triangle<f32>>,
-    tex_coords: Vec<Vector2<f32>>,
-    normals: Vec<Vector3<f32>>,
+    mesh: Mesh,
     bvh: Bvh,
+    texture: TextureImage2D,
 }
 
 impl Model {
-    pub fn new(primitives: Vec<Triangle<f32>>, tex_coords: Vec<Vector2<f32>>, normals: Vec<Vector3<f32>>, bvh: Bvh) -> Self {
-        Self { primitives, tex_coords, normals, bvh, }
+    pub fn new(mesh: Mesh, bvh: Bvh, texture: TextureImage2D) -> Self {
+        Self { mesh, bvh, texture, }
     }
 
     pub fn intersect(&self, ray: &Ray<f32>) -> Option<f32> {
-        self.bvh.intersect(&self.primitives, ray)
+        self.bvh.intersect(&self.mesh.primitives(), ray)
     }
 
     pub fn refit(&mut self) {
-        self.bvh.refit(&self.primitives)
+        self.bvh.refit(&self.mesh.primitives())
     }
 
     /// Returns the model space bounds for a model.
@@ -86,23 +80,23 @@ impl Model {
     }
 
     pub fn primitives(&self) -> &[Triangle<f32>] {
-        &self.primitives
+        &self.mesh.primitives()
     }
 
     pub fn primitives_mut(&mut self) -> &mut [Triangle<f32>] {
-        &mut self.primitives
+        self.mesh.primitives_mut()
     }
 
     pub fn tex_coords(&self) -> &[Vector2<f32>] {
-        &self.tex_coords
+        &self.mesh.tex_coords()
     }
 
     pub fn normals(&self) -> &[Vector3<f32>] {
-        &self.normals
+        &self.mesh.normals()
     }
 
     pub fn len(&self) -> usize {
-        self.primitives.len()
+        self.mesh.len()
     }
 }
 
@@ -110,7 +104,8 @@ pub struct ModelBuilder {
     primitives: Vec<Triangle<f32>>,
     tex_coords: Vec<Vector2<f32>>,
     normals: Vec<Vector3<f32>>,
-    bvh_builder: BvhBuilder
+    bvh_builder: BvhBuilder,
+    texture: TextureImage2D,
 }
 
 impl ModelBuilder {
@@ -120,6 +115,7 @@ impl ModelBuilder {
             tex_coords: Vec::new(),
             normals: Vec::new(),
             bvh_builder: BvhBuilder::new(),
+            texture: TextureImage2D::default(),
         }
     }
 
@@ -141,10 +137,17 @@ impl ModelBuilder {
         self
     }
 
+    pub fn with_texture(mut self, texture: TextureImage2D) -> Self {
+        self.texture = texture;
+
+        self
+    }
+
     pub fn build(mut self) -> ModelInstance {
         let bvh = self.bvh_builder.build_for(&mut self.primitives);
+        let mesh = Mesh::new(self.primitives, self.tex_coords, self.normals);
 
-        ModelInstance::new(self.primitives, self.tex_coords, self.normals, bvh)
+        ModelInstance::new(mesh, bvh, self.texture)
     }
 }
 

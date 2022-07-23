@@ -2,7 +2,7 @@ extern crate cglinalg;
 extern crate wavefront_obj;
 extern crate rand;
 extern crate rand_isaac;
-extern crate stb_image;
+extern crate image;
 extern crate tri_loader;
 extern crate tiled_array;
 extern crate num_traits;
@@ -18,18 +18,20 @@ mod aabb;
 mod backend;
 mod triangle;
 mod pixel;
-mod image;
+mod frame_buffer;
 mod ppm;
 mod ray;
 mod bvh;
+mod mesh;
 mod model;
 mod scene;
 mod tlas;
+mod texture;
 // mod camera;
 
 use crate::backend::*;
 use crate::triangle::*;
-use crate::image::*;
+use crate::frame_buffer::*;
 use crate::pixel::*;
 use crate::model::*;
 use crate::scene::*;
@@ -585,9 +587,9 @@ fn main() -> io::Result<()> {
     use std::time::SystemTime;
     println!("Building scene.");
     let now = SystemTime::now();
-    let state = Box::new(AppStateBigBenClock::new());
+    let state = Box::new(AppStateTwoArmadillos::new());
     let elapsed = now.elapsed().unwrap();
-    println!("Scene building time = {} s", elapsed.as_secs_f64());
+    println!("Scene building time = {:?}", elapsed);
 
     let mut app = App::new(state, SCREEN_WIDTH, SCREEN_HEIGHT);
 
@@ -743,7 +745,7 @@ fn main() -> io::Result<()> {
         let now = SystemTime::now();
         app.render();
         let elapsed = now.elapsed().unwrap();
-        println!("Rendering time = {} s", elapsed.as_secs_f64());
+        println!("Rendering time = {:?}", elapsed);
         app.frame_buffer.flip_vertical();
         update_to_gpu_texture(tex, &app.frame_buffer);
        
