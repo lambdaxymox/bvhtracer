@@ -15,6 +15,7 @@ mod gl {
 }
 
 mod aabb;
+mod intersection;
 mod backend;
 mod triangle;
 mod pixel;
@@ -180,7 +181,7 @@ impl AppStateBigBenClock {
         let camera = Camera::from_spec(spec);
         let mesh = load_tri_model("assets/bigben.tri");
         let model_builder = ModelBuilder::new();
-        let model = model_builder.with_primitives(mesh).build();
+        let model = model_builder.with_mesh(mesh).build();
         let object = SceneObjectBuilder::new(model)
             .build();
         let active_scene = SceneBuilder::new(camera)
@@ -269,7 +270,7 @@ impl AppStateTwoArmadillos {
         let camera = Camera::from_spec(spec);
         let mesh = load_tri_model("assets/armadillo.tri");
         let model_builder = ModelBuilder::new();
-        let model = model_builder.with_primitives(mesh).build();
+        let model = model_builder.with_mesh(mesh).build();
         let mut objects = vec![];
         let model1_transform = Matrix4x4::from_affine_translation(
             &Vector3::new(-1.3_f32, 0_f32, 0_f32)
@@ -352,7 +353,7 @@ impl AppStateSixteenArmadillos {
         let camera = Camera::from_spec(spec);
         let mesh = load_tri_model("assets/armadillo.tri");
         let model_builder = ModelBuilder::new();
-        let model = model_builder.with_primitives(mesh).build();
+        let model = model_builder.with_mesh(mesh).build();
         let objects = (0..16).map(|_| {
                 SceneObjectBuilder::new(model.clone())
                     .with_transform(&Matrix4x4::from_affine_scale(0.75))
@@ -445,7 +446,7 @@ impl AppState256Armadillos {
         let camera = Camera::from_spec(spec);
         let mesh = load_tri_model("assets/armadillo.tri");
         let model_builder = ModelBuilder::new();
-        let model = model_builder.with_primitives(mesh).build();
+        let model = model_builder.with_mesh(mesh).build();
         let objects = (0..256).map(|_| {
                 SceneObjectBuilder::new(model.clone())
                     .with_transform(&Matrix4x4::from_affine_scale(0.75))
@@ -578,15 +579,19 @@ fn update_to_gpu_texture(tex: GLuint, buffer: &ImageBuffer<Rgba<u8>, Vec<u8>>) {
     }
 }
 
-fn load_tri_model<P: AsRef<Path>>(path: P) -> Vec<Triangle<f32>> {
+fn load_tri_model<P: AsRef<Path>>(path: P) -> Mesh {
     let loaded_tri_data = tri_loader::load(path).unwrap();
-    loaded_tri_data.iter().map(|tri| {
+    let primitives = loaded_tri_data.iter().map(|tri| {
         let vertex0 = Vector3::new(tri.vertex0.x, tri.vertex0.y, tri.vertex0.z);
         let vertex1 = Vector3::new(tri.vertex1.x, tri.vertex1.y, tri.vertex1.z);
         let vertex2 = Vector3::new(tri.vertex2.x, tri.vertex2.y, tri.vertex2.z);
         
         Triangle::new(vertex0, vertex1, vertex2)
-    }).collect::<Vec<Triangle<_>>>()
+    }).collect::<Vec<Triangle<_>>>();
+    let tex_coords = vec![TriangleTexCoords::default(); primitives.len()];
+    let normals = vec![TriangleNormals::default(); primitives.len()];
+
+    Mesh::new(primitives, tex_coords, normals)
 }
 
 // TODO: Calculate normals from vertex data in the case that they're missing?

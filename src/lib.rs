@@ -1,4 +1,5 @@
 mod aabb;
+mod intersection;
 mod triangle;
 mod frame_buffer;
 mod pixel;
@@ -13,6 +14,7 @@ mod texture;
 
 
 pub use aabb::*;
+pub use intersection::*;
 pub use triangle::*;
 pub use frame_buffer::*;
 pub use pixel::*;

@@ -35,6 +35,7 @@ where
 
     #[inline]
     pub fn intersect(&self, ray: &Ray<S>) -> Option<S> {
+        // Moeller-Trumbore ray/triangle intersection algorithm.
         let edge1 = self.vertex1 - self.vertex0;
         let edge2 = self.vertex2 - self.vertex0;
         let normal = ray.direction.cross(&edge2);
@@ -65,6 +66,7 @@ where
 
     #[inline]
     pub fn intersect_mut(&self, ray: &mut Ray<S>) -> bool {
+        // Moeller-Trumbore ray/triangle intersection algorithm
         let edge1 = self.vertex1 - self.vertex0;
         let edge2 = self.vertex2 - self.vertex0;
         let normal = ray.direction.cross(&edge2);

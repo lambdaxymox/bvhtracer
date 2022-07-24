@@ -11,6 +11,7 @@ pub struct MeshInstance {
     mesh: Rc<RefCell<Vec<Triangle<f32>>>>,
 }
 */
+
 #[derive(Copy, Clone, Debug)]
 pub struct TriangleTexCoords {
     pub uv0: Vector2<f32>,
@@ -90,5 +91,4 @@ impl Mesh {
         &self.normals
     }
 }
-
 
