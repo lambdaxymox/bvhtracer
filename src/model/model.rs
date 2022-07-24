@@ -17,7 +17,7 @@ pub struct ModelInstance {
 }
 
 impl ModelInstance {
-    pub fn new(mesh: Mesh, bvh: Bvh, texture: TextureImage2D) -> Self {
+    pub fn new(mesh: Mesh<f32>, bvh: Bvh, texture: TextureImage2D) -> Self {
         Self { 
             handle: Rc::new(RefCell::new(Model::new(mesh, bvh, texture))),
         }
@@ -48,13 +48,13 @@ impl ModelInstance {
 
 #[derive(Clone, Debug)]
 pub struct Model {
-    mesh: Mesh,
+    mesh: Mesh<f32>,
     bvh: Bvh,
     texture: TextureImage2D,
 }
 
 impl Model {
-    pub fn new(mesh: Mesh, bvh: Bvh, texture: TextureImage2D) -> Self {
+    pub fn new(mesh: Mesh<f32>, bvh: Bvh, texture: TextureImage2D) -> Self {
         Self { mesh, bvh, texture, }
     }
 
@@ -79,11 +79,11 @@ impl Model {
         self.mesh.primitives_mut()
     }
 
-    pub fn tex_coords(&self) -> &[TriangleTexCoords] { // &[Vector2<f32>] {
+    pub fn tex_coords(&self) -> &[TextureCoordinates<f32, 3>] { // &[Vector2<f32>] {
         &self.mesh.tex_coords()
     }
 
-    pub fn normals(&self) -> &[TriangleNormals] { // &[Vector3<f32>] {
+    pub fn normals(&self) -> &[Normals<f32, 3>] { // &[Vector3<f32>] {
         &self.mesh.normals()
     }
 
@@ -95,8 +95,8 @@ impl Model {
 
 pub struct ModelBuilder {
     primitives: Vec<Triangle<f32>>,
-    tex_coords: Vec<TriangleTexCoords>, // Vec<Vector2<f32>>,
-    normals: Vec<TriangleNormals>,      // Vec<Vector3<f32>>,
+    tex_coords: Vec<TextureCoordinates<f32, 3>>, // Vec<Vector2<f32>>,
+    normals: Vec<Normals<f32, 3>>,               // Vec<Vector3<f32>>,
     bvh_builder: BvhBuilder,
     texture: TextureImage2D,
 }
@@ -118,19 +118,19 @@ impl ModelBuilder {
         self
     }
 
-    pub fn with_tex_coords(mut self, tex_coords: Vec<TriangleTexCoords>) -> Self { //Vec<Vector2<f32>>) -> Self {
+    pub fn with_tex_coords(mut self, tex_coords: Vec<TextureCoordinates<f32, 3>>) -> Self { //Vec<Vector2<f32>>) -> Self {
         self.tex_coords = tex_coords;
 
         self
     }
 
-    pub fn with_normals(mut self, normals: Vec<TriangleNormals>) -> Self { // Vec<Vector3<f32>>) -> Self {
+    pub fn with_normals(mut self, normals: Vec<Normals<f32, 3>>) -> Self { // Vec<Vector3<f32>>) -> Self {
         self.normals = normals;
 
         self
     }
 
-    pub fn with_mesh(mut self, mesh: Mesh) -> Self {
+    pub fn with_mesh(mut self, mesh: Mesh<f32>) -> Self {
         self.primitives = mesh.primitives()
             .iter()
             .map(|p| *p)
