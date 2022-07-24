@@ -15,7 +15,6 @@ where
     pub vertex0: Vector3<S>,
     pub vertex1: Vector3<S>,
     pub vertex2: Vector3<S>,
-    pub centroid: Vector3<S>,
 }
 
 impl<S> Triangle<S> 
@@ -23,12 +22,15 @@ where
     S: SimdScalarFloat
 {
     pub fn new(vertex0: Vector3<S>, vertex1: Vector3<S>, vertex2: Vector3<S>) -> Self {
+        Self { vertex0, vertex1, vertex2, }
+    }
+
+    pub fn centroid(&self) -> Vector3<S> {
         let one = S::one();
         let three = one + one + one;
         let one_third = one / three;
-        let centroid = (vertex0 + vertex1 + vertex2) * one_third;
-
-        Self { vertex0, vertex1, vertex2, centroid, }
+        
+        (self.vertex0 + self.vertex1 + self.vertex2) * one_third
     }
 
     #[inline]

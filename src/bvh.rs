@@ -324,8 +324,8 @@ impl Bvh {
             let mut bounds_min = 1e30;
             let mut bounds_max = 1e-30;
             for primitive in self.primitive_iter(mesh, node) {
-                bounds_min = f32::min(bounds_min, primitive.centroid[axis]);
-                bounds_max = f32::max(bounds_max, primitive.centroid[axis]);
+                bounds_min = f32::min(bounds_min, primitive.centroid()[axis]);
+                bounds_max = f32::max(bounds_max, primitive.centroid()[axis]);
             }
             if bounds_min == bounds_max {
                 continue;
@@ -334,7 +334,7 @@ impl Bvh {
             let mut bins = [Bin::default(); BIN_COUNT];
             let bin_scale = (BIN_COUNT as f32) / (bounds_max - bounds_min);
             for primitive in self.primitive_iter(mesh, node) {
-                let possible_bin_index = ((primitive.centroid[axis] - bounds_min) * bin_scale) as usize;
+                let possible_bin_index = ((primitive.centroid()[axis] - bounds_min) * bin_scale) as usize;
                 let bin_index = usize::min(BIN_COUNT - 1, possible_bin_index);
                 bins[bin_index].primitive_count += 1;
                 bins[bin_index].bounding_box.grow(&primitive.vertex0);
@@ -405,7 +405,7 @@ impl Bvh {
             let mut i = node.as_leaf().first_primitive_index;
             let mut j = i + node.primitive_count - 1;
             while i <= j {
-                if mesh[i as usize].centroid[axis] < split_position {
+                if mesh[i as usize].centroid()[axis] < split_position {
                     i += 1;
                 } else {
                     mesh.swap(i as usize, j as usize);

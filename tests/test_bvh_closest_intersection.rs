@@ -58,7 +58,7 @@ fn test_intersection_should_return_closest_point_triangle() {
     let closest = top_triangle();
 
     let ray_origin = Vector3::new(0_f32, 0_f32, 5_f32);
-    let ray_direction = (closest.centroid - ray_origin).normalize();
+    let ray_direction = (closest.centroid() - ray_origin).normalize();
     let ray = Ray::from_origin_dir(ray_origin, ray_direction);
     let result = scene.intersect(&ray);
     let expected = closest.intersect(&ray);
@@ -72,8 +72,8 @@ fn test_intersection_should_return_closest_point_triangle() {
 fn test_intersection_all_primitives_along_ray_should_hit() {
     let scene = scene();
     let closest = top_triangle();
-    let ray_origin = Vector3::new(closest.centroid.x, closest.centroid.y, 5_f32);
-    let ray_direction = (closest.centroid - ray_origin).normalize();
+    let ray_origin = Vector3::new(closest.centroid().x, closest.centroid().y, 5_f32);
+    let ray_direction = (closest.centroid() - ray_origin).normalize();
     let ray = Ray::from_origin_dir(ray_origin, ray_direction);
     let mesh = scene.mesh();
     let t_intersect_set = mesh.borrow().primitives().iter()
@@ -87,8 +87,8 @@ fn test_intersection_all_primitives_along_ray_should_hit() {
 fn test_intersection_closest_point_should_have_lowest_t() {
     let scene = scene();
     let closest = top_triangle();
-    let ray_origin = Vector3::new(closest.centroid.x, closest.centroid.y, 5_f32);
-    let ray_direction = (closest.centroid - ray_origin).normalize();
+    let ray_origin = Vector3::new(closest.centroid().x, closest.centroid().y, 5_f32);
+    let ray_direction = (closest.centroid() - ray_origin).normalize();
     let ray = Ray::from_origin_dir(ray_origin, ray_direction);
     let expected = closest.intersect(&ray).unwrap();
     let mesh = scene.mesh();

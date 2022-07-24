@@ -41,7 +41,7 @@ fn test_three_triangles_centroids_hit() {
     let mesh = scene.mesh();
     for triangle in mesh.borrow().primitives().iter() {
         let ray_origin = Vector3::new(0_f32, 0_f32, 10_f32);
-        let ray_direction = (triangle.centroid - ray_origin).normalize();
+        let ray_direction = (triangle.centroid() - ray_origin).normalize();
         let ray = Ray::from_origin_dir(ray_origin, ray_direction);
 
         assert!(triangle.intersect(&ray).is_some());

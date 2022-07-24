@@ -87,11 +87,11 @@ impl Model {
         self.mesh.primitives_mut()
     }
 
-    pub fn tex_coords(&self) -> &[Vector2<f32>] {
+    pub fn tex_coords(&self) -> &[TriangleTexCoords] { // &[Vector2<f32>] {
         &self.mesh.tex_coords()
     }
 
-    pub fn normals(&self) -> &[Vector3<f32>] {
+    pub fn normals(&self) -> &[TriangleNormals] { // &[Vector3<f32>] {
         &self.mesh.normals()
     }
 
@@ -100,10 +100,11 @@ impl Model {
     }
 }
 
+
 pub struct ModelBuilder {
     primitives: Vec<Triangle<f32>>,
-    tex_coords: Vec<Vector2<f32>>,
-    normals: Vec<Vector3<f32>>,
+    tex_coords: Vec<TriangleTexCoords>, // Vec<Vector2<f32>>,
+    normals: Vec<TriangleNormals>,      // Vec<Vector3<f32>>,
     bvh_builder: BvhBuilder,
     texture: TextureImage2D,
 }
@@ -125,14 +126,31 @@ impl ModelBuilder {
         self
     }
 
-    pub fn with_tex_coords(mut self, tex_coords: Vec<Vector2<f32>>) -> Self {
+    pub fn with_tex_coords(mut self, tex_coords: Vec<TriangleTexCoords>) -> Self { //Vec<Vector2<f32>>) -> Self {
         self.tex_coords = tex_coords;
 
         self
     }
 
-    pub fn with_normals(mut self, normals: Vec<Vector3<f32>>) -> Self {
+    pub fn with_normals(mut self, normals: Vec<TriangleNormals>) -> Self { // Vec<Vector3<f32>>) -> Self {
         self.normals = normals;
+
+        self
+    }
+
+    pub fn with_mesh(mut self, mesh: Mesh) -> Self {
+        self.primitives = mesh.primitives()
+            .iter()
+            .map(|p| *p)
+            .collect::<Vec<_>>();
+        self.tex_coords = mesh.tex_coords()
+            .iter()
+            .map(|p| *p)
+            .collect::<Vec<_>>();
+        self.normals = mesh.normals()
+            .iter()
+            .map(|p| *p)
+            .collect::<Vec<_>>();
 
         self
     }
