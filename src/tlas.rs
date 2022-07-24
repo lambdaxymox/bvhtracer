@@ -1,5 +1,4 @@
-use crate::aabb;
-use crate::aabb::*;
+use crate::geometry::*;
 use crate::ray::*;
 use crate::scene::{
     SceneObject,

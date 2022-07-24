@@ -1,4 +1,4 @@
-use crate::triangle::*;
+use crate::geometry::*;
 use cglinalg::{
     Vector2,
     Vector3,

@@ -1,22 +1,14 @@
-use crate::aabb::*;
-use crate::triangle::*;
+use crate::geometry::*;
 use crate::ray::*;
-use crate::bvh::*;
-use crate::texture::*;
+use crate::model::bvh::*;
+use crate::materials::*;
 use crate::mesh::*;
-use cglinalg::{
-    Vector2,
-    Vector3,
-};
 use std::rc::{
     Rc,
 };
 use std::cell::{
-    Ref,
-    RefMut,
     RefCell,
 };
-use std::slice;
 
 
 #[derive(Clone, Debug)]

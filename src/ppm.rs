@@ -1,6 +1,5 @@
 use std::ops;
 use std::io;
-use crate::pixel::*;
 use crate::frame_buffer::*;
 
 

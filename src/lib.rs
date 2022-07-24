@@ -1,29 +1,23 @@
-mod aabb;
 mod intersection;
-mod triangle;
+mod geometry;
 mod frame_buffer;
-mod pixel;
 mod ray;
-mod bvh;
 mod mesh;
 mod model;
 mod scene;
 mod tlas;
-mod texture;
+mod materials;
 // mod camera;
 
 
-pub use aabb::*;
 pub use intersection::*;
-pub use triangle::*;
+pub use geometry::*;
 pub use frame_buffer::*;
-pub use pixel::*;
 pub use ray::*;
-pub use bvh::*;
 pub use mesh::*;
 pub use model::*;
 pub use scene::*;
 pub use tlas::*;
-pub use texture::*;
+pub use materials::*;
 // pub use camera::*;
 

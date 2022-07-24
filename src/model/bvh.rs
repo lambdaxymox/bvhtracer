@@ -1,5 +1,4 @@
-use crate::aabb::*;
-use crate::triangle::*;
+use crate::geometry::*;
 use crate::ray::*;
 use cglinalg::{
     Vector3,

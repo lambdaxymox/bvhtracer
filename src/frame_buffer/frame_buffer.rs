@@ -1,4 +1,4 @@
-use crate::pixel::*;
+use crate::frame_buffer::pixel::*;
 
 use num_traits::{
     Zero,
