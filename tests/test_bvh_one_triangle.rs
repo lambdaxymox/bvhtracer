@@ -1,6 +1,9 @@
 extern crate bvhtracer;
 
 use bvhtracer::{
+    MeshBuilder,
+    TextureCoordinates,
+    Normals,
     ModelInstance,
     ModelBuilder,
     Triangle,
@@ -18,10 +21,14 @@ fn scene() -> ModelInstance {
         Vector3::new(-1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
         Vector3::new(1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
     );
-    let mesh = vec![triangle];
+    let tex_coords = TextureCoordinates::default();
+    let normals = Normals::default();
+    let mesh = MeshBuilder::new()
+        .with_primitive(triangle, tex_coords, normals)
+        .build();
     let builder = ModelBuilder::new();
     
-    builder.with_primitives(mesh).build()
+    builder.with_mesh(mesh).build()
 }
 
 /*

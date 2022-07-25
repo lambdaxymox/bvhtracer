@@ -1,6 +1,9 @@
 extern crate bvhtracer;
 
 use bvhtracer::{
+    TextureCoordinates,
+    Normals,
+    MeshBuilder,
     ModelInstance,
     ModelBuilder,
     Triangle,
@@ -23,15 +26,22 @@ fn scene() -> ModelInstance {
         triangle.vertex1 - displacement,
         triangle.vertex2 - displacement,
     );
+    let tex_coords1 = TextureCoordinates::default();
+    let normals1 = Normals::default();
     let triangle2 = Triangle::new(
         triangle.vertex0 + displacement,
         triangle.vertex1 + displacement,
         triangle.vertex2 + displacement,
     );
-    let primitives = vec![triangle1, triangle2];
+    let tex_coords2 = TextureCoordinates::default();
+    let normals2 = Normals::default();
+    let mesh = MeshBuilder::new()
+        .with_primitive(triangle1, tex_coords1, normals1)
+        .with_primitive(triangle2, tex_coords2, normals2)
+        .build();
     let builder = ModelBuilder::new();
     
-    builder.with_primitives(primitives).build()
+    builder.with_mesh(mesh).build()
 }
 
 
@@ -39,7 +49,7 @@ fn scene() -> ModelInstance {
 fn test_two_triangles_intersection_hits1() {
     let scene = scene();
     let ray_origin = Vector3::new(0_f32, 0_f32, 5_f32);
-    let mesh = scene.mesh();
+    let mesh = scene.model();
     let target_origin = mesh.borrow().primitives()[0].centroid();
     let ray_direction = (target_origin - ray_origin).normalize();
     let ray = Ray::from_origin_dir(ray_origin, ray_direction);
@@ -52,7 +62,7 @@ fn test_two_triangles_intersection_hits1() {
 fn test_two_triangles_intersection_hits2() {
     let scene = scene();
     let ray_origin = Vector3::new(0_f32, 0_f32, 5_f32);
-    let mesh = scene.mesh();
+    let mesh = scene.model();
     let target_origin = mesh.borrow().primitives()[1].centroid();
     let ray_direction = (target_origin - ray_origin).normalize();
     let ray = Ray::from_origin_dir(ray_origin, ray_direction);

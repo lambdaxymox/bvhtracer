@@ -184,7 +184,7 @@ impl AppStateBigBenClock {
         let r = 0_f32;
         let originals = active_scene.get_unchecked(0)
             .model()
-            .mesh()
+            .model()
             .borrow()
             .primitives()
             .iter()
@@ -200,7 +200,7 @@ impl AppStateBigBenClock {
             self.r -= std::f32::consts::FRAC_2_PI;
         }
         let a = f32::sin(self.r) * 0.5;
-        let mesh = self.active_scene().get_unchecked(0).model().mesh();
+        let mesh = self.active_scene().get_unchecked(0).model().model();
         for i in 0..self.originals.len() {
             let o_0 = self.originals[i].vertex0;
             let s_0 = a * (o_0.y - 0.2) * 0.2;

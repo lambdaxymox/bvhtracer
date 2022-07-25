@@ -6,6 +6,10 @@ extern crate rand_isaac;
 
 
 use bvhtracer::{
+    MeshBuilder,
+    TextureCoordinates,
+    Mesh,
+    Normals,
     Ray,
     ModelInstance,
     ModelBuilder,
@@ -30,7 +34,7 @@ use criterion::{
 const PI: f32 = std::f32::consts::PI;
 
 
-fn create_mesh_sphere(x_segments: u32, y_segments: u32) -> Vec<Triangle<f32>> {
+fn create_mesh_sphere(x_segments: u32, y_segments: u32) -> Mesh<f32> {
     let mut vertices = vec![];
     for y in 0..(y_segments + 1) {
         for x in 0..(x_segments + 1) {
@@ -40,23 +44,27 @@ fn create_mesh_sphere(x_segments: u32, y_segments: u32) -> Vec<Triangle<f32>> {
             let y_pos = f32::cos(y_segment * PI);
             let z_pos = f32::sin(x_segment * 2_f32 * PI) * f32::sin(y_segment * PI);
 
+
             vertices.push(Vector3::new(x_pos, y_pos, z_pos));
         }
     }
 
-    let mut mesh = vec![];
+    let mut builder = MeshBuilder::new();
     for chunk in vertices.chunks(3) {
-        mesh.push(Triangle::new(chunk[0], chunk[1], chunk[2]));
+        let primitive = Triangle::new(chunk[0], chunk[1], chunk[2]);
+        let tex_coords = TextureCoordinates::default();
+        let normals = Normals::default();
+        builder = builder.with_primitive(primitive, tex_coords, normals);
     }
 
-    mesh
+    builder.build()
 }
 
 fn scene() -> ModelInstance {
     let mesh = create_mesh_sphere(50, 50);
     let builder = ModelBuilder::new();
     
-    builder.with_primitives(mesh).build()
+    builder.with_mesh(mesh).build()
 }
 
 fn sample_unit_sphere(rng: &mut IsaacRng) -> Vector3<f32> {

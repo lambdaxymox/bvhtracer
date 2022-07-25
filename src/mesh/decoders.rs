@@ -8,19 +8,11 @@ use cglinalg::{
     Vector2,
     Vector3,
 };
-use image::{
-    ImageDecoder,
-};
-use image::codecs::{
-    png::PngDecoder,
-    jpeg::JpegDecoder,
-};
 use wavefront_obj::obj;
 
 use std::fs::{
     File,
 };
-use std::io;
 use std::io::{
     Read,
 };
@@ -48,14 +40,21 @@ pub fn load_tri_model<P: AsRef<Path>>(path: P) -> Mesh<f32> {
         })
         .collect::<Vec<_>>();
 
-    Mesh::new(primitives, tex_coords, normals)
+    let mut builder = MeshBuilder::new();
+    for i in 0..primitives.len() {
+        builder = builder.with_primitive(
+            primitives[i], 
+            tex_coords[i], 
+            normals[i]
+        );
+    }
+
+    builder.build()
 }
 
 // TODO: Calculate normals from vertex data in the case that they're missing?
 pub fn load_mesh(object: &obj::Object) -> Mesh<f32> {
-    let mut primitives = vec![];
-    let mut tex_coords = vec![];
-    let mut normals = vec![];
+    let mut builder = MeshBuilder::new();
     for element in object.element_set.iter() {
         match element {
             obj::Element::Face(vtn1, vtn2, vtn3) => {
@@ -136,15 +135,13 @@ pub fn load_mesh(object: &obj::Object) -> Mesh<f32> {
                     }
                 }
 
-                primitives.push(primitive);
-                tex_coords.push(tex_coord);
-                normals.push(normal);
+                builder = builder.with_primitive(primitive, tex_coord, normal);
             }
             _ => {}
         }
     }
 
-    Mesh::new(primitives, tex_coords, normals)
+    builder.build()
 }
 
 fn load_mesh_from_obj<P: AsRef<Path>>(path: P) -> Mesh<f32> {

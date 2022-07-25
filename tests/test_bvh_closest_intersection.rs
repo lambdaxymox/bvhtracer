@@ -4,6 +4,9 @@ extern crate cglinalg;
 use bvhtracer::{
     ModelInstance,
     ModelBuilder,
+    Normals,
+    TextureCoordinates,
+    MeshBuilder,
     Triangle,
     Ray,
 };
@@ -23,18 +26,22 @@ fn top_triangle() -> Triangle<f32> {
 
 fn scene() -> ModelInstance {
     let top = top_triangle();
-    let mesh = (0..100).map(|i| {
+    let mesh = (0..100).fold(MeshBuilder::new(), |builder, i| {
             let displacement = Vector3::new(0_f32, 0_f32, i as f32);
-            Triangle::new(
+            let primitive = Triangle::new(
                 top.vertex0 - displacement,
                 top.vertex1 - displacement,
                 top.vertex2 - displacement,
-            )
+            );
+            let tex_coords = TextureCoordinates::default();
+            let normals = Normals::default();
+
+            builder.with_primitive(primitive, tex_coords, normals)
         })
-        .collect::<Vec<_>>();
+        .build();
     let builder = ModelBuilder::new();
     
-    builder.with_primitives(mesh).build()
+    builder.with_mesh(mesh).build()
 }
 
 #[test]
@@ -42,12 +49,12 @@ fn test_scene_stack_xy() {
     let scene = scene();
     let top = top_triangle();
 
-    assert!(scene.mesh().borrow().primitives().iter().all(|triangle| triangle.vertex0.x == top.vertex0.x));
-    assert!(scene.mesh().borrow().primitives().iter().all(|triangle| triangle.vertex0.y == top.vertex0.y));
-    assert!(scene.mesh().borrow().primitives().iter().all(|triangle| triangle.vertex1.x == top.vertex1.x));
-    assert!(scene.mesh().borrow().primitives().iter().all(|triangle| triangle.vertex1.y == top.vertex1.y));
-    assert!(scene.mesh().borrow().primitives().iter().all(|triangle| triangle.vertex2.x == top.vertex2.x));
-    assert!(scene.mesh().borrow().primitives().iter().all(|triangle| triangle.vertex2.y == top.vertex2.y));
+    assert!(scene.model().borrow().primitives().iter().all(|triangle| triangle.vertex0.x == top.vertex0.x));
+    assert!(scene.model().borrow().primitives().iter().all(|triangle| triangle.vertex0.y == top.vertex0.y));
+    assert!(scene.model().borrow().primitives().iter().all(|triangle| triangle.vertex1.x == top.vertex1.x));
+    assert!(scene.model().borrow().primitives().iter().all(|triangle| triangle.vertex1.y == top.vertex1.y));
+    assert!(scene.model().borrow().primitives().iter().all(|triangle| triangle.vertex2.x == top.vertex2.x));
+    assert!(scene.model().borrow().primitives().iter().all(|triangle| triangle.vertex2.y == top.vertex2.y));
 }
 
 /// Given a set of triangles that could intersect a ray, the intersection test
@@ -75,7 +82,7 @@ fn test_intersection_all_primitives_along_ray_should_hit() {
     let ray_origin = Vector3::new(closest.centroid().x, closest.centroid().y, 5_f32);
     let ray_direction = (closest.centroid() - ray_origin).normalize();
     let ray = Ray::from_origin_dir(ray_origin, ray_direction);
-    let mesh = scene.mesh();
+    let mesh = scene.model();
     let t_intersect_set = mesh.borrow().primitives().iter()
         .map(|triangle| { triangle.intersect(&ray) })
         .collect::<Vec<_>>();
@@ -91,7 +98,7 @@ fn test_intersection_closest_point_should_have_lowest_t() {
     let ray_direction = (closest.centroid() - ray_origin).normalize();
     let ray = Ray::from_origin_dir(ray_origin, ray_direction);
     let expected = closest.intersect(&ray).unwrap();
-    let mesh = scene.mesh();
+    let mesh = scene.model();
     let t_intersect_set = mesh.borrow().primitives().iter()
         .map(|triangle| { triangle.intersect(&ray) })
         .collect::<Vec<_>>();
