@@ -1,3 +1,4 @@
+use crate::intersection::*;
 use crate::ray::*;
 use cglinalg::{
     Vector3,

@@ -4,8 +4,6 @@ use cglinalg::{
     Vector3,
     SimdScalar,
 };
-use std::io;
-use std::mem;
 use std::ops;
 use std::slice;
 
@@ -17,7 +15,7 @@ pub struct TextureCoordinates<S, const N: usize> {
 }
 
 impl<S, const N: usize> TextureCoordinates<S, N> {
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         N
     }
 }
@@ -61,7 +59,7 @@ pub struct Normals<S, const N: usize> {
 }
 
 impl<S, const N: usize> Normals<S, N> {
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         N
     }
 }
@@ -198,7 +196,7 @@ where
         self
     }
 
-    pub fn build(mut self) -> Mesh<S> {
+    pub fn build(self) -> Mesh<S> {
         Mesh::from_parts(self.vertices, self.tex_coords, self.normals)
     }
 }

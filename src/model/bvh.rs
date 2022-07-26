@@ -1,3 +1,4 @@
+use crate::intersection::*;
 use crate::geometry::*;
 use crate::ray::*;
 use cglinalg::{
@@ -238,7 +239,7 @@ impl Bvh {
         PrimitiveIter::new(mesh, node.primitive_count, base_primitive_index)
     }
 
-    fn intersect_subtree(&self, mesh: &[Triangle<f32>], ray: &Ray<f32>, node_index: u32) -> Option<f32> {    
+    fn intersect_subtree(&self, mesh: &[Triangle<f32>], ray: &Ray<f32>, node_index: u32) -> Option<f32> {
         let mut current_node = &self.nodes[node_index];
         let mut stack = vec![];
         let mut closest_ray = *ray;
