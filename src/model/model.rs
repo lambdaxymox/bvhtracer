@@ -24,7 +24,7 @@ impl ModelInstance {
         }
     }
 
-    pub fn intersect(&self, ray: &Ray<f32>) -> Option<f32> {
+    pub fn intersect(&self, ray: &Ray<f32>) -> Option<Intersection<f32>> {
         self.handle.borrow().intersect(ray)
     }
 
@@ -63,7 +63,7 @@ impl Model {
         Self { mesh, bvh, texture, }
     }
 
-    pub fn intersect(&self, ray: &Ray<f32>) -> Option<f32> {
+    pub fn intersect(&self, ray: &Ray<f32>) -> Option<Intersection<f32>> {
         self.bvh.intersect(&self.mesh.primitives(), ray)
     }
 

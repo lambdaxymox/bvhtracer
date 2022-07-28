@@ -1,3 +1,4 @@
+use crate::intersection::*;
 use crate::geometry::*;
 use crate::ray::*;
 use crate::scene::{
@@ -107,14 +108,16 @@ impl Tlas {
         self.nodes_used as usize
     }
 
-    pub fn intersect(&self, ray: &Ray<f32>) -> Option<f32> {
+    pub fn intersect(&self, ray: &Ray<f32>) -> Option<Intersection<f32>> {
         let mut current_node = &self.nodes[0];
         let mut stack = vec![];
         let mut closest_ray = *ray;
+        let mut closest_intersection = None;
         loop {
             if current_node.is_leaf() {
-                if let Some(t_intersect) = self.blas[current_node.blas() as usize].intersect(ray) {
-                    closest_ray.t = t_intersect;
+                if let Some(intersection) = self.blas[current_node.blas() as usize].intersect(ray) {
+                    closest_ray.t = intersection.ray.t;
+                    closest_intersection = Some(intersection);
                 }
 
                 if !stack.is_empty() {
@@ -152,7 +155,11 @@ impl Tlas {
             }
         }
 
-        if closest_ray.t < f32::MAX { Some(closest_ray.t) } else { None }
+        if (closest_ray.t < f32::MAX) && closest_intersection.is_some() { 
+            closest_intersection
+        } else { 
+            None 
+        }
     }
 
     fn find_best_match(&self, list: &[i32], n: i32, a: i32) -> i32 {

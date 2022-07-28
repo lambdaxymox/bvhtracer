@@ -97,7 +97,7 @@ fn test_one_triangle_intersection_center() {
     let ray = Ray::from_origin_dir(ray_origin, ray_direction);
     let expected_t = 5_f32;
     let expected = Ray::new(ray_origin, ray_direction, expected_t);
-    let result_t = scene.intersect(&ray).unwrap();
+    let result_t = scene.intersect(&ray).unwrap().interaction.t;
     let result = Ray::new(ray.origin, ray.direction, result_t);
 
     assert_eq!(result, expected);
@@ -112,7 +112,7 @@ fn test_one_triangle_intersection_vertex1() {
     let ray = Ray::from_origin_dir(ray_origin, ray_direction);
     let expected_t = f32::sqrt(101_f32 / 4_f32);
     let expected = Ray::new(ray_origin, ray_direction, expected_t);
-    let result_t = scene.intersect(&ray).unwrap();
+    let result_t = scene.intersect(&ray).unwrap().interaction.t;
     let result = Ray::new(ray.origin, ray.direction, result_t);
 
     assert_eq!(result, expected);
@@ -127,7 +127,7 @@ fn test_one_triangle_intersection_vertex2() {
     let ray = Ray::from_origin_dir(ray_origin, ray_direction);
     let expected_t = f32::sqrt(307_f32 / 12_f32);
     let expected = Ray::new(ray_origin, ray_direction, expected_t);
-    let result_t = scene.intersect(&ray).unwrap();
+    let result_t = scene.intersect(&ray).unwrap().interaction.t;
     let result = Ray::new(ray.origin, ray.direction, result_t);
 
     assert_eq!(result, expected);
@@ -142,7 +142,7 @@ fn test_one_triangle_intersection_vertex3() {
     let ray = Ray::from_origin_dir(ray_origin, ray_direction);
     let expected_t = f32::sqrt(307_f32 / 12_f32);
     let expected = Ray::new(ray_origin, ray_direction, expected_t);
-    let result_t = scene.intersect(&ray).unwrap();
+    let result_t = scene.intersect(&ray).unwrap().interaction.t;
     let result = Ray::new(ray.origin, ray.direction, result_t);
 
     assert_eq!(result, expected);

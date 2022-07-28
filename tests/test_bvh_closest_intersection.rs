@@ -7,6 +7,7 @@ use bvhtracer::{
     Normals,
     TextureCoordinates,
     MeshBuilder,
+    SurfaceInteraction,
     Triangle,
     Ray,
 };
@@ -67,8 +68,11 @@ fn test_intersection_should_return_closest_point_triangle() {
     let ray_origin = Vector3::new(0_f32, 0_f32, 5_f32);
     let ray_direction = (closest.centroid() - ray_origin).normalize();
     let ray = Ray::from_origin_dir(ray_origin, ray_direction);
-    let result = scene.intersect(&ray);
-    let expected = closest.intersect(&ray);
+    let result = scene.intersect(&ray)
+        .map(|intr| intr.interaction)
+        .map(|surf| surf.t);
+    let expected = closest.intersect(&ray)
+        .map(|surf| surf.t);
 
     assert!(result.is_some());
     assert!(expected.is_some());
@@ -99,12 +103,19 @@ fn test_intersection_closest_point_should_have_lowest_t() {
     let ray = Ray::from_origin_dir(ray_origin, ray_direction);
     let expected = closest.intersect(&ray).unwrap();
     let mesh = scene.model();
-    let t_intersect_set = mesh.borrow().primitives().iter()
+    let intersection_set = mesh.borrow().primitives().iter()
         .map(|triangle| { triangle.intersect(&ray) })
         .collect::<Vec<_>>();
-    let result = t_intersect_set.iter()
+    let init = SurfaceInteraction::new(f32::MAX, f32::MAX, f32::MAX);
+    let result = intersection_set.iter()
         .map(|elem| elem.unwrap())
-        .fold(f32::MAX, |elem, acc| f32::min(acc, elem));
+        .fold(init, |elem, acc| {
+            if acc.t < elem.t {
+                acc
+            } else { 
+                elem
+            }
+        });
 
     assert_eq!(result, expected);
 }

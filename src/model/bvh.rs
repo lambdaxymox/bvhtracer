@@ -71,7 +71,7 @@ impl<'a> PrimitiveIter<'a> {
 }
 
 impl<'a> Iterator for PrimitiveIter<'a> {
-    type Item = &'a Triangle<f32>;
+    type Item = (u32, &'a Triangle<f32>);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_offset < self.primitive_count {
@@ -79,7 +79,7 @@ impl<'a> Iterator for PrimitiveIter<'a> {
             let current_object = &self.primitives[current_primitive_index as usize];
             self.current_offset += 1;
             
-            return Some(current_object);
+            return Some((current_primitive_index, current_object));
         }
 
         None
@@ -239,15 +239,19 @@ impl Bvh {
         PrimitiveIter::new(mesh, node.primitive_count, base_primitive_index)
     }
 
-    fn intersect_subtree(&self, mesh: &[Triangle<f32>], ray: &Ray<f32>, node_index: u32) -> Option<f32> {
+    fn intersect_subtree(&self, mesh: &[Triangle<f32>], ray: &Ray<f32>, node_index: u32) -> Option<Intersection<f32>> {
         let mut current_node = &self.nodes[node_index];
         let mut stack = vec![];
         let mut closest_ray = *ray;
+        let mut closest_interaction = None;
+        let mut closest_primitive_index = 0;
         loop {
             if current_node.is_leaf() {
-                for primitive in self.primitive_iter(mesh, current_node) {
-                    if let Some(t_intersect) = primitive.intersect(&closest_ray) {
-                        closest_ray.t = t_intersect;
+                for (primitive_index, primitive) in self.primitive_iter(mesh, current_node) {
+                    if let Some(interaction) = primitive.intersect(&closest_ray) {
+                        closest_ray.t = interaction.t;
+                        closest_interaction = Some(interaction);
+                        closest_primitive_index = primitive_index;
                     }
                 }
 
@@ -286,10 +290,19 @@ impl Bvh {
             }
         }
 
-        if closest_ray.t < f32::MAX { Some(closest_ray.t) } else { None }
+        if (closest_ray.t < f32::MAX) && closest_interaction.is_some() { 
+            let instance_primitive = InstancePrimitiveIndex::from_primitive(closest_primitive_index);
+            Some(Intersection::new(
+                closest_ray, 
+                closest_interaction.unwrap(), 
+                instance_primitive)
+            )
+        } else { 
+            None 
+        }
     }
 
-    pub fn intersect(&self, mesh: &[Triangle<f32>], ray: &Ray<f32>) -> Option<f32> {
+    pub fn intersect(&self, mesh: &[Triangle<f32>], ray: &Ray<f32>) -> Option<Intersection<f32>> {
         self.intersect_subtree(mesh, ray, self.root_node_index)
     }
 
@@ -301,7 +314,7 @@ impl Bvh {
 
     fn update_node_bounds(&mut self, mesh: &[Triangle<f32>], node_index: u32) {
         let mut new_aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
-        for primitive in self.primitive_iter(mesh, &self.nodes[node_index]) {
+        for (_, primitive) in self.primitive_iter(mesh, &self.nodes[node_index]) {
             new_aabb.bounds_min = __min(&new_aabb.bounds_min, &primitive.vertex0);
             new_aabb.bounds_min = __min(&new_aabb.bounds_min, &primitive.vertex1);
             new_aabb.bounds_min = __min(&new_aabb.bounds_min, &primitive.vertex2);
@@ -323,7 +336,7 @@ impl Bvh {
         for axis in 0..3 {
             let mut bounds_min = 1e30;
             let mut bounds_max = 1e-30;
-            for primitive in self.primitive_iter(mesh, node) {
+            for (_, primitive) in self.primitive_iter(mesh, node) {
                 bounds_min = f32::min(bounds_min, primitive.centroid()[axis]);
                 bounds_max = f32::max(bounds_max, primitive.centroid()[axis]);
             }
@@ -333,7 +346,7 @@ impl Bvh {
 
             let mut bins = [Bin::default(); BIN_COUNT];
             let bin_scale = (BIN_COUNT as f32) / (bounds_max - bounds_min);
-            for primitive in self.primitive_iter(mesh, node) {
+            for (_, primitive) in self.primitive_iter(mesh, node) {
                 let possible_bin_index = ((primitive.centroid()[axis] - bounds_min) * bin_scale) as usize;
                 let bin_index = usize::min(BIN_COUNT - 1, possible_bin_index);
                 bins[bin_index].primitive_count += 1;

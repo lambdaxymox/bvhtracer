@@ -8,6 +8,8 @@ extern crate rand_isaac;
 use bvhtracer::{
     Ray,
     Triangle,
+    Intersection,
+    SurfaceInteraction,
 };
 use cglinalg::{
     Magnitude,
@@ -82,10 +84,12 @@ fn triangle_intersection_hit_mut(bh: &mut criterion::Criterion) {
         Vector3::new(-1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
         Vector3::new(1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
     );
-    let mut ray = gen_hitting_ray();
+    let ray = gen_hitting_ray();
+    let interaction = SurfaceInteraction::new(0_f32, 0_f32, 0_f32);
+    let mut intersection = Intersection::from_ray_interaction(ray, interaction);
 
     bh.bench_function("triangle_intersection_hit_mut", move |bh| bh.iter(|| {
-        criterion::black_box(triangle.intersect_mut(&mut ray))
+        criterion::black_box(triangle.intersect_mut(&mut intersection))
     }));
 }
 

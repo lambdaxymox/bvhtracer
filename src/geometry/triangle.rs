@@ -35,7 +35,7 @@ where
     }
 
     #[inline]
-    pub fn intersect(&self, ray: &Ray<S>) -> Option<S> {
+    pub fn intersect(&self, ray: &Ray<S>) -> Option<SurfaceInteraction<S>> {
         // Moeller-Trumbore ray/triangle intersection algorithm.
         let edge1 = self.vertex1 - self.vertex0;
         let edge2 = self.vertex2 - self.vertex0;
@@ -59,18 +59,20 @@ where
         }
         let t = f * edge2.dot(&q);
         if t > threshold {
-            Some(S::min(ray.t, t))
+            let new_t = S::min(ray.t, t);
+
+            Some(SurfaceInteraction::new(new_t, u, v))
         } else {
             None
         }
     }
 
     #[inline]
-    pub fn intersect_mut(&self, ray: &mut Ray<S>) -> bool {
+    pub fn intersect_mut(&self, intersection: &mut Intersection<S>) -> bool {
         // Moeller-Trumbore ray/triangle intersection algorithm
         let edge1 = self.vertex1 - self.vertex0;
         let edge2 = self.vertex2 - self.vertex0;
-        let normal = ray.direction.cross(&edge2);
+        let normal = intersection.ray.direction.cross(&edge2);
         let area = edge1.dot(&normal);
         let threshold: S = num_traits::cast(0.0001_f64).unwrap();
         if S::abs(area) < threshold {
@@ -78,19 +80,22 @@ where
             return false;
         }
         let f = S::one() / area;
-        let s = ray.origin - self.vertex0;
+        let s = intersection.ray.origin - self.vertex0;
         let u = f * s.dot(&normal);
         if u < S::zero() || u > S::one() {
             return false;
         }
         let q = s.cross(&edge1);
-        let v = f * ray.direction.dot(&q);
+        let v = f * intersection.ray.direction.dot(&q);
         if v < S::zero() || u + v > S::one() {
             return false;
         }
         let t = f * edge2.dot(&q);
         if t > threshold {
-            ray.t = S::min(ray.t, t);
+            intersection.ray.t = S::min(intersection.ray.t, t);
+            intersection.interaction.t = intersection.ray.t;
+            intersection.interaction.u = u;
+            intersection.interaction.v = v;
 
             return true;
         } else {

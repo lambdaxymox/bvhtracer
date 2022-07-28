@@ -128,8 +128,8 @@ impl Renderer {
                         (tile_width * x + u) as f32 / SCREEN_WIDTH as f32,
                         (tile_height * y + v) as f32 / SCREEN_HEIGHT as f32,
                     );
-                    if let Some(t_intersect) = scene.intersect(&ray) {
-                        ray.t = t_intersect;
+                    if let Some(intersection) = scene.intersect(&ray) {
+                        ray.t = intersection.ray.t;
                     }
                     let color = if ray.t < f32::MAX {
                         let _color = 255 - (((ray.t - 3_f32) * 80_f32) as i32) as u32;

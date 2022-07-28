@@ -41,7 +41,7 @@ impl SceneObject {
     }
 
     #[inline]
-    pub fn intersect(&self, ray: &Ray<f32>) -> Option<f32> {
+    pub fn intersect(&self, ray: &Ray<f32>) -> Option<Intersection<f32>> {
         // Convert the ray from world space to model space.
         let ray_model_space_origin = {
             let origin_world_space = ray.origin.extend(1_f32);
@@ -202,7 +202,7 @@ impl Scene {
         &mut self.active_camera
     }
 
-    pub fn intersect(&self, ray: &Ray<f32>) -> Option<f32> {
+    pub fn intersect(&self, ray: &Ray<f32>) -> Option<Intersection<f32>> {
         self.tlas.intersect(ray)
     }
 
