@@ -23,6 +23,7 @@ mod ppm;
 mod ray;
 mod mesh;
 mod model;
+mod scene_object;
 mod scene;
 mod tlas;
 // mod camera;
@@ -32,6 +33,7 @@ use crate::geometry::*;
 use crate::frame_buffer::*;
 use crate::mesh::*;
 use crate::model::*;
+use crate::scene_object::*;
 use crate::scene::*;
 use crate::materials::*;
 

@@ -1,9 +1,7 @@
 use crate::intersection::*;
 use crate::geometry::*;
 use crate::ray::*;
-use crate::scene::{
-    SceneObject,
-};
+use crate::scene_object::*;
 use cglinalg::{
     Vector3,
 };
