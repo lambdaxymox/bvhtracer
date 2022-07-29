@@ -6,10 +6,6 @@ use cglinalg::{
     Vector3,
 };
 use std::ops;
-use std::rc::{
-    Rc,
-};
-
 
 
 // TODO: Rethink some naming and understandability.

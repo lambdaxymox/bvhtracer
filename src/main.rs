@@ -31,16 +31,13 @@ mod tlas;
 use crate::backend::*;
 use crate::geometry::*;
 use crate::frame_buffer::*;
-use crate::mesh::*;
 use crate::model::*;
 use crate::scene_object::*;
 use crate::scene::*;
-use crate::materials::*;
 
 use cglinalg::{
     Magnitude,
     Matrix4x4,
-    Vector2,
     Vector3,
     Radians,
 };

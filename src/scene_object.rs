@@ -1,12 +1,10 @@
 use crate::intersection::*;
 use crate::geometry::*;
 use crate::ray::*;
-use crate::tlas::*;
 use crate::model::{
     ModelInstance,
 };
 use cglinalg::{
-    Magnitude,
     Matrix4x4,
     Vector3,
 };
