@@ -26,9 +26,10 @@ mod model;
 mod scene_object;
 mod scene;
 mod tlas;
-// mod camera;
+mod camera;
 
 use crate::backend::*;
+use crate::camera::*;
 use crate::geometry::*;
 use crate::frame_buffer::*;
 use crate::model::*;
@@ -88,7 +89,7 @@ impl App {
         let frame_buffer = ImageBuffer::from_fill(
             width, 
             height,
-            Rgba::from([0, 0, 0, 1])
+            Rgba::from([0, 0, 0, 255])
         );
         let renderer = Renderer::new();
     
@@ -152,7 +153,7 @@ impl Renderer {
     }
 }
 
-
+/*
 struct AppStateBigBenClock {
     active_scene: Scene,
     r: f32,
@@ -240,7 +241,7 @@ impl AppState for AppStateBigBenClock {
         &mut self.active_scene
     }
 }
-
+*/
 
 
 struct AppStateTwoArmadillos {
@@ -250,17 +251,24 @@ struct AppStateTwoArmadillos {
 
 impl AppStateTwoArmadillos {
     fn new() -> Self {
-        let focal_offset = Vector3::new(0_f32, 0.5_f32, 0_f32);
-        let spec = IdentityModelSpec::new(
+        // let focal_offset = Vector3::new(0_f32, 0.5_f32, 0_f32);
+        let focal_offset = 0.5_f32;
+        let model_spec = PerspectiveSpec::new(
             -1_f32, 
             1_f32, 
-            -1_f32, 
-            1_f32, 
-            2_f32, 
-            -4.5_f32, 
-            focal_offset
+            -1_f32 - focal_offset, 
+            1_f32 - focal_offset, 
+            -1.5_f32,
+            -10000_f32,
         );
-        let camera = Camera::from_spec(spec);
+        let attitude_spec = CameraAttitudeSpec::new(
+            Vector3::new(0_f32, 0_f32, -4.5_f32),
+            Vector3::unit_z(),
+            Vector3::unit_x(),
+            Vector3::unit_y(),
+            Vector3::unit_z()
+        );
+        let camera = Camera::new(&model_spec, &attitude_spec);
         let mesh = mesh::load_tri_model("assets/armadillo.tri");
         let model_builder = ModelBuilder::new();
         let model = model_builder.with_mesh(mesh).build();
@@ -316,7 +324,7 @@ impl AppState for AppStateTwoArmadillos {
     }
 }
 
-
+/*
 struct AppStateSixteenArmadillos {
     active_scene: Scene,
     a: Vec<f32>,
@@ -408,8 +416,8 @@ impl AppState for AppStateSixteenArmadillos {
         &mut self.active_scene
     }
 }
-
-
+*/
+/*
 struct AppState256Armadillos {
     positions: Vec<Vector3<f32>>,
     directions: Vec<Vector3<f32>>,
@@ -499,7 +507,7 @@ impl AppState for AppState256Armadillos {
         &mut self.active_scene
     }
 }
-
+*/
 
 /// Load texture image into the GPU.
 fn send_to_gpu_texture(buffer: &ImageBuffer<Rgba<u8>, Vec<u8>>, wrapping_mode: GLuint) -> Result<GLuint, String> {

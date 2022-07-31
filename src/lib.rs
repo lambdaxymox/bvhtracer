@@ -8,7 +8,7 @@ mod scene_object;
 mod scene;
 mod tlas;
 mod materials;
-// mod camera;
+mod camera;
 
 
 pub use intersection::*;
@@ -21,5 +21,5 @@ pub use scene_object::*;
 pub use scene::*;
 pub use tlas::*;
 pub use materials::*;
-// pub use camera::*;
+pub use camera::*;
 

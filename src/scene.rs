@@ -1,13 +1,15 @@
+use crate::camera::*;
 use crate::intersection::*;
 use crate::ray::*;
 use crate::scene_object::*;
 use crate::tlas::*;
+
 use cglinalg::{
     Magnitude,
     Vector3,
 };
 
-
+/*
 pub struct IdentityModelSpec {
     left: f32,
     right: f32,
@@ -69,10 +71,10 @@ impl Camera {
         Ray::from_origin_dir(ray_origin, ray_direction)
     }
 }
-
+*/
 pub struct Scene {
     tlas: Tlas,
-    active_camera: Camera,
+    active_camera: Camera<f32, PerspectiveProjection<f32>>,
 }
 
 impl Scene {
@@ -84,11 +86,11 @@ impl Scene {
         self.tlas.get_mut_unchecked(index)
     }
 
-    pub fn active_camera(&self) -> &Camera {
+    pub fn active_camera(&self) -> &Camera<f32, PerspectiveProjection<f32>> {
         &self.active_camera
     }
 
-    pub fn active_camera_mut(&mut self) -> &mut Camera {
+    pub fn active_camera_mut(&mut self) -> &mut Camera<f32, PerspectiveProjection<f32>> {
         &mut self.active_camera
     }
 
@@ -103,11 +105,11 @@ impl Scene {
 
 pub struct SceneBuilder {
     objects: Vec<SceneObject>,
-    active_camera: Camera,
+    active_camera: Camera<f32, PerspectiveProjection<f32>>,
 }
 
 impl SceneBuilder {
-    pub fn new(camera: Camera) -> Self {
+    pub fn new(camera: Camera<f32, PerspectiveProjection<f32>>) -> Self {
         Self {
             objects: vec![],
             active_camera: camera,
