@@ -220,9 +220,37 @@ fn test_camera_z_axis_world() {
     let camera = camera();
     let expected = -Vector3::unit_z();
     let result = {
-        let z_axis_eye = -camera.forward_axis_eye();
+        let z_axis_eye = Vector3::unit_z();
         let z_axis_world = camera.view_matrix_inv() * z_axis_eye.extend(0_f64);
         z_axis_world.contract()
+    };
+    eprintln!("view_matrix = {:?}", camera.view_matrix());
+
+    assert_eq!(result, expected);
+}
+
+
+#[test]
+fn test_camera_origin_eye_to_world() {
+    let camera = camera();
+    let expected = Vector3::new(0_f64, 0_f64, -5_f64);
+    let result = {
+        let origin_eye = Vector3::zero();
+        let origin_world = camera.view_matrix_inv() * origin_eye.extend(1_f64);
+        origin_world.contract()
+    };
+
+    assert_eq!(result, expected);
+}
+
+#[test]
+fn test_camera_origin_world_to_eye() {
+    let camera = camera();
+    let expected = Vector3::zero();
+    let result = {
+        let origin_world = Vector3::new(0_f64, 0_f64, -5_f64);
+        let origin_eye = camera.view_matrix() * origin_world.extend(1_f64);
+        origin_eye.contract()
     };
 
     assert_eq!(result, expected);
