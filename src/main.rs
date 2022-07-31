@@ -124,7 +124,7 @@ impl Renderer {
             let y = tile / tile_count_y;
             for v in 0..tile_height {
                 for u in 0..tile_width {
-                    let mut ray = scene.active_camera().get_ray_world_space(
+                    let mut ray = scene.active_camera().get_ray_world(
                         (tile_width * x + u) as f32 / SCREEN_WIDTH as f32,
                         (tile_height * y + v) as f32 / SCREEN_HEIGHT as f32,
                     );
@@ -251,15 +251,14 @@ struct AppStateTwoArmadillos {
 
 impl AppStateTwoArmadillos {
     fn new() -> Self {
-        // let focal_offset = Vector3::new(0_f32, 0.5_f32, 0_f32);
         let focal_offset = 0.5_f32;
         let model_spec = PerspectiveSpec::new(
             -1_f32, 
             1_f32, 
             -1_f32 - focal_offset, 
             1_f32 - focal_offset, 
-            -1.5_f32,
-            -10000_f32,
+            2.0_f32,
+            10000_f32,
         );
         let attitude_spec = CameraAttitudeSpec::new(
             Vector3::new(0_f32, 0_f32, -4.5_f32),

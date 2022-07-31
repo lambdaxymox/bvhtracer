@@ -40,16 +40,16 @@ pub trait CameraModel {
     fn update_viewport(&mut self, width: usize, height: usize);
 
     /// Get the location in eye space of the top left corner of the viewport.
-    fn top_left(&self) -> Vector3<Self::Scalar>;
+    fn top_left_eye(&self) -> Vector3<Self::Scalar>;
 
     /// Get the location in eye space of the top right corner of the viewport.
-    fn top_right(&self) -> Vector3<Self::Scalar>;
+    fn top_right_eye(&self) -> Vector3<Self::Scalar>;
 
     /// Get the location in eye space of the bottom left corner of the viewport.
-    fn bottom_left(&self) -> Vector3<Self::Scalar>;
+    fn bottom_left_eye(&self) -> Vector3<Self::Scalar>;
 
     /// Get the location in eye space of the bottom right corner of the viewport.
-    fn bottom_right(&self) -> Vector3<Self::Scalar>;
+    fn bottom_right_eye(&self) -> Vector3<Self::Scalar>;
 }
 
 
@@ -203,19 +203,19 @@ where
         );
     }
 
-    fn top_left(&self) -> Vector3<Self::Scalar> {
+    fn top_left_eye(&self) -> Vector3<Self::Scalar> {
         unimplemented!()
     }
 
-    fn top_right(&self) -> Vector3<Self::Scalar> {
+    fn top_right_eye(&self) -> Vector3<Self::Scalar> {
         unimplemented!()
     }
 
-    fn bottom_left(&self) -> Vector3<Self::Scalar> {
+    fn bottom_left_eye(&self) -> Vector3<Self::Scalar> {
         unimplemented!()
     }
 
-    fn bottom_right(&self) -> Vector3<Self::Scalar> {
+    fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
         unimplemented!()
     }
 
@@ -386,19 +386,19 @@ where
         unimplemented!();
     }
 
-    fn top_left(&self) -> Vector3<Self::Scalar> {
+    fn top_left_eye(&self) -> Vector3<Self::Scalar> {
         Vector3::new(self.left, self.top, -self.near)
     }
 
-    fn top_right(&self) -> Vector3<Self::Scalar> {
+    fn top_right_eye(&self) -> Vector3<Self::Scalar> {
         Vector3::new(self.right, self.top, -self.near)
     }
 
-    fn bottom_left(&self) -> Vector3<Self::Scalar> {
+    fn bottom_left_eye(&self) -> Vector3<Self::Scalar> {
         Vector3::new(self.left, self.bottom, -self.near)
     }
 
-    fn bottom_right(&self) -> Vector3<Self::Scalar> {
+    fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
         Vector3::new(self.right, self.bottom, -self.near)
     }
 }
@@ -569,19 +569,19 @@ where
         unimplemented!()
     }
 
-    fn top_left(&self) -> Vector3<Self::Scalar> {
+    fn top_left_eye(&self) -> Vector3<Self::Scalar> {
         Vector3::new(self.left, self.top, -self.near)
     }
 
-    fn top_right(&self) -> Vector3<Self::Scalar> {
+    fn top_right_eye(&self) -> Vector3<Self::Scalar> {
         Vector3::new(self.right, self.top, -self.near)
     }
 
-    fn bottom_left(&self) -> Vector3<Self::Scalar> {
+    fn bottom_left_eye(&self) -> Vector3<Self::Scalar> {
         Vector3::new(self.left, self.bottom, -self.near)
     }
 
-    fn bottom_right(&self) -> Vector3<Self::Scalar> {
+    fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
         Vector3::new(self.right, self.bottom, -self.near)
     }
 }
@@ -737,19 +737,19 @@ where
         );
     }
 
-    fn top_left(&self) -> Vector3<Self::Scalar> {
+    fn top_left_eye(&self) -> Vector3<Self::Scalar> {
         unimplemented!()
     }
 
-    fn top_right(&self) -> Vector3<Self::Scalar> {
+    fn top_right_eye(&self) -> Vector3<Self::Scalar> {
         unimplemented!()
     }
 
-    fn bottom_left(&self) -> Vector3<Self::Scalar> {
+    fn bottom_left_eye(&self) -> Vector3<Self::Scalar> {
         unimplemented!()
     }
 
-    fn bottom_right(&self) -> Vector3<Self::Scalar> {
+    fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
         unimplemented!()
     }
 }
@@ -843,8 +843,9 @@ struct CameraAttitude<S> {
     /// The viewing matrix of the camera mapping the complete translation + rotation
     /// of the camera. The transformation direction is from world space to eye space.
     view_matrix: Matrix4x4<S>,
-    /// The inverse of the viewing matrix of the camera mapping the the complete translation + rotation
-    /// of the camera. The transformation direction is from eye space to world space.
+    /// The inverse of the viewing matrix of the camera mapping the the complete 
+    /// translation + rotation of the camera. The transformation direction is 
+    /// from eye space to world space.
     view_matrix_inv: Matrix4x4<S>,
 }
 
@@ -853,16 +854,16 @@ where
     S: SimdScalarFloat 
 {
     /// Construct the camera's viewing transformation from its specification. 
-    fn from_spec(spec: &CameraAttitudeSpec<S>) -> CameraAttitude<S> {
+    fn from_spec(spec: &CameraAttitudeSpec<S>) -> Self {
         let axis = Quaternion::from_parts(S::zero(), spec.axis);
         let translation_matrix = Matrix4x4::from_affine_translation(
             &(-spec.position)
         );
         let rotation_matrix = Matrix4x4::from(&axis);
-        let view_matrix = rotation_matrix * translation_matrix;
+        let view_matrix = translation_matrix * rotation_matrix;
         let view_matrix_inv = view_matrix.inverse().unwrap();
 
-        CameraAttitude {
+        Self {
             position: spec.position,
             forward: spec.forward.extend(S::zero()),
             right: spec.right.extend(S::zero()),
@@ -873,7 +874,6 @@ where
             view_matrix: view_matrix,
             view_matrix_inv: view_matrix_inv,
         }
-
     }
 
     /// Get the camera's up direction in camera space.
@@ -908,6 +908,12 @@ where
     fn view_matrix(&self) -> &Matrix4x4<S> {
         &self.view_matrix
     }
+
+    /// Get the underlying inverse viewing matrix for the camera.
+    #[inline]
+    fn view_matrix_inv(&self) -> &Matrix4x4<S> {
+        &self.view_matrix_inv
+    }
 }
 
 
@@ -937,7 +943,7 @@ where
 {
     /// Construct a new camera.
     pub fn new(model_spec: &M::Spec, attitude_spec: &CameraAttitudeSpec<S>) -> Self {
-        Camera {
+        Self {
             model: <M as CameraModel>::from_spec(model_spec),
             attitude: CameraAttitude::from_spec(attitude_spec),
         }
@@ -1002,6 +1008,11 @@ where
         self.attitude.view_matrix()
     }
 
+    #[inline]
+    pub fn view_matrix_inv(&self) -> &Matrix4x4<S> {
+        self.attitude.view_matrix_inv()
+    }
+
     /// Return the underlying projection the camera uses to transform from
     /// view space to the camera's canonical view volume.
     #[inline]
@@ -1010,26 +1021,24 @@ where
     }
 
     pub fn top_left_eye(&self) -> Vector3<S> {
-        self.model.top_left()
+        self.model.top_left_eye()
     }
 
     pub fn top_right_eye(&self) -> Vector3<S> {
-        self.model.top_right()
+        self.model.top_right_eye()
     }
 
     pub fn bottom_left_eye(&self) -> Vector3<S> {
-        self.model.bottom_left()
+        self.model.bottom_left_eye()
     }
 
     pub fn bottom_right_eye(&self) -> Vector3<S> {
-        self.model.bottom_right()
+        self.model.bottom_right_eye()
     }
 
-    #[inline]
-    pub fn get_ray_eye_space(&self, u: S, v: S) -> Ray<S> {
+    pub fn get_ray_eye(&self, u: S, v: S) -> Ray<S> {
         let ray_origin = Vector3::zero();
-        let pixel_position = ray_origin + 
-            self.top_left_eye() + 
+        let pixel_position = ray_origin + self.top_left_eye() + 
             (self.top_right_eye() - self.top_left_eye()) * u + 
             (self.bottom_left_eye() - self.top_left_eye()) * v;
         let ray_direction = (pixel_position - ray_origin).normalize();
@@ -1037,8 +1046,8 @@ where
         Ray::from_origin_dir(ray_origin, ray_direction)
     }
 
-    pub fn get_ray_world_space(&self, u: S, v: S) -> Ray<S> {
-       let ray_eye = self.get_ray_eye_space(u, v);
+    pub fn get_ray_world(&self, u: S, v: S) -> Ray<S> {
+       let ray_eye = self.get_ray_eye(u, v);
        let ray_origin_world = (self.attitude.view_matrix_inv * ray_eye.origin.extend(S::one())).contract();
        let ray_direction_world = (self.attitude.view_matrix_inv * ray_eye.direction.extend(S::zero())).contract();
 
