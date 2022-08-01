@@ -81,24 +81,11 @@ impl ops::IndexMut<u32> for TlasNodeArray {
 }
 
 pub struct Tlas {
-    // blas: Vec<SceneObject>,
     nodes: TlasNodeArray,
     nodes_used: u32,
 }
 
 impl Tlas {
-    /*
-    #[inline]
-    pub fn get_unchecked(&self, index: usize) -> &SceneObject {
-        &self.blas[index]
-    }
-
-    #[inline]
-    pub fn get_mut_unchecked(&mut self, index: usize) -> &mut SceneObject {
-        &mut self.blas[index]
-    }
-    */
-
     #[inline]
     pub fn nodes_used(&self) -> usize {
         self.nodes_used as usize
@@ -253,24 +240,6 @@ impl TlasBuilder {
         
         Self { partial_tlas, }
     }
-
-    /*
-    pub fn with_objects(mut self, objects: Vec<SceneObject>) -> Self {
-        let len_nodes = 2 * objects.len();
-        self.partial_tlas.blas = objects;
-        self.partial_tlas.nodes = TlasNodeArray(vec![TlasNode::default(); len_nodes]);
-
-        self
-    }
-
-    pub fn with_object(mut self, object: SceneObject) -> Self {
-        self.partial_tlas.blas.push(object);
-        self.partial_tlas.nodes.0.push(TlasNode::default());
-        self.partial_tlas.nodes.0.push(TlasNode::default());
-
-        self
-    }
-    */
 
     // TODO: Make this more general. We are currently building TLASes for at most 256 objects.
     pub fn build_for(mut self, blas: &[SceneObject]) -> Tlas { 
