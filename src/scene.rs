@@ -12,16 +12,19 @@ use cglinalg::{
 
 pub struct Scene {
     tlas: Tlas,
+    objects: Vec<SceneObject>,
     active_camera: Camera<f32, PerspectiveProjection<f32>>,
 }
 
 impl Scene {
     pub fn get_unchecked(&self, index: usize) -> &SceneObject {
-        self.tlas.get_unchecked(index)
+        // self.tlas.get_unchecked(index)
+        &self.objects[index]
     }
 
     pub fn get_mut_unchecked(&mut self, index: usize) -> &mut SceneObject {
-        self.tlas.get_mut_unchecked(index)
+        // self.tlas.get_mut_unchecked(index)
+        &mut self.objects[index]
     }
 
     pub fn active_camera(&self) -> &Camera<f32, PerspectiveProjection<f32>> {
@@ -33,11 +36,11 @@ impl Scene {
     }
 
     pub fn intersect(&self, ray: &Ray<f32>) -> Option<Intersection<f32>> {
-        self.tlas.intersect(ray)
+        self.tlas.intersect(&self.objects, ray)
     }
 
     pub fn rebuild(&mut self) {
-        self.tlas.rebuild();
+        self.tlas.rebuild(&self.objects);
     }
 }
 
@@ -68,11 +71,11 @@ impl SceneBuilder {
 
     pub fn build(self) -> Scene {
         let tlas = TlasBuilder::new()
-            .with_objects(self.objects)
-            .build();
+            .build_for(&self.objects);
 
         Scene {
             tlas,
+            objects: self.objects,
             active_camera: self.active_camera,
         }
     }

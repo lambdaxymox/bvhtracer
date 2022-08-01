@@ -81,12 +81,13 @@ impl ops::IndexMut<u32> for TlasNodeArray {
 }
 
 pub struct Tlas {
-    blas: Vec<SceneObject>,
+    // blas: Vec<SceneObject>,
     nodes: TlasNodeArray,
     nodes_used: u32,
 }
 
 impl Tlas {
+    /*
     #[inline]
     pub fn get_unchecked(&self, index: usize) -> &SceneObject {
         &self.blas[index]
@@ -96,20 +97,21 @@ impl Tlas {
     pub fn get_mut_unchecked(&mut self, index: usize) -> &mut SceneObject {
         &mut self.blas[index]
     }
+    */
 
     #[inline]
     pub fn nodes_used(&self) -> usize {
         self.nodes_used as usize
     }
 
-    pub fn intersect(&self, ray: &Ray<f32>) -> Option<Intersection<f32>> {
+    pub fn intersect(&self, blas: &[SceneObject], ray: &Ray<f32>) -> Option<Intersection<f32>> {
         let mut current_node = &self.nodes[0];
         let mut stack = vec![];
         let mut closest_ray = *ray;
         let mut closest_intersection = None;
         loop {
             if current_node.is_leaf() {
-                if let Some(intersection) = self.blas[current_node.blas() as usize].intersect(&closest_ray) {
+                if let Some(intersection) = blas[current_node.blas() as usize].intersect(&closest_ray) {
                     closest_ray.t = intersection.ray.t;
                     closest_intersection = Some(intersection);
                 }
@@ -182,15 +184,15 @@ impl Tlas {
     }
 
     // TODO: Make this more general. We are currently building TLASes for at most 256 objects.
-    pub fn rebuild(&mut self) {
+    pub fn rebuild(&mut self, blas: &[SceneObject]) {
         // Assign a Tlasleaf node to each BLAS.
-        let blas_count = self.blas.len();
+        let blas_count = blas.len();
         let mut node_index_count = blas_count;
         let mut node_indices = vec![0_i32; 256];
         let mut nodes_used = 1;
         for i in 0..blas_count {
             node_indices[i] = nodes_used;
-            let bounds_i = self.blas[i].bounds();
+            let bounds_i = blas[i].bounds();
             self.nodes[nodes_used as u32].aabb = bounds_i;
             self.nodes[nodes_used as u32].blas = i as u32;
             // Make it a leaf.
@@ -244,7 +246,7 @@ impl TlasBuilder {
         // other in memory).
         let nodes_used = 2;
         let partial_tlas = Tlas {
-            blas: vec![],
+            // blas: vec![],
             nodes: TlasNodeArray(vec![TlasNode::default(); nodes_used as usize]),
             nodes_used: nodes_used,
         };
@@ -252,6 +254,7 @@ impl TlasBuilder {
         Self { partial_tlas, }
     }
 
+    /*
     pub fn with_objects(mut self, objects: Vec<SceneObject>) -> Self {
         let len_nodes = 2 * objects.len();
         self.partial_tlas.blas = objects;
@@ -267,10 +270,13 @@ impl TlasBuilder {
 
         self
     }
+    */
 
     // TODO: Make this more general. We are currently building TLASes for at most 256 objects.
-    pub fn build(mut self) -> Tlas { 
-        self.partial_tlas.rebuild();
+    pub fn build_for(mut self, blas: &[SceneObject]) -> Tlas { 
+        let len_nodes = 2 * blas.len();
+        self.partial_tlas.nodes = TlasNodeArray(vec![TlasNode::default(); len_nodes]);
+        self.partial_tlas.rebuild(blas);
 
         self.partial_tlas
     }

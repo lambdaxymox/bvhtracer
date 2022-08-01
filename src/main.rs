@@ -596,7 +596,7 @@ fn main() -> io::Result<()> {
     use std::time::SystemTime;
     println!("Building scene.");
     let now = SystemTime::now();
-    let state = Box::new(AppStateSixteenArmadillos::new());
+    let state = Box::new(AppStateTwoArmadillos::new());
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {:?}", elapsed);
 
