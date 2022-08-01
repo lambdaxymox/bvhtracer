@@ -109,7 +109,7 @@ impl Tlas {
         let mut closest_intersection = None;
         loop {
             if current_node.is_leaf() {
-                if let Some(intersection) = self.blas[current_node.blas() as usize].intersect(ray) {
+                if let Some(intersection) = self.blas[current_node.blas() as usize].intersect(&closest_ray) {
                     closest_ray.t = intersection.ray.t;
                     closest_intersection = Some(intersection);
                 }
