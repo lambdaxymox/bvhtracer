@@ -265,7 +265,7 @@ impl AppStateTwoArmadillos {
             Vector3::unit_z(),
             Vector3::unit_x(),
             Vector3::unit_y(),
-            Vector3::unit_z()
+            -Vector3::unit_z()
         );
         let camera = Camera::new(&model_spec, &attitude_spec);
         let mesh = mesh::load_tri_model("assets/armadillo.tri");

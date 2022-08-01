@@ -26,7 +26,7 @@ fn camera() -> Camera<f64, PerspectiveProjection<f64>> {
         Vector3::new(0_f64, 0_f64, -5_f64),
         Vector3::unit_z(),
         Vector3::unit_x(),
-        Vector3::unit_y(),
+        -Vector3::unit_y(),
         Vector3::unit_z()
     );
 
@@ -177,7 +177,7 @@ fn test_camera_get_ray_centroid() {
 }
 
 #[test]
-fn test_camera_forward_world() {
+fn test_camera_forward_axis_world1() {
     let camera = camera();
     let expected = Vector3::unit_z();
     let result = {
@@ -190,7 +190,7 @@ fn test_camera_forward_world() {
 }
 
 #[test]
-fn test_camera_right_axis_world() {
+fn test_camera_right_axis_world1() {
     let camera = camera();
     let expected = Vector3::unit_x();
     let result = {
@@ -203,9 +203,48 @@ fn test_camera_right_axis_world() {
 }
 
 #[test]
-fn test_camera_up_axis_world() {
+fn test_camera_up_axis_world1() {
     let camera = camera();
     let expected = -Vector3::unit_y();
+    let result = {
+        let up_eye = camera.up_axis_eye();
+        let up_world = camera.view_matrix_inv() * up_eye.extend(0_f64);
+        up_world.contract()
+    };
+
+    assert_eq!(result, expected);
+}
+
+#[test]
+fn test_camera_forward_axis_world2() {
+    let camera = camera();
+    let expected = camera.forward_axis_world();
+    let result = {
+        let forward_eye = camera.forward_axis_eye();
+        let forward_world = camera.view_matrix_inv() * forward_eye.extend(0_f64);
+        forward_world.contract()
+    };
+
+    assert_eq!(result, expected);
+}
+
+#[test]
+fn test_camera_right_axis_world2() {
+    let camera = camera();
+    let expected = camera.right_axis_world();
+    let result = {
+        let right_eye = camera.right_axis_eye();
+        let right_world = camera.view_matrix_inv() * right_eye.extend(0_f64);
+        right_world.contract()
+    };
+
+    assert_eq!(result, expected);
+}
+
+#[test]
+fn test_camera_up_axis_world2() {
+    let camera = camera();
+    let expected = camera.up_axis_world();
     let result = {
         let up_eye = camera.up_axis_eye();
         let up_world = camera.view_matrix_inv() * up_eye.extend(0_f64);
@@ -224,11 +263,9 @@ fn test_camera_z_axis_world() {
         let z_axis_world = camera.view_matrix_inv() * z_axis_eye.extend(0_f64);
         z_axis_world.contract()
     };
-    eprintln!("view_matrix = {:?}", camera.view_matrix());
 
     assert_eq!(result, expected);
 }
-
 
 #[test]
 fn test_camera_origin_eye_to_world() {
