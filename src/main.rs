@@ -251,12 +251,12 @@ struct AppStateTwoArmadillos {
 
 impl AppStateTwoArmadillos {
     fn new() -> Self {
-        let focal_offset = 0.5_f32;
+        let focal_offset = 0.25_f32;
         let model_spec = PerspectiveSpec::new(
             -1_f32, 
             1_f32, 
-            -1_f32 - focal_offset, 
-            1_f32 - focal_offset, 
+            -1_f32 + focal_offset, 
+            1_f32 + focal_offset, 
             2.0_f32,
             10000_f32,
         );
@@ -265,7 +265,7 @@ impl AppStateTwoArmadillos {
             Vector3::unit_z(),
             Vector3::unit_x(),
             Vector3::unit_y(),
-            -Vector3::unit_z()
+            Vector3::unit_z()
         );
         let camera = Camera::new(&model_spec, &attitude_spec);
         let mesh = mesh::load_tri_model("assets/armadillo.tri");

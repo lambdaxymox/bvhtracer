@@ -857,9 +857,14 @@ where
     fn from_spec(spec: &CameraAttitudeSpec<S>) -> Self {
         let axis = Quaternion::from_parts(S::zero(), spec.axis);
         let translation_matrix = Matrix4x4::from_affine_translation(
-            &(-spec.position)
+            &(spec.position)
         );
-        let rotation_matrix = Matrix4x4::from(&axis);
+        let rotation_matrix = Matrix4x4::new(
+            spec.right.x,   spec.right.y,   spec.right.z,   S::zero(),
+            spec.up.x,      spec.up.y,      spec.up.z,      S::zero(),
+            -spec.forward.x, -spec.forward.y, -spec.forward.z, S::zero(),
+            S::zero(),      S::zero(),      S::zero(),      S::one()
+        );
         let view_matrix = translation_matrix * rotation_matrix;
         let view_matrix_inv = view_matrix.inverse().unwrap();
 
@@ -1106,6 +1111,19 @@ mod attitude_tests {
             let up_eye = attitude.up_axis_eye();
             let up_world = attitude.view_matrix_inv() * up_eye.extend(0_f64);
             up_world.contract()
+        };
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_z_axis_eye_to_world() {
+        let attitude = attitude();
+        let expected = Vector3::new(0_f64, 0_f64, -1_f64);
+        let result = {
+            let z_axis_eye = Vector3::new(0_f64, 0_f64, 1_f64);
+            let z_axis_world = attitude.view_matrix_inv() * z_axis_eye.extend(0_f64);
+            z_axis_world.contract()
         };
 
         assert_eq!(result, expected);
