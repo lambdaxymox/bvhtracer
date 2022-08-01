@@ -153,7 +153,7 @@ impl Renderer {
     }
 }
 
-/*
+
 struct AppStateBigBenClock {
     active_scene: Scene,
     r: f32,
@@ -162,17 +162,23 @@ struct AppStateBigBenClock {
 
 impl AppStateBigBenClock {
     fn new() -> Self {
-        let focal_offset = Vector3::new(0_f32, 3.5_f32, 0_f32);
-        let spec = IdentityModelSpec::new(
+        let focal_offset = 1.5;
+        let model_spec = PerspectiveSpec::new(
             -1_f32, 
             1_f32, 
-            -1_f32, 
-            1_f32, 
+            -1_f32 + focal_offset, 
+            1_f32 + focal_offset, 
             2_f32, 
-            -4.5_f32, 
-            focal_offset
+            10000_f32, 
         );
-        let camera = Camera::from_spec(spec);
+        let attitude_spec = CameraAttitudeSpec::new(
+            Vector3::new(0_f32, 0_f32, -4.5_f32),
+            Vector3::unit_z(),
+            Vector3::unit_x(),
+            Vector3::unit_y(),
+            Vector3::unit_z()
+        );
+        let camera = Camera::new(&model_spec, &attitude_spec);
         let mesh = mesh::load_tri_model("assets/bigben.tri");
         let model_builder = ModelBuilder::new();
         let model = model_builder.with_mesh(mesh).build();
@@ -241,7 +247,7 @@ impl AppState for AppStateBigBenClock {
         &mut self.active_scene
     }
 }
-*/
+
 
 
 struct AppStateTwoArmadillos {
@@ -323,7 +329,7 @@ impl AppState for AppStateTwoArmadillos {
     }
 }
 
-/*
+
 struct AppStateSixteenArmadillos {
     active_scene: Scene,
     a: Vec<f32>,
@@ -340,17 +346,23 @@ impl AppStateSixteenArmadillos {
         let p0 = (rot_mat * _p0.extend(1_f32)).contract();
         let p1 = (rot_mat * _p1.extend(1_f32)).contract();
         let p2 = (rot_mat * _p2.extend(1_f32)).contract();
-        let focal_offset = Vector3::new(0_f32, 4.5_f32, 0_f32);
-        let spec = IdentityModelSpec::new(
+        let focal_offset = 1.5;
+        let model_spec = PerspectiveSpec::new(
             p0.x, 
             p1.x, 
-            p2.y,
-            p0.y,
+            p2.y + focal_offset,
+            p0.y + focal_offset,
             p0.z, 
-            -8.5_f32, 
-            focal_offset
+            10000_f32, 
         );
-        let camera = Camera::from_spec(spec);
+        let attitude_spec = CameraAttitudeSpec::new(
+            Vector3::new(0_f32, 0_f32, -8.5_f32),
+            Vector3::unit_z(),
+            Vector3::unit_x(),
+            Vector3::unit_y(),
+            Vector3::unit_z()
+        );
+        let camera = Camera::new(&model_spec, &attitude_spec);
         let mesh = mesh::load_tri_model("assets/armadillo.tri");
         let model_builder = ModelBuilder::new();
         let model = model_builder.with_mesh(mesh).build();
@@ -415,7 +427,7 @@ impl AppState for AppStateSixteenArmadillos {
         &mut self.active_scene
     }
 }
-*/
+
 /*
 struct AppState256Armadillos {
     positions: Vec<Vector3<f32>>,
