@@ -1088,7 +1088,7 @@ where
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         write!(
             formatter,
-            "SwitchableFovProjection [orthographic_matrix={}, perspective_matrix={}]",
+            "SwitchableProjection [orthographic_matrix={}, perspective_matrix={}]",
             self.orthographic_matrix, self.perspective_matrix
         )
     }
