@@ -17,6 +17,22 @@ use cglinalg::{
 use std::fmt;
 
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum ActiveProjection {
+    Perspective,
+    Orthographic,
+}
+
+impl ActiveProjection {
+    pub fn is_perspective(self) -> bool {
+        self == ActiveProjection::Perspective
+    }
+
+    pub fn is_orthographic(self) -> bool {
+        self == ActiveProjection::Orthographic
+    }
+}
+
 /// A type with this trait can be used as a camera model. A camera model
 /// is a process of mapping incoming light rays from the camera's view space into
 /// the camera model's canonical view volume.
@@ -51,6 +67,9 @@ pub trait CameraModel {
 
     /// Get the location in eye space of the bottom right corner of the viewport.
     fn bottom_right_eye(&self) -> Vector3<Self::Scalar>;
+
+    /// Switch to a different projection in the underlying camera model.
+    fn set_active(&mut self, projection: ActiveProjection);
 }
 
 
@@ -220,6 +239,9 @@ where
         unimplemented!()
     }
 
+    fn set_active(&mut self, projection: ActiveProjection) {
+
+    }
 }
 
 
@@ -411,6 +433,10 @@ where
 
     fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
         Vector3::new(self.right, self.bottom, -self.near)
+    }
+
+    fn set_active(&mut self, projection: ActiveProjection) {
+
     }
 }
 
@@ -605,6 +631,10 @@ where
     fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
         Vector3::new(self.right, self.bottom, -self.near)
     }
+
+    fn set_active(&mut self, projection: ActiveProjection) {
+
+    }
 }
 
 
@@ -773,6 +803,10 @@ where
     fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
         unimplemented!()
     }
+
+    fn set_active(&mut self, projection: ActiveProjection) {
+
+    }
 }
 
 
@@ -826,23 +860,6 @@ where
     }
 }
 
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum ActiveProjection {
-    Perspective,
-    Orthographic,
-}
-
-impl ActiveProjection {
-    pub fn is_perspective(self) -> bool {
-        self == ActiveProjection::Perspective
-    }
-
-    pub fn is_orthographic(self) -> bool {
-        self == ActiveProjection::Orthographic
-    }
-}
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -963,6 +980,10 @@ where
 
     fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
         unimplemented!()
+    }
+
+    fn set_active(&mut self, projection: ActiveProjection) {
+        self.active_projection = projection
     }
 }
 
@@ -1140,6 +1161,10 @@ where
 
     fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
         Vector3::new(self.right, self.bottom, -self.near)
+    }
+
+    fn set_active(&mut self, projection: ActiveProjection) {
+        self.active_projection = projection
     }
 }
 
@@ -1427,6 +1452,10 @@ where
 
     pub fn bottom_right_eye(&self) -> Vector3<S> {
         self.model.bottom_right_eye()
+    }
+
+    pub fn set_active(&mut self, projection: ActiveProjection) {
+        self.model.set_active(projection);
     }
 
     pub fn get_ray_eye(&self, u: S, v: S) -> Ray<S> {
