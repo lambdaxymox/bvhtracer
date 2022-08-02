@@ -25,6 +25,7 @@ mod mesh;
 mod model;
 mod scene;
 mod camera;
+mod renderer;
 
 use crate::backend::*;
 use crate::camera::*;
@@ -32,6 +33,7 @@ use crate::geometry::*;
 use crate::frame_buffer::*;
 use crate::model::*;
 use crate::scene::*;
+use crate::renderer::*;
 
 use cglinalg::{
     Matrix4x4,
@@ -75,14 +77,14 @@ pub trait AppState {
 }
 
 struct App {
-    frame_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
+    frame_buffer: FrameBuffer<Rgba<u8>, Vec<u8>>,
     state: Box<dyn AppState>,
     renderer: Renderer,
 }
     
 impl App {
     fn new(state: Box<dyn AppState>, width: usize, height: usize) -> Self {
-        let frame_buffer = ImageBuffer::from_fill(
+        let frame_buffer = FrameBuffer::from_fill(
             width, 
             height,
             Rgba::from([0, 0, 0, 255])
@@ -101,6 +103,7 @@ impl App {
     }
 }
 
+/*
 struct Renderer {}
 
 impl Renderer {
@@ -148,7 +151,7 @@ impl Renderer {
         rays_traced
     }
 }
-
+*/
 
 struct AppStateBigBenClock {
     active_scene: Scene,
@@ -517,7 +520,7 @@ impl AppState for AppState256Armadillos {
 */
 
 /// Load texture image into the GPU.
-fn send_to_gpu_texture(buffer: &ImageBuffer<Rgba<u8>, Vec<u8>>, wrapping_mode: GLuint) -> Result<GLuint, String> {
+fn send_to_gpu_texture(buffer: &FrameBuffer<Rgba<u8>, Vec<u8>>, wrapping_mode: GLuint) -> Result<GLuint, String> {
     let mut tex = 0;
     unsafe {
         gl::GenTextures(1, &mut tex);
@@ -560,7 +563,7 @@ fn send_to_gpu_texture(buffer: &ImageBuffer<Rgba<u8>, Vec<u8>>, wrapping_mode: G
     Ok(tex)
 }
 
-fn update_to_gpu_texture(tex: GLuint, buffer: &ImageBuffer<Rgba<u8>, Vec<u8>>) {
+fn update_to_gpu_texture(tex: GLuint, buffer: &FrameBuffer<Rgba<u8>, Vec<u8>>) {
     // SAFETY: This function does not check whether the texture handle actually exists on the GPU yet.
     // send_to_gpu_texture should be called first.
     unsafe {
@@ -592,7 +595,7 @@ fn main() -> io::Result<()> {
     use std::time::SystemTime;
     println!("Building scene.");
     let now = SystemTime::now();
-    let state = Box::new(AppStateSixteenArmadillos::new());
+    let state = Box::new(AppStateTwoArmadillos::new());
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {:?}", elapsed);
 

@@ -113,21 +113,21 @@ where
 }
 
 #[derive(Debug, Hash, PartialEq, Eq)]
-pub struct ImageBuffer<P, Storage> {
+pub struct FrameBuffer<P, Storage> {
     width: usize,
     height: usize,
     data: Storage,
     _marker: PhantomData<P>,
 }
 
-impl<P, Storage> ImageBuffer<P, Storage>
+impl<P, Storage> FrameBuffer<P, Storage>
 where
     P: Pixel,
     Storage: ops::Deref<Target = [P::Subpixel]>,
 {
-    pub fn from_raw(width: usize, height: usize, buffer: Storage) -> Option<ImageBuffer<P, Storage>> {
+    pub fn from_raw(width: usize, height: usize, buffer: Storage) -> Option<FrameBuffer<P, Storage>> {
         if Self::image_fits_inside_storage(width, height, buffer.len()) {
-            Some(ImageBuffer {
+            Some(FrameBuffer {
                 width,
                 height,
                 data: buffer,
@@ -142,9 +142,9 @@ where
         width: usize, 
         height: usize, 
         buffer: Vec<P::Subpixel>
-    ) -> Option<ImageBuffer<P, Vec<P::Subpixel>>> 
+    ) -> Option<FrameBuffer<P, Vec<P::Subpixel>>> 
     {
-        ImageBuffer::from_raw(width, height, buffer)
+        FrameBuffer::from_raw(width, height, buffer)
     }
 
     pub fn pixels(&self) -> Pixels<P> {
@@ -244,7 +244,7 @@ where
     }
 }
 
-impl<P, Storage> ImageBuffer<P, Storage>
+impl<P, Storage> FrameBuffer<P, Storage>
 where
     P: Pixel,
     Storage: ops::Deref<Target = [P::Subpixel]> + ops::DerefMut,
@@ -313,14 +313,14 @@ where
     }
 }
 
-impl<P> ImageBuffer<P, Vec<P::Subpixel>> 
+impl<P> FrameBuffer<P, Vec<P::Subpixel>> 
 where
     P: Pixel,
 {
-    pub fn new(width: usize, height: usize) -> ImageBuffer<P, Vec<P::Subpixel>> {
+    pub fn new(width: usize, height: usize) -> FrameBuffer<P, Vec<P::Subpixel>> {
         let size = Self::image_buffer_len(width, height).unwrap();
 
-        ImageBuffer { 
+        FrameBuffer { 
             width, 
             height, 
             data: vec![<P::Subpixel as Zero>::zero(); size],
@@ -328,8 +328,8 @@ where
         }
     }
 
-    pub fn from_fill(width: usize, height: usize, fill_value: P) -> ImageBuffer<P, Vec<P::Subpixel>> {
-        let mut buffer = ImageBuffer::<P, Vec<P::Subpixel>>::new(width, height);
+    pub fn from_fill(width: usize, height: usize, fill_value: P) -> FrameBuffer<P, Vec<P::Subpixel>> {
+        let mut buffer = FrameBuffer::<P, Vec<P::Subpixel>>::new(width, height);
         for pixel in buffer.pixels_mut() {
             *pixel = fill_value;
         }
@@ -337,11 +337,11 @@ where
         buffer
     }
 
-    pub fn from_fn<Op>(width: usize, height: usize, mut op: Op) -> ImageBuffer<P, Vec<P::Subpixel>>
+    pub fn from_fn<Op>(width: usize, height: usize, mut op: Op) -> FrameBuffer<P, Vec<P::Subpixel>>
     where
         Op: FnMut(usize, usize) -> P
     {
-        let mut buffer = ImageBuffer::<P, Vec<P::Subpixel>>::new(width, height);
+        let mut buffer = FrameBuffer::<P, Vec<P::Subpixel>>::new(width, height);
         for (x, y, pixel) in buffer.enumerate_pixels_mut() {
             *pixel = op(x, y);
         }
@@ -350,7 +350,7 @@ where
     }
 }
 
-impl<P, Storage> ops::Index<(usize, usize)> for ImageBuffer<P, Storage>
+impl<P, Storage> ops::Index<(usize, usize)> for FrameBuffer<P, Storage>
 where
     P: Pixel,
     Storage: ops::Deref<Target = [P::Subpixel]>
@@ -363,7 +363,7 @@ where
     }
 }
 
-impl<P, Storage> ops::IndexMut<(usize, usize)> for ImageBuffer<P, Storage> 
+impl<P, Storage> ops::IndexMut<(usize, usize)> for FrameBuffer<P, Storage> 
 where
     P: Pixel,
     Storage: ops::Deref<Target = [P::Subpixel]> + ops::DerefMut,

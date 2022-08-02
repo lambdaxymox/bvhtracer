@@ -12,7 +12,7 @@ impl<'a, W: io::Write + 'a> PpmEncoder<'a, W> {
         Self { writer, }
     }
 
-    pub fn encode<Storage>(&mut self, buffer: &ImageBuffer<Rgba<u8>, Storage>) -> io::Result<()> 
+    pub fn encode<Storage>(&mut self, buffer: &FrameBuffer<Rgba<u8>, Storage>) -> io::Result<()> 
     where
         Storage: ops::Deref<Target = [u8]>,
     {

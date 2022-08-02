@@ -2,7 +2,7 @@ extern crate bvhtracer;
 
 
 use bvhtracer::{
-    ImageBuffer,
+    FrameBuffer,
     Rgba,
 };
 
@@ -12,7 +12,7 @@ fn test_image_buffer1() {
     let data: Vec<u8> = vec![
         0, 0, 0, 255, 1, 1, 1, 255, 2, 2, 2, 255, 3, 3, 3, 255, 4, 4, 4, 255, 5, 5, 5, 255, 6, 6, 6, 255
     ];
-    let buffer: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::from_raw(7, 1, data).unwrap();
+    let buffer: FrameBuffer<Rgba<u8>, Vec<u8>> = FrameBuffer::from_raw(7, 1, data).unwrap();
 
     assert_eq!(buffer.get_pixel_unchecked(0, 0), &Rgba::new(0, 0, 0, 255));
     assert_eq!(buffer.get_pixel_unchecked(1, 0), &Rgba::new(1, 1, 1, 255));
@@ -29,7 +29,7 @@ fn test_image_buffer2() {
         0, 0, 0, 255, 1, 1, 1, 255, 2, 2, 2, 255, 3,  3,  3, 255,  4,  4,  4,  255, 5,  5,  5,  255, 6,  6,  6,  255,
         7, 7, 7, 255, 8, 8, 8, 255, 9, 9, 9, 255, 10, 10, 10, 255, 11, 11, 11, 255, 12, 12, 12, 255, 13, 13, 13, 255
     ];
-    let buffer: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::from_raw(7, 2, data).unwrap();
+    let buffer: FrameBuffer<Rgba<u8>, Vec<u8>> = FrameBuffer::from_raw(7, 2, data).unwrap();
 
     assert_eq!(buffer.get_pixel_unchecked(0, 0), &Rgba::new(0,  0,  0,  255));
     assert_eq!(buffer.get_pixel_unchecked(1, 0), &Rgba::new(1,  1,  1,  255));
@@ -53,7 +53,7 @@ fn test_image_buffer3() {
         255, 0, 0,   255, 0,   255, 0, 255, 
         0,   0, 255, 255, 255, 255, 0, 255,
     ];
-    let buffer: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::from_raw(2, 2, data).unwrap();
+    let buffer: FrameBuffer<Rgba<u8>, Vec<u8>> = FrameBuffer::from_raw(2, 2, data).unwrap();
 
     assert_eq!(buffer.get_pixel_unchecked(0, 0), &Rgba::new(255, 0,   0,   255));
     assert_eq!(buffer.get_pixel_unchecked(1, 0), &Rgba::new(0,   255, 0,   255));
@@ -67,7 +67,7 @@ fn test_image_buffer4() {
         255, 0,   0, 255, 0,   255, 0,   255, 0, 0, 255, 255,
         255, 255, 0, 255, 255, 255, 255, 255, 0, 0, 0,   255
     ];
-    let buffer: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::from_raw(3, 2, data).unwrap();
+    let buffer: FrameBuffer<Rgba<u8>, Vec<u8>> = FrameBuffer::from_raw(3, 2, data).unwrap();
 
     assert_eq!(buffer.get_pixel_unchecked(0, 0), &Rgba::new(255, 0,   0,   255));
     assert_eq!(buffer.get_pixel_unchecked(1, 0), &Rgba::new(0,   255, 0,   255));
@@ -83,7 +83,7 @@ fn test_out_of_bounds() {
         255, 0,   0, 255, 0,   255, 0,   255, 0, 0, 255, 255,
         255, 255, 0, 255, 255, 255, 255, 255, 0, 0, 0,   255
     ];
-    let buffer: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::from_raw(3, 2, data).unwrap();
+    let buffer: FrameBuffer<Rgba<u8>, Vec<u8>> = FrameBuffer::from_raw(3, 2, data).unwrap();
 
     assert!(buffer.get_pixel(usize::MAX, usize::MAX).is_none());
 }
@@ -95,13 +95,13 @@ fn test_put_pixel() {
         0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255,
         0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255,
     ];
-    let mut result: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::from_raw(3, 3, data).unwrap();
+    let mut result: FrameBuffer<Rgba<u8>, Vec<u8>> = FrameBuffer::from_raw(3, 3, data).unwrap();
     let expected_data: Vec<u8> = vec![
         1,  2,  3,  255, 4,  5,  6,  255, 7,  8,  9,  255, 
         10, 11, 12, 255, 13, 14, 15, 255, 16, 17, 18, 255,
         19, 20, 21, 255, 22, 23, 24, 255, 25, 26, 27, 255,
     ];
-    let expected: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::from_raw(3, 3, expected_data).unwrap();
+    let expected: FrameBuffer<Rgba<u8>, Vec<u8>> = FrameBuffer::from_raw(3, 3, expected_data).unwrap();
     result.put_pixel(0, 0, Rgba::from([1,  2,  3,  255]));
     result.put_pixel(1, 0, Rgba::from([4,  5,  6,  255]));
     result.put_pixel(2, 0, Rgba::from([7,  8,  9,  255]));

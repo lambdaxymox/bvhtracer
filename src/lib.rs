@@ -6,6 +6,7 @@ mod query;
 mod scene;
 mod materials;
 mod camera;
+mod renderer;
 
 
 pub use geometry::*;
@@ -16,4 +17,5 @@ pub use query::*;
 pub use scene::*;
 pub use materials::*;
 pub use camera::*;
+pub use renderer::*;
 
