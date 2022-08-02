@@ -1,4 +1,6 @@
-use crate::ray::*;
+use crate::query::{
+    Ray,
+};
 
 use cglinalg::{
     Degrees,
@@ -13,7 +15,6 @@ use cglinalg::{
 };
 
 use std::fmt;
-use std::ops;
 
 
 /// A type with this trait can be used as a camera model. A camera model

@@ -1,6 +1,5 @@
-use crate::intersection::*;
 use crate::geometry::*;
-use crate::ray::*;
+use crate::query::*;
 use crate::model::{
     ModelInstance,
 };

@@ -1,4 +1,4 @@
-use crate::ray::*;
+use super::ray::*;
 use cglinalg::{
     SimdScalarFloat,
     SimdScalar,

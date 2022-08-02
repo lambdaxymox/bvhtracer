@@ -3,7 +3,9 @@ use cglinalg::{
     SimdScalar,
     SimdScalarFloat,
 };
-use crate::ray::*;
+use crate::query::{
+    Ray,
+};
 
 
 #[repr(C)]

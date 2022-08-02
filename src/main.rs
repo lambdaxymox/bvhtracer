@@ -14,18 +14,16 @@ mod gl {
     include!(concat!(env!("OUT_DIR"), "/gl_bindings.rs"));
 }
 
-mod intersection;
+
 mod backend;
 mod geometry;
 mod materials;
 mod frame_buffer;
 mod ppm;
-mod ray;
+mod query;
 mod mesh;
 mod model;
-mod scene_object;
 mod scene;
-mod tlas;
 mod camera;
 
 use crate::backend::*;
@@ -33,11 +31,9 @@ use crate::camera::*;
 use crate::geometry::*;
 use crate::frame_buffer::*;
 use crate::model::*;
-use crate::scene_object::*;
 use crate::scene::*;
 
 use cglinalg::{
-    Magnitude,
     Matrix4x4,
     Vector3,
     Radians,
@@ -596,7 +592,7 @@ fn main() -> io::Result<()> {
     use std::time::SystemTime;
     println!("Building scene.");
     let now = SystemTime::now();
-    let state = Box::new(AppStateTwoArmadillos::new());
+    let state = Box::new(AppStateSixteenArmadillos::new());
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {:?}", elapsed);
 

@@ -1,7 +1,6 @@
-use crate::intersection::*;
 use crate::geometry::*;
-use crate::ray::*;
-use crate::scene_object::*;
+use crate::query::*;
+use super::scene_object::*;
 use cglinalg::{
     Vector3,
 };
@@ -128,8 +127,10 @@ impl Tlas {
         loop {
             if current_node.is_leaf() {
                 if let Some(intersection) = blas[current_node.blas() as usize].intersect(&closest_ray) {
-                    closest_ray.t = intersection.ray.t;
-                    closest_intersection = Some(intersection);
+                    if intersection.ray.t < closest_ray.t {
+                        closest_ray.t = intersection.ray.t;
+                        closest_intersection = Some(intersection);
+                    }
                 }
 
                 if !stack.is_empty() {

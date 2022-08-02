@@ -1,13 +1,7 @@
 use crate::camera::*;
-use crate::intersection::*;
-use crate::ray::*;
-use crate::scene_object::*;
-use crate::tlas::*;
-
-use cglinalg::{
-    Magnitude,
-    Vector3,
-};
+use crate::query::*;
+use super::scene_object::*;
+use super::tlas::*;
 
 
 pub struct Scene {
