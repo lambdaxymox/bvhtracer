@@ -224,6 +224,7 @@ impl ops::IndexMut<u32> for BvhNodeArray {
     }
 }
 
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Bvh {
     nodes: BvhNodeArray,

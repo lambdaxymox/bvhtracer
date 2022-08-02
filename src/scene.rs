@@ -18,12 +18,10 @@ pub struct Scene {
 
 impl Scene {
     pub fn get_unchecked(&self, index: usize) -> &SceneObject {
-        // self.tlas.get_unchecked(index)
         &self.objects[index]
     }
 
     pub fn get_mut_unchecked(&mut self, index: usize) -> &mut SceneObject {
-        // self.tlas.get_mut_unchecked(index)
         &mut self.objects[index]
     }
 

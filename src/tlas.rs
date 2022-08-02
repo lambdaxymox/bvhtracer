@@ -8,12 +8,41 @@ use cglinalg::{
 use std::ops;
 
 
-// TODO: Rethink some naming and understandability.
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+struct LeftRightIndex {
+    /// The upper u16 is the left index, and the lower u16 is the right index.
+    data: u32,
+}
+
+impl LeftRightIndex {
+    fn new(left: u32, right: u32) -> Self {
+        Self { 
+            data: left + (right << 16),
+        }
+    }
+
+    #[inline]
+    const fn left(self) -> u32 {
+        (self.data & 0xFFFF0000) >> 16
+    }
+
+    #[inline]
+    const fn right(self) -> u32 {
+        self.data & 0x0000FFFF
+    }
+
+    #[inline]
+    const fn zero() -> Self {
+        Self { data: 0 }
+    }
+}
+
+
 #[derive(Copy, Clone, Debug)]
 struct TlasNode {
     aabb: Aabb<f32>,
-    // Upper u16 is the left index, lower u16 is the right index.
-    left_right: u32,
+    left_right: LeftRightIndex,
     blas: u32,
 }
 
@@ -21,7 +50,7 @@ impl Default for TlasNode {
     fn default() -> Self {
         Self {
             aabb: Aabb::new_empty(),
-            left_right: 0,
+            left_right: LeftRightIndex::zero(),
             blas: 0,
         }
     }
@@ -30,22 +59,22 @@ impl Default for TlasNode {
 impl TlasNode {
     #[inline]
     fn is_leaf(&self) -> bool {
-        self.left_right == 0
+        self.left_right == LeftRightIndex::zero()
     }
 
     #[inline]
     fn is_branch(&self) -> bool {
-        self.left_right != 0
+        self.left_right != LeftRightIndex::zero()
     }
 
     #[inline]
     fn left_blas(&self) -> u32 {
-        (self.left_right & 0xFFFF0000) >> 16
+        self.left_right.left()
     }
 
     #[inline]
     fn right_blas(&self) -> u32 {
-        self.left_right & 0x0000FFFF
+        self.left_right.right()
     }
 
     #[inline]
@@ -170,12 +199,11 @@ impl Tlas {
         best_b
     }
 
-    // TODO: Make this more general. We are currently building TLASes for at most 256 objects.
     pub fn rebuild(&mut self, blas: &[SceneObject]) {
         // Assign a Tlasleaf node to each BLAS.
         let blas_count = blas.len();
         let mut node_index_count = blas_count;
-        let mut node_indices = vec![0_i32; 256];
+        let mut node_indices = vec![0_i32; blas_count]; // vec![0_i32; 256];
         let mut nodes_used = 1;
         for i in 0..blas_count {
             node_indices[i] = nodes_used;
@@ -183,7 +211,7 @@ impl Tlas {
             self.nodes[nodes_used as u32].aabb = bounds_i;
             self.nodes[nodes_used as u32].blas = i as u32;
             // Make it a leaf.
-            self.nodes[nodes_used as u32].left_right = 0;
+            self.nodes[nodes_used as u32].left_right = LeftRightIndex::zero();
             nodes_used += 1;
         }
 
@@ -198,7 +226,7 @@ impl Tlas {
                 let node_a = self.nodes[node_index_a as u32];
                 let node_b = self.nodes[node_index_b as u32];
                 let new_node = &mut self.nodes[nodes_used as u32];
-                new_node.left_right = (node_index_a + (node_index_b << 16)) as u32;
+                new_node.left_right = LeftRightIndex::new(node_index_a as u32, node_index_b as u32);
                 new_node.aabb = Aabb::new(
                     Vector3::component_min(&node_a.aabb.bounds_min, &node_b.aabb.bounds_min),
                     Vector3::component_max(&node_a.aabb.bounds_max, &node_b.aabb.bounds_max),
@@ -227,13 +255,12 @@ pub struct TlasBuilder {
 impl TlasBuilder {
     pub fn new() -> Self {
         // For an initial top level acceleration structure that contains no bottom level
-        // acceleration structures (i.e. BVHs), the initial number of nodes used is two, 
+        // acceleration structures (i.e. BVHs, or kD-Trees), the initial number of nodes used is two, 
         // one for the root node, and one for an unused filler node in the array that aligns
         // the buffer in memory nicely (every node's left and right children sit next to each 
         // other in memory).
         let nodes_used = 2;
         let partial_tlas = Tlas {
-            // blas: vec![],
             nodes: TlasNodeArray(vec![TlasNode::default(); nodes_used as usize]),
             nodes_used: nodes_used,
         };
@@ -241,7 +268,6 @@ impl TlasBuilder {
         Self { partial_tlas, }
     }
 
-    // TODO: Make this more general. We are currently building TLASes for at most 256 objects.
     pub fn build_for(mut self, blas: &[SceneObject]) -> Tlas { 
         let len_nodes = 2 * blas.len();
         self.partial_tlas.nodes = TlasNodeArray(vec![TlasNode::default(); len_nodes]);
