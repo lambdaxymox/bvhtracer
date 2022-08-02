@@ -756,6 +756,194 @@ where
 }
 
 
+pub struct SwitchableFovSpec<S> {
+    /// The vertical field of view angle of the orthographic camera model 
+    /// viewport.
+    fovy: Degrees<S>,
+    /// The ratio of the horizontal width to the vertical height.
+    aspect: S,
+    /// The position of the near plane along the **negative z-axis**.
+    near: S,
+    /// The position of the far plane along the **negative z-axis**.
+    far: S,
+    /// The default active projection at the time of construction.
+    default_active_projection: ActiveProjection,
+}
+
+impl<S> SwitchableFovSpec<S> {
+    /// Construct a new switchable projection operation specification
+    /// based on the vertical field of view angle `fovy`, the `near` plane, the 
+    /// `far` plane, and aspect ratio `aspect`.
+    #[inline]
+    pub const fn new(
+        fovy: Degrees<S>, 
+        aspect: S, 
+        near: S, 
+        far: S, 
+        default_active_projection: ActiveProjection) -> Self 
+    {
+        Self {
+            fovy: fovy,
+            aspect: aspect,
+            near: near,
+            far: far,
+            default_active_projection: default_active_projection,
+        }
+    }
+}
+
+impl<S> fmt::Display for SwitchableFovSpec<S> 
+where 
+    S: fmt::Display
+{
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            formatter,
+            "SwitchableFovSpec [fovy={}, aspect={}, near={}, far={}]",
+            self.fovy, self.aspect, self.near, self.far
+        )
+    }
+}
+
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum ActiveProjection {
+    Perspective,
+    Orthographic,
+}
+
+impl ActiveProjection {
+    pub fn is_perspective(self) -> bool {
+        self == ActiveProjection::Perspective
+    }
+
+    pub fn is_orthographic(self) -> bool {
+        self == ActiveProjection::Orthographic
+    }
+}
+
+pub struct SwitchableFovProjection<S> {
+    /// The vertical field of view angle of the orthographic camera model 
+    /// viewport.
+    fovy: Degrees<S>,
+    /// The ratio of the horizontal width to the vertical height.
+    aspect: S,
+    /// The position of the near plane along the **negative z-axis**.
+    near: S,
+    /// The position of the far plane along the **negative z-axis**.
+    far: S,
+    /// The underlying matrix that implements the orthographic projection.
+    orthographic_matrix: Matrix4x4<S>,
+    /// The underlying matrix that implements the perspective projection.
+    perspective_matrix: Matrix4x4<S>,
+    /// The current active projection.
+    active_projection: ActiveProjection,
+}
+
+
+impl<S> SwitchableFovProjection<S> 
+where 
+    S: SimdScalarFloat 
+{
+    /// Get the underlying matrix implementing the orthographic camera model.
+    #[inline]
+    pub fn to_matrix(&self) -> &Matrix4x4<S> {
+        if self.active_projection.is_perspective() {
+            &self.perspective_matrix
+        } else {
+            &self.orthographic_matrix
+        }
+    }
+}
+
+impl<S> fmt::Display for SwitchableFovProjection<S> 
+where 
+    S: fmt::Display 
+{
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            formatter,
+            "SwitchableFovProjection [orthographic_matrix={}, perspective_matrix={}]",
+            self.orthographic_matrix, self.perspective_matrix
+        )
+    }
+}
+
+impl<S> CameraModel for SwitchableFovProjection<S> 
+where 
+    S: SimdScalarFloat
+{
+    type Scalar = S;
+    type Spec = SwitchableFovSpec<S>;
+    type Projection = Matrix4x4<S>;
+
+    #[inline]
+    fn from_spec(spec: &Self::Spec) -> Self {
+        let orthographic_matrix = Matrix4x4::from_orthographic_fov(
+            spec.fovy, 
+            spec.aspect, 
+            spec.near,
+            spec.far
+        );
+        let perspective_matrix = Matrix4x4::from_perspective_fov(
+            spec.fovy, 
+            spec.aspect, 
+            spec.near,
+            spec.far
+        );
+
+        Self {
+            fovy: spec.fovy,
+            aspect: spec.aspect,
+            near: spec.near,
+            far: spec.far,
+            orthographic_matrix: orthographic_matrix,
+            perspective_matrix: perspective_matrix,
+            active_projection: spec.default_active_projection,
+        }
+    }
+
+    #[inline]
+    fn projection(&self) -> &Self::Projection {
+        &self.to_matrix()
+    }
+
+    fn update_viewport(&mut self, width: usize, height: usize) {
+        let width_float = num_traits::cast::<usize, S>(width).unwrap();
+        let height_float = num_traits::cast::<usize, S>(height).unwrap();
+        self.aspect = width_float / height_float;
+        self.orthographic_matrix = Matrix4x4::from_orthographic_fov(
+            self.fovy, 
+            self.aspect, 
+            self.near, 
+            self.far
+        );
+        self.perspective_matrix = Matrix4x4::from_perspective_fov(
+            self.fovy, 
+            self.aspect, 
+            self.near, 
+            self.far
+        );
+    }
+
+    fn top_left_eye(&self) -> Vector3<Self::Scalar> {
+        unimplemented!()
+    }
+
+    fn top_right_eye(&self) -> Vector3<Self::Scalar> {
+        unimplemented!()
+    }
+
+    fn bottom_left_eye(&self) -> Vector3<Self::Scalar> {
+        unimplemented!()
+    }
+
+    fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
+        unimplemented!()
+    }
+}
+
 
 /// A specification describing a rigid body transformation for the attitude 
 /// (position and orientation) of a camera. The spec describes the location, 
