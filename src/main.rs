@@ -484,7 +484,7 @@ impl AppStateTrippyTeapots {
         let p0 = (rot_mat * _p0.extend(1_f32)).contract();
         let p1 = (rot_mat * _p1.extend(1_f32)).contract();
         let p2 = (rot_mat * _p2.extend(1_f32)).contract();
-        let focal_offset = 0_f32; // 1.5;
+        let focal_offset = 0_f32;
         let model_spec = PerspectiveSpec::new(
             p0.x, 
             p1.x, 
@@ -494,7 +494,7 @@ impl AppStateTrippyTeapots {
             10000_f32, 
         );
         let attitude_spec = CameraAttitudeSpec::new(
-            Vector3::new(0_f32, 3_f32, -6.5_f32),
+            Vector3::new(0_f32, -2.5_f32, -8.5_f32),
             Vector3::unit_z(),
             Vector3::unit_x(),
             Vector3::unit_y(),
@@ -641,11 +641,11 @@ fn main() -> io::Result<()> {
     use std::time::SystemTime;
     println!("Building scene.");
     let now = SystemTime::now();
-    let state = Box::new(AppStateTwoArmadillos::new());
+    let state = Box::new(AppStateTrippyTeapots::new());
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {:?}", elapsed);
 
-    let renderer = Renderer::new(Box::new(DepthMappingPipeline::new()));
+    let renderer = Renderer::new(Box::new(UvMappingPipeline::new()));
     let mut app = App::new(state, renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     println!("Rendering scene.");

@@ -63,15 +63,15 @@ impl RenderingPipeline for DepthMappingPipeline {
     }
 }
 
-pub struct UVMappingPipeline {}
+pub struct UvMappingPipeline {}
 
-impl UVMappingPipeline {
+impl UvMappingPipeline {
     pub fn new() -> Self {
         Self {}
     }
 }
 
-impl RenderingPipeline for UVMappingPipeline {
+impl RenderingPipeline for UvMappingPipeline {
     fn render(&mut self, scene: &Scene, frame_buffer: &mut FrameBuffer<Rgba<u8>, Vec<u8>>) -> usize {
         let mut rays_traced = 0;
         let tile_width = 8;
