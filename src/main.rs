@@ -83,13 +83,12 @@ struct App {
 }
     
 impl App {
-    fn new(state: Box<dyn AppState>, width: usize, height: usize) -> Self {
+    fn new(state: Box<dyn AppState>, renderer: Renderer, width: usize, height: usize) -> Self {
         let frame_buffer = FrameBuffer::from_fill(
             width, 
             height,
             Rgba::from([0, 0, 0, 255])
         );
-        let renderer = Renderer::new();
     
         Self { frame_buffer, state, renderer, }
     }
@@ -248,7 +247,7 @@ impl AppStateTwoArmadillos {
             .build();
         let angle = 0_f32;
 
-        Self { angle, active_scene }
+        Self { angle, active_scene, }
     }
 }
 
@@ -549,7 +548,8 @@ fn main() -> io::Result<()> {
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {:?}", elapsed);
 
-    let mut app = App::new(state, SCREEN_WIDTH, SCREEN_HEIGHT);
+    let renderer = Renderer::new(Box::new(DepthMappingPipeline::new()));
+    let mut app = App::new(state, renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     println!("Rendering scene.");
     let now = SystemTime::now();
