@@ -494,7 +494,7 @@ impl AppStateTrippyTeapots {
             10000_f32, 
         );
         let attitude_spec = CameraAttitudeSpec::new(
-            Vector3::new(0_f32, -2.5_f32, -8.5_f32),
+            Vector3::new(0_f32, -1.5_f32, -6.5_f32),
             Vector3::unit_z(),
             Vector3::unit_x(),
             Vector3::unit_y(),
