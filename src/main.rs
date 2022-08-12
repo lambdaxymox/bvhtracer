@@ -18,7 +18,7 @@ mod gl {
 mod backend;
 mod geometry;
 mod materials;
-mod frame_buffer;
+mod texture_buffer;
 mod ppm;
 mod query;
 mod mesh;
@@ -30,7 +30,7 @@ mod renderer;
 use crate::backend::*;
 use crate::camera::*;
 use crate::geometry::*;
-use crate::frame_buffer::*;
+use crate::texture_buffer::*;
 use crate::model::*;
 use crate::scene::*;
 use crate::renderer::*;
@@ -77,14 +77,14 @@ pub trait AppState {
 }
 
 struct App {
-    frame_buffer: FrameBuffer<Rgba<u8>, Vec<u8>>,
+    frame_buffer: TextureBuffer2D<Rgba<u8>, Vec<u8>>,
     state: Box<dyn AppState>,
     renderer: Renderer,
 }
     
 impl App {
     fn new(state: Box<dyn AppState>, renderer: Renderer, width: usize, height: usize) -> Self {
-        let frame_buffer = FrameBuffer::from_fill(
+        let frame_buffer = TextureBuffer2D::from_fill(
             width, 
             height,
             Rgba::from([0, 0, 0, 255])
@@ -501,7 +501,7 @@ impl AppStateTrippyTeapots {
             Vector3::unit_z()
         );
         let camera = Camera::new(&model_spec, &attitude_spec);
-        let model = model::load_obj_model("assets/teapot.obj", "assets/bricks.png");
+        let model = model::load_obj_model("assets/teapot.obj", "assets/bricks_rgb.png");
         let objects = (0..16).map(|_| {
                 SceneObjectBuilder::new(model.clone())
                     .with_transform(&Matrix4x4::from_affine_scale(1_f32))
@@ -566,7 +566,7 @@ impl AppState for AppStateTrippyTeapots {
 }
 
 /// Load texture image into the GPU.
-fn send_to_gpu_texture(buffer: &FrameBuffer<Rgba<u8>, Vec<u8>>, wrapping_mode: GLuint) -> Result<GLuint, String> {
+fn send_to_gpu_texture(buffer: &TextureBuffer2D<Rgba<u8>, Vec<u8>>, wrapping_mode: GLuint) -> Result<GLuint, String> {
     let mut tex = 0;
     unsafe {
         gl::GenTextures(1, &mut tex);
@@ -609,7 +609,7 @@ fn send_to_gpu_texture(buffer: &FrameBuffer<Rgba<u8>, Vec<u8>>, wrapping_mode: G
     Ok(tex)
 }
 
-fn update_to_gpu_texture(tex: GLuint, buffer: &FrameBuffer<Rgba<u8>, Vec<u8>>) {
+fn update_to_gpu_texture(tex: GLuint, buffer: &TextureBuffer2D<Rgba<u8>, Vec<u8>>) {
     // SAFETY: This function does not check whether the texture handle actually exists on the GPU yet.
     // send_to_gpu_texture should be called first.
     unsafe {
@@ -645,7 +645,7 @@ fn main() -> io::Result<()> {
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {:?}", elapsed);
 
-    let renderer = Renderer::new(Box::new(UvMappingPipeline::new()));
+    let renderer = Renderer::new(Box::new(PathTracer::new(SCREEN_WIDTH, SCREEN_HEIGHT)));
     let mut app = App::new(state, renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     println!("Rendering scene.");

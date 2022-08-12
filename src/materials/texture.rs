@@ -11,7 +11,7 @@ use image::{
 
 use std::io;
 
-
+/*
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum ColorType {
     L8,
@@ -21,8 +21,8 @@ pub enum ColorType {
 
 #[derive(Clone, Debug)]
 pub struct TextureImage2D {
-    pub width: u32,
-    pub height: u32,
+    width: u32,
+    height: u32,
     pub color_type: ColorType,
     pub bytes_per_pixel: u32,
     data: Vec<u8>,
@@ -46,6 +46,14 @@ impl TextureImage2D {
     pub fn as_slice(&self) -> &[u8] {
         &self.data
     }
+
+    pub fn width(&self) -> usize {
+        self.width as usize
+    } 
+
+    pub fn height(&self) -> usize {
+        self.height as usize
+    }
 }
 
 impl Default for TextureImage2D {
@@ -59,5 +67,5 @@ impl Default for TextureImage2D {
         }
     }
 }
-
+*/
 

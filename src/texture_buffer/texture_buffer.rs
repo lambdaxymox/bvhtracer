@@ -1,4 +1,4 @@
-use crate::frame_buffer::pixel::*;
+use crate::texture_buffer::pixel::*;
 
 use num_traits::{
     Zero,
@@ -112,22 +112,22 @@ where
     }
 }
 
-#[derive(Debug, Hash, PartialEq, Eq)]
-pub struct FrameBuffer<P, Storage> {
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct TextureBuffer2D<P, Storage> {
     width: usize,
     height: usize,
     data: Storage,
     _marker: PhantomData<P>,
 }
 
-impl<P, Storage> FrameBuffer<P, Storage>
+impl<P, Storage> TextureBuffer2D<P, Storage>
 where
     P: Pixel,
     Storage: ops::Deref<Target = [P::Subpixel]>,
 {
-    pub fn from_raw(width: usize, height: usize, buffer: Storage) -> Option<FrameBuffer<P, Storage>> {
+    pub fn from_raw(width: usize, height: usize, buffer: Storage) -> Option<TextureBuffer2D<P, Storage>> {
         if Self::image_fits_inside_storage(width, height, buffer.len()) {
-            Some(FrameBuffer {
+            Some(TextureBuffer2D {
                 width,
                 height,
                 data: buffer,
@@ -142,9 +142,9 @@ where
         width: usize, 
         height: usize, 
         buffer: Vec<P::Subpixel>
-    ) -> Option<FrameBuffer<P, Vec<P::Subpixel>>> 
+    ) -> Option<TextureBuffer2D<P, Vec<P::Subpixel>>> 
     {
-        FrameBuffer::from_raw(width, height, buffer)
+        TextureBuffer2D::from_raw(width, height, buffer)
     }
 
     pub fn pixels(&self) -> Pixels<P> {
@@ -244,7 +244,7 @@ where
     }
 }
 
-impl<P, Storage> FrameBuffer<P, Storage>
+impl<P, Storage> TextureBuffer2D<P, Storage>
 where
     P: Pixel,
     Storage: ops::Deref<Target = [P::Subpixel]> + ops::DerefMut,
@@ -313,14 +313,14 @@ where
     }
 }
 
-impl<P> FrameBuffer<P, Vec<P::Subpixel>> 
+impl<P> TextureBuffer2D<P, Vec<P::Subpixel>> 
 where
     P: Pixel,
 {
-    pub fn new(width: usize, height: usize) -> FrameBuffer<P, Vec<P::Subpixel>> {
+    pub fn new(width: usize, height: usize) -> TextureBuffer2D<P, Vec<P::Subpixel>> {
         let size = Self::image_buffer_len(width, height).unwrap();
 
-        FrameBuffer { 
+        TextureBuffer2D { 
             width, 
             height, 
             data: vec![<P::Subpixel as Zero>::zero(); size],
@@ -328,8 +328,8 @@ where
         }
     }
 
-    pub fn from_fill(width: usize, height: usize, fill_value: P) -> FrameBuffer<P, Vec<P::Subpixel>> {
-        let mut buffer = FrameBuffer::<P, Vec<P::Subpixel>>::new(width, height);
+    pub fn from_fill(width: usize, height: usize, fill_value: P) -> TextureBuffer2D<P, Vec<P::Subpixel>> {
+        let mut buffer = TextureBuffer2D::<P, Vec<P::Subpixel>>::new(width, height);
         for pixel in buffer.pixels_mut() {
             *pixel = fill_value;
         }
@@ -337,11 +337,11 @@ where
         buffer
     }
 
-    pub fn from_fn<Op>(width: usize, height: usize, mut op: Op) -> FrameBuffer<P, Vec<P::Subpixel>>
+    pub fn from_fn<Op>(width: usize, height: usize, mut op: Op) -> TextureBuffer2D<P, Vec<P::Subpixel>>
     where
         Op: FnMut(usize, usize) -> P
     {
-        let mut buffer = FrameBuffer::<P, Vec<P::Subpixel>>::new(width, height);
+        let mut buffer = TextureBuffer2D::<P, Vec<P::Subpixel>>::new(width, height);
         for (x, y, pixel) in buffer.enumerate_pixels_mut() {
             *pixel = op(x, y);
         }
@@ -350,7 +350,7 @@ where
     }
 }
 
-impl<P, Storage> ops::Index<(usize, usize)> for FrameBuffer<P, Storage>
+impl<P, Storage> ops::Index<(usize, usize)> for TextureBuffer2D<P, Storage>
 where
     P: Pixel,
     Storage: ops::Deref<Target = [P::Subpixel]>
@@ -363,7 +363,7 @@ where
     }
 }
 
-impl<P, Storage> ops::IndexMut<(usize, usize)> for FrameBuffer<P, Storage> 
+impl<P, Storage> ops::IndexMut<(usize, usize)> for TextureBuffer2D<P, Storage> 
 where
     P: Pixel,
     Storage: ops::Deref<Target = [P::Subpixel]> + ops::DerefMut,
@@ -371,6 +371,21 @@ where
     #[inline]
     fn index_mut(&mut self, _index: (usize, usize)) -> &mut Self::Output {
         self.get_pixel_mut_unchecked(_index.0, _index.1)
+    }
+}
+
+impl<P, Storage> Default for TextureBuffer2D<P, Storage> 
+where
+    P: Pixel,
+    Storage: Default,
+{
+    fn default() -> Self {
+        TextureBuffer2D {
+            width: 0,
+            height: 0,
+            data: Storage::default(),
+            _marker: PhantomData,
+        }
     }
 }
 

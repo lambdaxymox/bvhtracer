@@ -2,6 +2,7 @@ use crate::geometry::*;
 use crate::query::*;
 use crate::model::bvh::*;
 use crate::materials::*;
+use crate::texture_buffer::*;
 use crate::mesh::*;
 use std::rc::{
     Rc,
@@ -17,7 +18,7 @@ pub struct ModelInstance {
 }
 
 impl ModelInstance {
-    pub fn new(mesh: Mesh<f32>, bvh: Bvh, texture: TextureImage2D) -> Self {
+    pub fn new(mesh: Mesh<f32>, bvh: Bvh, texture: TextureMaterial<Rgb<u8>>) -> Self {
         Self { 
             handle: Rc::new(RefCell::new(Model::new(mesh, bvh, texture))),
         }
@@ -54,11 +55,11 @@ impl ModelInstance {
 pub struct Model {
     mesh: Mesh<f32>,
     bvh: Bvh,
-    texture: TextureImage2D,
+    texture: TextureMaterial<Rgb<u8>>,
 }
 
 impl Model {
-    pub fn new(mesh: Mesh<f32>, bvh: Bvh, texture: TextureImage2D) -> Self {
+    pub fn new(mesh: Mesh<f32>, bvh: Bvh, texture: TextureMaterial<Rgb<u8>>) -> Self {
         Self { mesh, bvh, texture, }
     }
 
@@ -102,13 +103,17 @@ impl Model {
     pub fn len_primitives(&self) -> usize {
         self.mesh.len_primitives()
     }
+
+    pub fn texture(&self) -> &TextureMaterial<Rgb<u8>> {
+        &self.texture
+    }
 }
 
 
 pub struct ModelBuilder {
     mesh: Mesh<f32>,
     bvh_builder: BvhBuilder,
-    texture: TextureImage2D,
+    texture: TextureMaterial<Rgb<u8>>,
 }
 
 impl ModelBuilder {
@@ -116,7 +121,7 @@ impl ModelBuilder {
         Self {
             mesh: Mesh::from_parts(vec![], vec![], vec![]),
             bvh_builder: BvhBuilder::new(),
-            texture: TextureImage2D::default(),
+            texture: TextureMaterial::default(),
         }
     }
 
@@ -126,7 +131,7 @@ impl ModelBuilder {
         self
     }
 
-    pub fn with_texture(mut self, texture: TextureImage2D) -> Self {
+    pub fn with_texture(mut self, texture: TextureMaterial<Rgb<u8>>) -> Self {
         self.texture = texture;
 
         self

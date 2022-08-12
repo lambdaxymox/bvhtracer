@@ -1,6 +1,6 @@
 use std::ops;
 use std::io;
-use crate::frame_buffer::*;
+use crate::texture_buffer::*;
 
 
 pub struct PpmEncoder<'a, W: 'a> {
@@ -12,7 +12,7 @@ impl<'a, W: io::Write + 'a> PpmEncoder<'a, W> {
         Self { writer, }
     }
 
-    pub fn encode<Storage>(&mut self, buffer: &FrameBuffer<Rgba<u8>, Storage>) -> io::Result<()> 
+    pub fn encode<Storage>(&mut self, buffer: &TextureBuffer2D<Rgba<u8>, Storage>) -> io::Result<()> 
     where
         Storage: ops::Deref<Target = [u8]>,
     {

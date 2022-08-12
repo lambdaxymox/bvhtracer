@@ -50,7 +50,7 @@ impl InstancePrimitiveIndex {
     /// for an intersection test.
     #[inline]
     pub const fn instance_index(self) -> u32 {
-        self.data & 0xFFF00000 >> 20
+        (self.data & 0xFFF00000) >> 20
     }
 
     /// Get the indes of the primitive from the mesh that we are querying in 
