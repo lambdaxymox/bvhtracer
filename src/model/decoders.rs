@@ -18,14 +18,6 @@ fn load_mesh_from_obj<P: AsRef<Path>>(path: P) -> Mesh<f32> {
     let obj_decoder = ObjMeshDecoder::new(obj_file);
     
     obj_decoder.read_mesh().unwrap()
-    /*
-    let mut buffer = String::new();
-    obj_file.read_to_string(&mut buffer).unwrap();
-    let obj_set = obj::parse(&buffer).unwrap();
-    let object = &obj_set.objects[0];
-
-    load_mesh(object)
-    */
 }
 
 fn load_texture_from_png<P: AsRef<Path>>(path: P) -> TextureBuffer2D<Rgb<u8>, Vec<u8>> {
