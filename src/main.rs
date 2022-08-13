@@ -31,6 +31,7 @@ use crate::backend::*;
 use crate::camera::*;
 use crate::geometry::*;
 use crate::texture_buffer::*;
+use crate::mesh::*;
 use crate::model::*;
 use crate::scene::*;
 use crate::renderer::*;
@@ -55,6 +56,9 @@ use rand::{
 };
 use rand_isaac::{
     IsaacRng,
+};
+use std::fs::{
+    File,
 };
 use std::io;
 use std::mem;
@@ -127,7 +131,8 @@ impl AppStateBigBenClock {
             Vector3::unit_z()
         );
         let camera = Camera::new(&model_spec, &attitude_spec);
-        let mesh = mesh::load_tri_model("assets/bigben.tri");
+        let mesh_decoder = TriMeshDecoder::new(File::open("assets/bigben.tri").unwrap());
+        let mesh = mesh_decoder.read_mesh().unwrap();
         let model_builder = ModelBuilder::new();
         let model = model_builder.with_mesh(mesh).build();
         let object = SceneObjectBuilder::new(model)
@@ -222,7 +227,8 @@ impl AppStateTwoArmadillos {
             Vector3::unit_z()
         );
         let camera = Camera::new(&model_spec, &attitude_spec);
-        let mesh = mesh::load_tri_model("assets/armadillo.tri");
+        let mesh_decoder = TriMeshDecoder::new(File::open("assets/armadillo.tri").unwrap());
+        let mesh = mesh_decoder.read_mesh().unwrap();
         let model_builder = ModelBuilder::new();
         let model = model_builder.with_mesh(mesh).build();
         let mut objects = vec![];
@@ -311,7 +317,8 @@ impl AppStateSixteenArmadillos {
             Vector3::unit_z()
         );
         let camera = Camera::new(&model_spec, &attitude_spec);
-        let mesh = mesh::load_tri_model("assets/armadillo.tri");
+        let mesh_decoder = TriMeshDecoder::new(File::open("assets/armadillo.tri").unwrap());
+        let mesh = mesh_decoder.read_mesh().unwrap();
         let model_builder = ModelBuilder::new();
         let model = model_builder.with_mesh(mesh).build();
         let objects = (0..16).map(|_| {

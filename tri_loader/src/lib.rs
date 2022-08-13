@@ -25,7 +25,7 @@ use std::io::{
 
 
 
-pub fn from_reader<R: io::Read + io::Seek>(reader: &mut R) -> Result<Vec<Triangle>, TriLoaderError> {
+pub fn from_reader<R: io::Read>(reader: &mut R) -> Result<Vec<Triangle>, TriLoaderError> {
     let mut contents = String::new();
     reader.read_to_string(&mut contents).unwrap();
     let mut loader = TriLoader::new(&contents);
