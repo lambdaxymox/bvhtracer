@@ -37,6 +37,10 @@ impl SceneObject {
         self.bounds = new_bounds;
     }
 
+    pub fn get_transform(&self) -> &Matrix4x4<f32> {
+        &self.transform
+    }
+
     #[inline]
     pub fn intersect(&self, ray: &Ray<f32>) -> Option<Intersection<f32>> {
         // Convert the ray from world space to model space.
