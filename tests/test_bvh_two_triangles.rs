@@ -22,16 +22,16 @@ fn scene() -> ModelInstance {
         Vector3::new(1_f32 / f32::sqrt(3_f32), -1_f32 / 2_f32, 0_f32),
     );
     let triangle1 = Triangle::new(
-        triangle.vertex0 - displacement,
-        triangle.vertex1 - displacement,
-        triangle.vertex2 - displacement,
+        triangle.vertices[0] - displacement,
+        triangle.vertices[1] - displacement,
+        triangle.vertices[2] - displacement,
     );
     let tex_coords1 = TextureCoordinates::default();
     let normals1 = Normals::default();
     let triangle2 = Triangle::new(
-        triangle.vertex0 + displacement,
-        triangle.vertex1 + displacement,
-        triangle.vertex2 + displacement,
+        triangle.vertices[0] + displacement,
+        triangle.vertices[1] + displacement,
+        triangle.vertices[2] + displacement,
     );
     let tex_coords2 = TextureCoordinates::default();
     let normals2 = Normals::default();

@@ -22,9 +22,9 @@ fn bvh() -> (Bvh, Vec<Triangle<f32>>) {
     );
     let mut mesh = (-100..100).zip(-100..100).map(|(i, j)| {
         Triangle::new(
-            triangle0.vertex0 + (i as f32) * displacement_x + (j as f32) * displacement_y,
-            triangle0.vertex1 + (i as f32) * displacement_x + (j as f32) * displacement_y,
-            triangle0.vertex1 + (i as f32) * displacement_x + (j as f32) * displacement_y,
+            triangle0.vertices[0] + (i as f32) * displacement_x + (j as f32) * displacement_y,
+            triangle0.vertices[1] + (i as f32) * displacement_x + (j as f32) * displacement_y,
+            triangle0.vertices[2] + (i as f32) * displacement_x + (j as f32) * displacement_y,
         )
     })
     .collect::<Vec<Triangle<_>>>();
@@ -41,9 +41,9 @@ fn animate(mesh: &mut [Triangle<f32>]) {
     let displacement2 =  Vector3::new(0_f32, 0_f32, 0.3_f32);
 
     for triangle in mesh.iter_mut() {
-        triangle.vertex0 += displacement0;
-        triangle.vertex1 += displacement1;
-        triangle.vertex2 += displacement2;
+        triangle.vertices[0] += displacement0;
+        triangle.vertices[1] += displacement1;
+        triangle.vertices[2] += displacement2;
     }
 }
 

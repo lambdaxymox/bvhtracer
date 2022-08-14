@@ -161,17 +161,17 @@ impl AppStateBigBenClock {
         let a = f32::sin(self.r) * 0.5;
         let mesh = self.active_scene().get_unchecked(0).model().model();
         for i in 0..self.originals.len() {
-            let o_0 = self.originals[i].vertex0;
+            let o_0 = self.originals[i].vertices[0];
             let s_0 = a * (o_0.y - 0.2) * 0.2;
             let x_0 = o_0.x * f32::cos(s_0) - o_0.y * f32::sin(s_0);
             let y_0 = o_0.x * f32::sin(s_0) + o_0.y * f32::cos(s_0);
 
-            let o_1 = self.originals[i].vertex1;
+            let o_1 = self.originals[i].vertices[1];
             let s_1 = a * (o_1.y - 0.2) * 0.2;
             let x_1 = o_1.x * f32::cos(s_1) - o_1.y * f32::sin(s_1);
             let y_1 = o_1.x * f32::sin(s_1) + o_1.y * f32::cos(s_1);
 
-            let o_2 = self.originals[i].vertex2;
+            let o_2 = self.originals[i].vertices[2];
             let s_2 = a * (o_2.y - 0.2) * 0.2;
             let x_2 = o_2.x * f32::cos(s_2) - o_2.y * f32::sin(s_2);
             let y_2 = o_2.x * f32::sin(s_2) + o_2.y * f32::cos(s_2);

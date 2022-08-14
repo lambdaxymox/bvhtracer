@@ -315,12 +315,12 @@ impl Bvh {
     fn update_node_bounds(&mut self, mesh: &[Triangle<f32>], node_index: u32) {
         let mut new_aabb = Aabb::new(Vector3::from_fill(f32::MAX), Vector3::from_fill(-f32::MAX));
         for (_, primitive) in self.primitive_iter(mesh, &self.nodes[node_index]) {
-            new_aabb.bounds_min = __min(&new_aabb.bounds_min, &primitive.vertex0);
-            new_aabb.bounds_min = __min(&new_aabb.bounds_min, &primitive.vertex1);
-            new_aabb.bounds_min = __min(&new_aabb.bounds_min, &primitive.vertex2);
-            new_aabb.bounds_max = __max(&new_aabb.bounds_max, &primitive.vertex0);
-            new_aabb.bounds_max = __max(&new_aabb.bounds_max, &primitive.vertex1);
-            new_aabb.bounds_max = __max(&new_aabb.bounds_max, &primitive.vertex2);
+            new_aabb.bounds_min = __min(&new_aabb.bounds_min, &primitive.vertices[0]);
+            new_aabb.bounds_min = __min(&new_aabb.bounds_min, &primitive.vertices[1]);
+            new_aabb.bounds_min = __min(&new_aabb.bounds_min, &primitive.vertices[2]);
+            new_aabb.bounds_max = __max(&new_aabb.bounds_max, &primitive.vertices[0]);
+            new_aabb.bounds_max = __max(&new_aabb.bounds_max, &primitive.vertices[1]);
+            new_aabb.bounds_max = __max(&new_aabb.bounds_max, &primitive.vertices[2]);
         }
 
         let node = &mut self.nodes[node_index];
@@ -350,9 +350,9 @@ impl Bvh {
                 let possible_bin_index = ((primitive.centroid()[axis] - bounds_min) * bin_scale) as usize;
                 let bin_index = usize::min(BIN_COUNT - 1, possible_bin_index);
                 bins[bin_index].primitive_count += 1;
-                bins[bin_index].bounding_box.grow(&primitive.vertex0);
-                bins[bin_index].bounding_box.grow(&primitive.vertex1);
-                bins[bin_index].bounding_box.grow(&primitive.vertex2);
+                bins[bin_index].bounding_box.grow(&primitive.vertices[0]);
+                bins[bin_index].bounding_box.grow(&primitive.vertices[1]);
+                bins[bin_index].bounding_box.grow(&primitive.vertices[2]);
             }
 
             // Assemble the data for calculating the `BIN_COUNT - 1` planes between the `BIN_COUNT` bins.
@@ -558,9 +558,9 @@ mod bvh_tests {
         );
         let mut mesh = (-100..100).zip(-100..100).map(|(i, j)| {
             Triangle::new(
-                triangle0.vertex0 + (i as f32) * displacement_x + (j as f32) * displacement_y,
-                triangle0.vertex1 + (i as f32) * displacement_x + (j as f32) * displacement_y,
-                triangle0.vertex1 + (i as f32) * displacement_x + (j as f32) * displacement_y,
+                triangle0.vertices[0] + (i as f32) * displacement_x + (j as f32) * displacement_y,
+                triangle0.vertices[1] + (i as f32) * displacement_x + (j as f32) * displacement_y,
+                triangle0.vertices[2] + (i as f32) * displacement_x + (j as f32) * displacement_y,
             )
         })
         .collect::<Vec<Triangle<_>>>();
@@ -799,9 +799,9 @@ mod bvh_tree_one_triangle_tests {
     fn expected_bvh() -> Bvh {
         let triangle = triangle();
         let mut aabb = Aabb::new_empty();
-        aabb.grow(&triangle.vertex0);
-        aabb.grow(&triangle.vertex1);
-        aabb.grow(&triangle.vertex2);
+        aabb.grow(&triangle.vertices[0]);
+        aabb.grow(&triangle.vertices[1]);
+        aabb.grow(&triangle.vertices[2]);
 
         let root_node = BvhNode {
             aabb: aabb,

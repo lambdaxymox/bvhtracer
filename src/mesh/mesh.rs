@@ -183,9 +183,9 @@ where
     }
 
     pub fn with_primitive(mut self, primitive: Triangle<S>, tex_coords: TextureCoordinates<S, 3>, normals: Normals<S, 3>) -> Self {
-        self.vertices.push(primitive.vertex0);
-        self.vertices.push(primitive.vertex1);
-        self.vertices.push(primitive.vertex2);
+        self.vertices.push(primitive.vertices[0]);
+        self.vertices.push(primitive.vertices[1]);
+        self.vertices.push(primitive.vertices[2]);
         self.tex_coords.push(tex_coords[0]);
         self.tex_coords.push(tex_coords[1]);
         self.tex_coords.push(tex_coords[2]);

@@ -30,9 +30,9 @@ fn scene() -> ModelInstance {
     let mesh = (0..100).fold(MeshBuilder::new(), |builder, i| {
             let displacement = Vector3::new(0_f32, 0_f32, i as f32);
             let primitive = Triangle::new(
-                top.vertex0 - displacement,
-                top.vertex1 - displacement,
-                top.vertex2 - displacement,
+                top.vertices[0] - displacement,
+                top.vertices[1] - displacement,
+                top.vertices[2] - displacement,
             );
             let tex_coords = TextureCoordinates::default();
             let normals = Normals::default();
@@ -50,12 +50,12 @@ fn test_scene_stack_xy() {
     let scene = scene();
     let top = top_triangle();
 
-    assert!(scene.model().borrow().primitives().iter().all(|triangle| triangle.vertex0.x == top.vertex0.x));
-    assert!(scene.model().borrow().primitives().iter().all(|triangle| triangle.vertex0.y == top.vertex0.y));
-    assert!(scene.model().borrow().primitives().iter().all(|triangle| triangle.vertex1.x == top.vertex1.x));
-    assert!(scene.model().borrow().primitives().iter().all(|triangle| triangle.vertex1.y == top.vertex1.y));
-    assert!(scene.model().borrow().primitives().iter().all(|triangle| triangle.vertex2.x == top.vertex2.x));
-    assert!(scene.model().borrow().primitives().iter().all(|triangle| triangle.vertex2.y == top.vertex2.y));
+    assert!(scene.model().borrow().primitives().iter().all(|triangle| triangle.vertices[0].x == top.vertices[0].x));
+    assert!(scene.model().borrow().primitives().iter().all(|triangle| triangle.vertices[0].y == top.vertices[0].y));
+    assert!(scene.model().borrow().primitives().iter().all(|triangle| triangle.vertices[1].x == top.vertices[1].x));
+    assert!(scene.model().borrow().primitives().iter().all(|triangle| triangle.vertices[1].y == top.vertices[1].y));
+    assert!(scene.model().borrow().primitives().iter().all(|triangle| triangle.vertices[2].x == top.vertices[2].x));
+    assert!(scene.model().borrow().primitives().iter().all(|triangle| triangle.vertices[2].y == top.vertices[2].y));
 }
 
 /// Given a set of triangles that could intersect a ray, the intersection test

@@ -119,8 +119,8 @@ where
 
             let tex_coords = TextureCoordinates::default();
 
-            let v0v2 = (primitive.vertex2 - primitive.vertex0).normalize();
-            let v0v1 = (primitive.vertex1 - primitive.vertex0).normalize();
+            let v0v2 = (primitive.vertices[2] - primitive.vertices[0]).normalize();
+            let v0v1 = (primitive.vertices[1] - primitive.vertices[0]).normalize();
             let normal = v0v2.cross(&v0v1).normalize();
             let normals = Normals::from([normal, normal, normal]);
             
@@ -171,78 +171,78 @@ where
                         object.get_vtn_triple(*vtn3).unwrap(),
                     ];
     
-                    let mut primitive = Triangle::default();
-                    let mut tex_coord = TextureCoordinates::default();
-                    let mut normal = Normals::default();
-                 
+                    let mut vertices = Triangle::default();
+                    let mut tex_coords = TextureCoordinates::default();
+                    let mut normals = Normals::default();
+
                     match triples[0] {
                         obj::VTNTriple::V(vp) => {
-                            primitive.vertex0 = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coord[0] = Vector2::zero();
-                            normal[0] = Vector3::zero();
+                            vertices.vertices[0] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
+                            tex_coords[0] = Vector2::zero();
+                            normals[0] = Vector3::zero();
                         }
                         obj::VTNTriple::VT(vp, vt) => {
-                            primitive.vertex0 = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coord[0] = Vector2::new(vt.u as f32, vt.v as f32);
-                            normal[0] = Vector3::zero();
+                            vertices.vertices[0] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
+                            tex_coords[0] = Vector2::new(vt.u as f32, vt.v as f32);
+                            normals[0] = Vector3::zero();
                         }
                         obj::VTNTriple::VN(vp, vn) => {
-                            primitive.vertex0 = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coord[0] = Vector2::zero();
-                            normal[0] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
+                            vertices.vertices[0] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
+                            tex_coords[0] = Vector2::zero();
+                            normals[0] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
                         }
                         obj::VTNTriple::VTN(vp, vt, vn) => {
-                            primitive.vertex0 = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coord[0] = Vector2::new(vt.u as f32, vt.v as f32);
-                            normal[0] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
+                            vertices.vertices[0] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
+                            tex_coords[0] = Vector2::new(vt.u as f32, vt.v as f32);
+                            normals[0] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
                         }
                     }
                     match triples[1] {
                         obj::VTNTriple::V(vp) => {
-                            primitive.vertex1 = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coord[1] = Vector2::zero();
-                            normal[1] = Vector3::zero();
+                            vertices.vertices[1] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
+                            tex_coords[1] = Vector2::zero();
+                            normals[1] = Vector3::zero();
                         }
                         obj::VTNTriple::VT(vp, vt) => {
-                            primitive.vertex1 = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coord[1] = Vector2::new(vt.u as f32, vt.v as f32);
-                            normal[1] = Vector3::zero();
+                            vertices.vertices[1] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
+                            tex_coords[1] = Vector2::new(vt.u as f32, vt.v as f32);
+                            normals[1] = Vector3::zero();
                         }
                         obj::VTNTriple::VN(vp, vn) => {
-                            primitive.vertex1 = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coord[1] = Vector2::zero();
-                            normal[1] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
+                            vertices.vertices[1] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
+                            tex_coords[1] = Vector2::zero();
+                            normals[1] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
                         }
                         obj::VTNTriple::VTN(vp, vt, vn) => {
-                            primitive.vertex1 = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coord[1] = Vector2::new(vt.u as f32, vt.v as f32);
-                            normal[1] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
+                            vertices.vertices[1] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
+                            tex_coords[1] = Vector2::new(vt.u as f32, vt.v as f32);
+                            normals[1] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
                         }
                     }
                     match triples[2] {
                         obj::VTNTriple::V(vp) => {
-                            primitive.vertex2 = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coord[2] = Vector2::zero();
-                            normal[2] = Vector3::zero();
+                            vertices.vertices[2] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
+                            tex_coords[2] = Vector2::zero();
+                            normals[2] = Vector3::zero();
                         }
                         obj::VTNTriple::VT(vp, vt) => {
-                            primitive.vertex2 = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coord[2] = Vector2::new(vt.u as f32, vt.v as f32);
-                            normal[2] = Vector3::zero();
+                            vertices.vertices[2] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
+                            tex_coords[2] = Vector2::new(vt.u as f32, vt.v as f32);
+                            normals[2] = Vector3::zero();
                         }
                         obj::VTNTriple::VN(vp, vn) => {
-                            primitive.vertex2 = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coord[2] = Vector2::zero();
-                            normal[2] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
+                            vertices.vertices[2] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
+                            tex_coords[2] = Vector2::zero();
+                            normals[2] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
                         }
                         obj::VTNTriple::VTN(vp, vt, vn) => {
-                            primitive.vertex2 = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coord[2] = Vector2::new(vt.u as f32, vt.v as f32);
-                            normal[2] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
+                            vertices.vertices[2] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
+                            tex_coords[2] = Vector2::new(vt.u as f32, vt.v as f32);
+                            normals[2] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
                         }
                     }
     
-                    builder = builder.with_primitive(primitive, tex_coord, normal);
+                    builder = builder.with_primitive(vertices, tex_coords, normals);
                 }
                 _ => {}
             }

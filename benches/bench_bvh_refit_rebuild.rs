@@ -46,17 +46,17 @@ fn animate(scene: &mut ModelInstance, r: f32) {
     let mesh = scene.model();
     let primitive_count = mesh.borrow().len_primitives();
     for i in 0..primitive_count {
-        let o_0 = mesh.borrow().primitives()[i].vertex0;
+        let o_0 = mesh.borrow().primitives()[i].vertices[0];
         let s_0 = a * (o_0.y - 0.2) * 0.2;
         let x_0 = o_0.x * f32::cos(s_0) - o_0.y * f32::sin(s_0);
         let y_0 = o_0.x * f32::sin(s_0) + o_0.y * f32::cos(s_0);
 
-        let o_1 = mesh.borrow().primitives()[i].vertex1;
+        let o_1 = mesh.borrow().primitives()[i].vertices[1];
         let s_1 = a * (o_1.y - 0.2) * 0.2;
         let x_1 = o_1.x * f32::cos(s_1) - o_1.y * f32::sin(s_1);
         let y_1 = o_1.x * f32::sin(s_1) + o_1.y * f32::cos(s_1);
 
-        let o_2 = mesh.borrow().primitives()[i].vertex2;
+        let o_2 = mesh.borrow().primitives()[i].vertices[2];
         let s_2 = a * (o_2.y - 0.2) * 0.2;
         let x_2 = o_2.x * f32::cos(s_2) - o_2.y * f32::sin(s_2);
         let y_2 = o_2.x * f32::sin(s_2) + o_2.y * f32::cos(s_2);
