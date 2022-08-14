@@ -175,71 +175,32 @@ where
                     let mut tex_coords = TextureCoordinates::default();
                     let mut normals = Normals::default();
 
-                    match triples[0] {
-                        obj::VTNTriple::V(vp) => {
-                            vertices.vertices[0] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coords[0] = Vector2::zero();
-                            normals[0] = Vector3::zero();
-                        }
-                        obj::VTNTriple::VT(vp, vt) => {
-                            vertices.vertices[0] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coords[0] = Vector2::new(vt.u as f32, vt.v as f32);
-                            normals[0] = Vector3::zero();
-                        }
-                        obj::VTNTriple::VN(vp, vn) => {
-                            vertices.vertices[0] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coords[0] = Vector2::zero();
-                            normals[0] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
-                        }
-                        obj::VTNTriple::VTN(vp, vt, vn) => {
-                            vertices.vertices[0] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coords[0] = Vector2::new(vt.u as f32, vt.v as f32);
-                            normals[0] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
-                        }
-                    }
-                    match triples[1] {
-                        obj::VTNTriple::V(vp) => {
-                            vertices.vertices[1] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coords[1] = Vector2::zero();
-                            normals[1] = Vector3::zero();
-                        }
-                        obj::VTNTriple::VT(vp, vt) => {
-                            vertices.vertices[1] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coords[1] = Vector2::new(vt.u as f32, vt.v as f32);
-                            normals[1] = Vector3::zero();
-                        }
-                        obj::VTNTriple::VN(vp, vn) => {
-                            vertices.vertices[1] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coords[1] = Vector2::zero();
-                            normals[1] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
-                        }
-                        obj::VTNTriple::VTN(vp, vt, vn) => {
-                            vertices.vertices[1] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coords[1] = Vector2::new(vt.u as f32, vt.v as f32);
-                            normals[1] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
-                        }
-                    }
-                    match triples[2] {
-                        obj::VTNTriple::V(vp) => {
-                            vertices.vertices[2] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coords[2] = Vector2::zero();
-                            normals[2] = Vector3::zero();
-                        }
-                        obj::VTNTriple::VT(vp, vt) => {
-                            vertices.vertices[2] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coords[2] = Vector2::new(vt.u as f32, vt.v as f32);
-                            normals[2] = Vector3::zero();
-                        }
-                        obj::VTNTriple::VN(vp, vn) => {
-                            vertices.vertices[2] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coords[2] = Vector2::zero();
-                            normals[2] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
-                        }
-                        obj::VTNTriple::VTN(vp, vt, vn) => {
-                            vertices.vertices[2] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
-                            tex_coords[2] = Vector2::new(vt.u as f32, vt.v as f32);
-                            normals[2] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
-                        }
+                    debug_assert_eq!(triples.len(), tex_coords.len());
+                    debug_assert_eq!(triples.len(), normals.len());
+
+                    for i in 0..triples.len() {
+                        match triples[i] {
+                            obj::VTNTriple::V(vp) => {
+                                vertices.vertices[i] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
+                                tex_coords[i] = Vector2::zero();
+                                normals[i] = Vector3::zero();
+                            }
+                            obj::VTNTriple::VT(vp, vt) => {
+                                vertices.vertices[i] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
+                                tex_coords[i] = Vector2::new(vt.u as f32, vt.v as f32);
+                                normals[i] = Vector3::zero();
+                            }
+                            obj::VTNTriple::VN(vp, vn) => {
+                                vertices.vertices[i] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
+                                tex_coords[i] = Vector2::zero();
+                                normals[i] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
+                            }
+                            obj::VTNTriple::VTN(vp, vt, vn) => {
+                                vertices.vertices[i] = Vector3::new(vp.x as f32, vp.y as f32, vp.z as f32);
+                                tex_coords[i] = Vector2::new(vt.u as f32, vt.v as f32);
+                                normals[i] = Vector3::new(vn.x as f32, vn.y as f32, vn.z as f32);
+                            }
+                        }   
                     }
     
                     builder = builder.with_primitive(vertices, tex_coords, normals);
