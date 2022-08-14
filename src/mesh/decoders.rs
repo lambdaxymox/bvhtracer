@@ -109,30 +109,22 @@ where
         let loaded_tri_data = tri_loader::from_reader(&mut self.reader).map_err(|err| {
             MeshError::Decoding(DecodingError::new(err))
         })?;
-        let primitives = loaded_tri_data.iter().map(|tri| {
-                let vertex0 = Vector3::new(tri.vertex0.x, tri.vertex0.y, tri.vertex0.z);
-                let vertex1 = Vector3::new(tri.vertex1.x, tri.vertex1.y, tri.vertex1.z);
-                let vertex2 = Vector3::new(tri.vertex2.x, tri.vertex2.y, tri.vertex2.z);
-            
-                Triangle::new(vertex0, vertex1, vertex2)
-            }).collect::<Vec<Triangle<_>>>();
-        let tex_coords = vec![TextureCoordinates::default(); primitives.len()];
-        let normals = primitives.iter().map(|primitive| {
-                let v0v2 = (primitive.vertex2 - primitive.vertex0).normalize();
-                let v0v1 = (primitive.vertex1 - primitive.vertex0).normalize();
-                let normal = v0v2.cross(&v0v1).normalize();
-    
-                Normals::from([normal, normal, normal])
-            })
-            .collect::<Vec<_>>();
-    
+
         let mut builder = MeshBuilder::new();
-        for i in 0..primitives.len() {
-            builder = builder.with_primitive(
-                primitives[i], 
-                tex_coords[i], 
-                normals[i]
-            );
+        for tri in loaded_tri_data.iter() {
+            let vertex0 = Vector3::new(tri.vertex0.x, tri.vertex0.y, tri.vertex0.z);
+            let vertex1 = Vector3::new(tri.vertex1.x, tri.vertex1.y, tri.vertex1.z);
+            let vertex2 = Vector3::new(tri.vertex2.x, tri.vertex2.y, tri.vertex2.z);
+            let primitive = Triangle::new(vertex0, vertex1, vertex2);
+
+            let tex_coords = TextureCoordinates::default();
+
+            let v0v2 = (primitive.vertex2 - primitive.vertex0).normalize();
+            let v0v1 = (primitive.vertex1 - primitive.vertex0).normalize();
+            let normal = v0v2.cross(&v0v1).normalize();
+            let normals = Normals::from([normal, normal, normal]);
+            
+            builder = builder.with_primitive(primitive, tex_coords, normals);
         }
     
         let mesh = builder.build();
