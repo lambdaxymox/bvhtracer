@@ -97,7 +97,7 @@ impl<S, const N: usize> ops::IndexMut<usize> for Normals<S, N> {
 
 
 // TODO: Add tangent and bitangent vectors.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Mesh<S> 
 where
     S: SimdScalar,

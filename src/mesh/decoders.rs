@@ -17,6 +17,7 @@ use std::io::{
 use std::path::{
     Path,
 };
+use std::io;
 use std::error;
 use std::fmt;
 
@@ -54,6 +55,7 @@ pub enum MeshError {
     Decoding(DecodingError),
     CouldNotCalculateNormals,
     CouldNotCalculateTextureCoordinates,
+    IoError(io::Error),
 }
 
 impl fmt::Display for MeshError {
@@ -67,6 +69,9 @@ impl fmt::Display for MeshError {
             }
             MeshError::CouldNotCalculateTextureCoordinates => {
                 write!(formatter, "Could not calculate valid texture coordinates")
+            }
+            MeshError::IoError(err) => {
+                write!(formatter, "An error occurred in reading from the reader: {}", err)
             }
         }
     }
@@ -159,7 +164,9 @@ where
     // TODO: Calculate normals from vertex data in the case that they're missing?
     fn read_mesh(mut self) -> MeshResult<Mesh<f32>> {
         let mut buffer = String::new();
-        self.reader.read_to_string(&mut buffer).unwrap();
+        self.reader.read_to_string(&mut buffer).map_err(|err| {
+            MeshError::IoError(err)
+        })?;
         let obj_set = obj::parse(&buffer).unwrap();
         let object = &obj_set.objects[0];
         let mut builder = MeshBuilder::new();
