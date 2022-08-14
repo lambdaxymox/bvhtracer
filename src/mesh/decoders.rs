@@ -17,14 +17,63 @@ use std::io::{
 use std::path::{
     Path,
 };
+use std::error;
+use std::fmt;
 
 
 pub type MeshResult<T> = Result<T, MeshError>;
 
-#[derive(Clone, Debug)]
-pub enum MeshError {
 
+#[derive(Debug)]
+pub struct DecodingError {
+    underlying: Option<Box<dyn error::Error + Send + Sync>>,
 }
+
+impl DecodingError {
+    fn new(underlying: impl Into<Box<dyn error::Error + Send + Sync>>) -> Self {
+        Self { 
+            underlying: Some(underlying.into()),
+        }
+    }
+}
+
+impl fmt::Display for DecodingError {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            formatter,
+            "An error occurred while decoding a mesh format: {:?}",
+            self.underlying
+        )
+    }
+}
+
+impl error::Error for DecodingError {}
+
+#[derive(Debug)]
+pub enum MeshError {
+    Decoding(DecodingError),
+    CouldNotCalculateNormals,
+    CouldNotCalculateTextureCoordinates,
+}
+
+impl fmt::Display for MeshError {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            MeshError::Decoding(err) => {
+                write!(formatter, "{}", err)
+            }
+            MeshError::CouldNotCalculateNormals => {
+                write!(formatter, "Could not calculate valid normal vector")
+            }
+            MeshError::CouldNotCalculateTextureCoordinates => {
+                write!(formatter, "Could not calculate valid texture coordinates")
+            }
+        }
+    }
+}
+
+impl error::Error for MeshError {}
+
 
 pub trait MeshDecoder<'a>: Sized {
     type Reader: Read + 'a;
@@ -52,7 +101,9 @@ where
     type Reader = R;
 
     fn read_mesh(mut self) -> MeshResult<Mesh<f32>> {
-        let loaded_tri_data = tri_loader::from_reader(&mut self.reader).unwrap();
+        let loaded_tri_data = tri_loader::from_reader(&mut self.reader).map_err(|err| {
+            MeshError::Decoding(DecodingError::new(err))
+        })?;
         let primitives = loaded_tri_data.iter().map(|tri| {
                 let vertex0 = Vector3::new(tri.vertex0.x, tri.vertex0.y, tri.vertex0.z);
                 let vertex1 = Vector3::new(tri.vertex1.x, tri.vertex1.y, tri.vertex1.z);

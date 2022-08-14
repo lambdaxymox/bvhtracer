@@ -1,3 +1,5 @@
+use std::error;
+use std::fmt;
 use std::path::{
     Path,
 };
@@ -60,6 +62,18 @@ impl TriLoaderError {
         Self { line_number, kind, message, }
     }
 }
+
+impl fmt::Display for TriLoaderError {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            formatter, 
+            "Tri file format parsing error at line {}: {}",
+            self.line_number, self.message
+        )
+    }
+}
+
+impl error::Error for TriLoaderError {}
 
 pub struct TriLoader<'a> {
     line_number: usize,
