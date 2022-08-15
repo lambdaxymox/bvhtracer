@@ -21,12 +21,10 @@ fn load_mesh_from_obj<P: AsRef<Path>>(path: P) -> Mesh<f32> {
 }
 
 fn load_texture_from_png<P: AsRef<Path>>(path: P) -> TextureBuffer2D<Rgb<u8>, Vec<u8>> {
-    let mut texture_file = File::open(&path).unwrap();
-    let parsed = from_png_reader(&mut texture_file).unwrap();
-    match parsed {
-        TextureBufferParsed::Rgb8(buffer) => buffer,
-        _ => panic!("Incorrect color space"),
-    }
+    let texture_file = File::open(&path).unwrap();
+    let texture_decoder: PngTextureBufferDecoder<Rgb<u8>, _> = PngTextureBufferDecoder::new(texture_file);
+
+    texture_decoder.read_texture().unwrap()
 }
 
 pub fn load_obj_model<P: AsRef<Path>>(obj_path: P, texture_path: P) -> ModelInstance {
