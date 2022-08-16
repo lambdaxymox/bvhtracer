@@ -6,6 +6,8 @@ use image::codecs::{
     png::PngDecoder,
     jpeg::JpegDecoder,
 };
+use std::error;
+use std::fmt;
 use std::fs::{
     File,
 };
@@ -21,12 +23,39 @@ use std::marker::{
 };
 
 
-#[derive(Clone, Debug)]
-pub enum TextureBufferError {
-    ColorSpaceMismatch(),
+pub type TextureBufferResult<T> = Result<T, TextureBufferError>;
+
+
+#[derive(Debug)]
+pub struct DecodingError {
+    underlying: Option<Box<dyn error::Error + Send + Sync>>,
 }
 
-pub type TextureBufferResult<T> = Result<T, TextureBufferError>;
+impl DecodingError {
+    fn new(underlying: impl Into<Box<dyn error::Error + Send + Sync>>) -> Self {
+        Self { 
+            underlying: Some(underlying.into()),
+        }
+    }
+}
+
+impl fmt::Display for DecodingError {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            formatter,
+            "An error occurred while decoding a mesh format: {:?}",
+            self.underlying
+        )
+    }
+}
+
+impl error::Error for DecodingError {}
+
+#[derive(Debug)]
+pub enum TextureBufferError {
+    Decoding(DecodingError),
+    ColorSpaceMismatch(),
+}
 
 
 pub trait TextureBufferDecoder<'a>: Sized {
@@ -63,7 +92,9 @@ where
     type Output = TextureBuffer2D<Rgb<u8>, Vec<u8>>;
 
     fn read_texture(self) -> TextureBufferResult<Self::Output> {
-        let image_decoder = PngDecoder::new(self.reader).unwrap();
+        let image_decoder = PngDecoder::new(self.reader).map_err(|err| {
+            TextureBufferError::Decoding(DecodingError::new(err))
+        })?;
         let (width, height) = image_decoder.dimensions();
         let total_bytes = image_decoder.total_bytes();
         let image_decoder_color_type = image_decoder.color_type();
@@ -71,9 +102,11 @@ where
             image::ColorType::Rgb8 => {
                 let bytes_per_pixel = image_decoder_color_type.bytes_per_pixel() as u32;
                 let mut buffer = vec![0 as u8; total_bytes as usize];
-                image_decoder.read_image(&mut buffer).unwrap();
+                image_decoder.read_image(&mut buffer).map_err(|err| { 
+                    TextureBufferError::Decoding(DecodingError::new(err))
+                })?;
     
-                assert_eq!(total_bytes, (width * height * bytes_per_pixel) as u64);
+                debug_assert_eq!(total_bytes, (width * height * bytes_per_pixel) as u64);
     
                 let texture = TextureBuffer2D::from_raw(
                         width as usize, 
@@ -96,7 +129,9 @@ where
     type Output = TextureBuffer2D<Rgba<u8>, Vec<u8>>;
 
     fn read_texture(self) -> TextureBufferResult<Self::Output> {
-        let image_decoder = PngDecoder::new(self.reader).unwrap();
+        let image_decoder = PngDecoder::new(self.reader).map_err(|err| {
+            TextureBufferError::Decoding(DecodingError::new(err))
+        })?;
         let (width, height) = image_decoder.dimensions();
         let total_bytes = image_decoder.total_bytes();
         let image_decoder_color_type = image_decoder.color_type();
@@ -104,9 +139,11 @@ where
             image::ColorType::Rgba8 => {
                 let bytes_per_pixel = image_decoder_color_type.bytes_per_pixel() as u32;
                 let mut buffer = vec![0 as u8; total_bytes as usize];
-                image_decoder.read_image(&mut buffer).unwrap();
+                image_decoder.read_image(&mut buffer).map_err(|err| { 
+                    TextureBufferError::Decoding(DecodingError::new(err))
+                })?;
     
-                assert_eq!(total_bytes, (width * height * bytes_per_pixel) as u64);
+                debug_assert_eq!(total_bytes, (width * height * bytes_per_pixel) as u64);
     
                 let texture = TextureBuffer2D::from_raw(
                         width as usize, 
@@ -148,7 +185,9 @@ where
     type Output = TextureBuffer2D<Rgb<u8>, Vec<u8>>;
 
     fn read_texture(self) -> TextureBufferResult<Self::Output> {
-        let image_decoder = JpegDecoder::new(self.reader).unwrap();
+        let image_decoder = JpegDecoder::new(self.reader).map_err(|err| {
+            TextureBufferError::Decoding(DecodingError::new(err))
+        })?;
         let (width, height) = image_decoder.dimensions();
         let total_bytes = image_decoder.total_bytes();
         let image_decoder_color_type = image_decoder.color_type();
@@ -156,9 +195,11 @@ where
             image::ColorType::Rgb8 => {
                 let bytes_per_pixel = image_decoder_color_type.bytes_per_pixel() as u32;
                 let mut buffer = vec![0 as u8; total_bytes as usize];
-                image_decoder.read_image(&mut buffer).unwrap();
+                image_decoder.read_image(&mut buffer).map_err(|err| { 
+                    TextureBufferError::Decoding(DecodingError::new(err))
+                })?;
     
-                assert_eq!(total_bytes, (width * height * bytes_per_pixel) as u64);
+                debug_assert_eq!(total_bytes, (width * height * bytes_per_pixel) as u64);
     
                 let texture = TextureBuffer2D::from_raw(
                         width as usize, 
@@ -181,7 +222,9 @@ where
     type Output = TextureBuffer2D<Rgba<u8>, Vec<u8>>;
 
     fn read_texture(self) -> TextureBufferResult<Self::Output> {
-        let image_decoder = JpegDecoder::new(self.reader).unwrap();
+        let image_decoder = JpegDecoder::new(self.reader).map_err(|err| {
+            TextureBufferError::Decoding(DecodingError::new(err))
+        })?;
         let (width, height) = image_decoder.dimensions();
         let total_bytes = image_decoder.total_bytes();
         let image_decoder_color_type = image_decoder.color_type();
@@ -189,9 +232,11 @@ where
             image::ColorType::Rgba8 => {
                 let bytes_per_pixel = image_decoder_color_type.bytes_per_pixel() as u32;
                 let mut buffer = vec![0 as u8; total_bytes as usize];
-                image_decoder.read_image(&mut buffer).unwrap();
+                image_decoder.read_image(&mut buffer).map_err(|err| { 
+                    TextureBufferError::Decoding(DecodingError::new(err))
+                })?;
     
-                assert_eq!(total_bytes, (width * height * bytes_per_pixel) as u64);
+                debug_assert_eq!(total_bytes, (width * height * bytes_per_pixel) as u64);
     
                 let texture = TextureBuffer2D::from_raw(
                         width as usize, 
