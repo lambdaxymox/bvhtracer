@@ -325,7 +325,8 @@ impl AppStateSixteenArmadillos {
                 SceneObjectBuilder::new(model.clone())
                     .with_transform(&Matrix4x4::from_affine_scale(0.75))
                     .build()
-            }).collect::<Vec<_>>();
+            })
+            .collect::<Vec<_>>();
         let active_scene = SceneBuilder::new(camera)
             .with_objects(objects)
             .build();
@@ -425,7 +426,8 @@ impl AppStateTrippyTeapots {
                 SceneObjectBuilder::new(model.clone())
                     .with_transform(&Matrix4x4::from_affine_scale(1_f32))
                     .build()
-            }).collect::<Vec<_>>();
+            })
+            .collect::<Vec<_>>();
         let active_scene = SceneBuilder::new(camera)
             .with_objects(objects)
             .build();
