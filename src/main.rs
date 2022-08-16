@@ -416,7 +416,11 @@ impl AppStateTrippyTeapots {
             Vector3::unit_z()
         );
         let camera = Camera::new(&model_spec, &attitude_spec);
-        let model = model::load_obj_model("assets/teapot.obj", "assets/bricks_rgb.png");
+        let mesh_reader = File::open("assets/teapot.obj").unwrap();
+        let material_reader = File::open("assets/bricks_rgb.png").unwrap();
+        let model = SimpleModelDecoder::new(mesh_reader, material_reader)
+            .read_model()
+            .unwrap();
         let objects = (0..16).map(|_| {
                 SceneObjectBuilder::new(model.clone())
                     .with_transform(&Matrix4x4::from_affine_scale(1_f32))

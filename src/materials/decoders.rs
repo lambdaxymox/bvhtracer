@@ -57,6 +57,14 @@ pub enum TextureBufferError {
     ColorSpaceMismatch(),
 }
 
+impl fmt::Display for TextureBufferError {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        unimplemented!()
+    }
+}
+
+impl error::Error for TextureBufferError {}
+
 
 pub trait TextureBufferDecoder<'a>: Sized {
     type Reader: Read + 'a;
