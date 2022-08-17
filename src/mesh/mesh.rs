@@ -9,7 +9,7 @@ use std::slice;
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct TextureCoordinates<S, const N: usize> {
     data: [Vector2<S>; N],
 }
@@ -53,7 +53,7 @@ impl<S, const N: usize> ops::IndexMut<usize> for TextureCoordinates<S, N> {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Normals<S, const N: usize> {
     data: [Vector3<S>; N],
 }
@@ -144,7 +144,7 @@ where
     pub fn tex_coords(&self) -> &[TextureCoordinates<S, 3>] {
         unsafe {
             let p = self.tex_coords.as_ptr() as *const TextureCoordinates<S, 3>;
-            let len = self.tex_coords.len() / 2;
+            let len = self.tex_coords.len() / 3;
 
             slice::from_raw_parts(p, len)
         }

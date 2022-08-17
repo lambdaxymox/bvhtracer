@@ -12,7 +12,7 @@ image = "0.24.3"
 
 [dependencies.cgwavefront_obj]
 git = "https://github.com/lambdaxymox/cgwavefront_obj"
-version = "1.0.3"
+version = "1.0.4"
 
 [dependencies.cglinalg]
 git = "https://github.com/lambdaxymox/cglinalg/"
