@@ -108,6 +108,7 @@ impl ops::IndexMut<u32> for TlasNodeArray {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Tlas {
     nodes: TlasNodeArray,
     nodes_used: u32,

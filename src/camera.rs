@@ -1273,10 +1273,10 @@ where
             &(spec.position)
         );
         let rotation_matrix = Matrix4x4::new(
-            spec.right.x,   spec.right.y,   spec.right.z,   S::zero(),
-            spec.up.x,      spec.up.y,      spec.up.z,      S::zero(),
+             spec.right.x,    spec.right.y,    spec.right.z,   S::zero(),
+             spec.up.x,       spec.up.y,       spec.up.z,      S::zero(),
             -spec.forward.x, -spec.forward.y, -spec.forward.z, S::zero(),
-            S::zero(),      S::zero(),      S::zero(),      S::one()
+             S::zero(),       S::zero(),       S::zero(),      S::one()
         );
         let view_matrix = translation_matrix * rotation_matrix;
         let view_matrix_inv = view_matrix.inverse().unwrap();
@@ -1568,6 +1568,103 @@ mod attitude_tests {
             0_f64, -1_f64,  0_f64, 0_f64,
             0_f64,  0_f64, -1_f64, 0_f64,
             0_f64,  0_f64, -5_f64, 1_f64
+        ).inverse().unwrap();
+        let result = attitude.view_matrix_inv();
+
+        assert_eq!(result, &expected);
+    }
+}
+
+#[cfg(test)]
+mod attitude_tests2 {
+    use super::*;
+
+    fn attitude() -> CameraAttitude<f64> {
+        let attitude_spec = CameraAttitudeSpec::new(
+            Vector3::new(0_f64, 0_f64, 5_f64),
+            -Vector3::unit_z(),
+            Vector3::unit_x(),
+            Vector3::unit_y(),
+            Vector3::unit_z()
+        );
+
+        CameraAttitude::from_spec(&attitude_spec)
+    }
+
+    #[test]
+    fn test_forward_axis_eye_to_world() {
+        let attitude = attitude();
+        let expected = Vector3::new(0_f64, 0_f64, -1_f64);
+        let result = {
+            let forward_eye = attitude.forward_axis_eye();
+            let forward_world = attitude.view_matrix_inv() * forward_eye.extend(0_f64);
+            forward_world.contract()
+        };
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_right_axis_eye_to_world() {
+        let attitude = attitude();
+        let expected = Vector3::new(1_f64, 0_f64, 0_f64);
+        let result = {
+            let right_eye = attitude.right_axis_eye();
+            let right_world = attitude.view_matrix_inv() * right_eye.extend(0_f64);
+            right_world.contract()
+        };
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_up_axis_eye_to_world() {
+        let attitude = attitude();
+        let expected = Vector3::new(0_f64, 1_f64, 0_f64);
+        let result = {
+            let up_eye = attitude.up_axis_eye();
+            let up_world = attitude.view_matrix_inv() * up_eye.extend(0_f64);
+            up_world.contract()
+        };
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_z_axis_eye_to_world() {
+        let attitude = attitude();
+        let expected = Vector3::new(0_f64, 0_f64, 1_f64);
+        let result = {
+            let z_axis_eye = Vector3::new(0_f64, 0_f64, 1_f64);
+            let z_axis_world = attitude.view_matrix_inv() * z_axis_eye.extend(0_f64);
+            z_axis_world.contract()
+        };
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_view_matrix() {
+        let attitude = attitude();
+        let expected = Matrix4x4::new(
+            1_f64,  0_f64,  0_f64, 0_f64,
+            0_f64,  1_f64,  0_f64, 0_f64,
+            0_f64,  0_f64,  1_f64, 0_f64,
+            0_f64,  0_f64,  5_f64, 1_f64
+        );
+        let result = attitude.view_matrix();
+
+        assert_eq!(result, &expected);
+    }
+
+    #[test]
+    fn test_view_matrix_inv() {
+        let attitude = attitude();
+        let expected = Matrix4x4::new(
+            1_f64,  0_f64,  0_f64, 0_f64,
+            0_f64,  1_f64,  0_f64, 0_f64,
+            0_f64,  0_f64,  1_f64, 0_f64,
+            0_f64,  0_f64,  5_f64, 1_f64
         ).inverse().unwrap();
         let result = attitude.view_matrix_inv();
 
