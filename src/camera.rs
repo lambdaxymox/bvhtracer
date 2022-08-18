@@ -1270,15 +1270,26 @@ where
     fn from_spec(spec: &CameraAttitudeSpec<S>) -> Self {
         let axis = Quaternion::from_parts(S::zero(), spec.axis);
         let translation_matrix = Matrix4x4::from_affine_translation(
-            &(spec.position)
+            &(-spec.position)
         );
+        /*
         let rotation_matrix = Matrix4x4::new(
-             spec.right.x,    spec.right.y,    spec.right.z,   S::zero(),
-             spec.up.x,       spec.up.y,       spec.up.z,      S::zero(),
+            spec.right.x,   spec.right.y,   spec.right.z,   S::zero(),
+            spec.up.x,      spec.up.y,      spec.up.z,      S::zero(),
             -spec.forward.x, -spec.forward.y, -spec.forward.z, S::zero(),
-             S::zero(),       S::zero(),       S::zero(),      S::one()
+            S::zero(),      S::zero(),      S::zero(),      S::one()
         );
-        let view_matrix = translation_matrix * rotation_matrix;
+        */
+        let rotation_matrix = Matrix4x4::new(
+            spec.right.x, spec.up.x, -spec.forward.x, S::zero(),
+            spec.right.y, spec.up.y, -spec.forward.y, S::zero(),
+            spec.right.z, spec.up.z, -spec.forward.z, S::zero(),
+            S::zero(),    S::zero(), S::zero(),       S::one()
+        );
+        let view_matrix = rotation_matrix * translation_matrix;
+        eprintln!("TRANSLATION MATRIX:\n{:?}", translation_matrix);
+        eprintln!("ROTATION MATRIX:\n{:?}", rotation_matrix);
+        eprintln!("VIEW MATRIX:\n{:?}", view_matrix);
         let view_matrix_inv = view_matrix.inverse().unwrap();
 
         Self {
@@ -1479,7 +1490,7 @@ where
 
 
 #[cfg(test)]
-mod attitude_tests {
+mod attitude_tests1 {
     use super::*;
 
     fn attitude() -> CameraAttitude<f64> {
@@ -1650,7 +1661,7 @@ mod attitude_tests2 {
             1_f64,  0_f64,  0_f64, 0_f64,
             0_f64,  1_f64,  0_f64, 0_f64,
             0_f64,  0_f64,  1_f64, 0_f64,
-            0_f64,  0_f64,  5_f64, 1_f64
+            0_f64,  0_f64, -5_f64, 1_f64
         );
         let result = attitude.view_matrix();
 
@@ -1664,7 +1675,7 @@ mod attitude_tests2 {
             1_f64,  0_f64,  0_f64, 0_f64,
             0_f64,  1_f64,  0_f64, 0_f64,
             0_f64,  0_f64,  1_f64, 0_f64,
-            0_f64,  0_f64,  5_f64, 1_f64
+            0_f64,  0_f64, -5_f64, 1_f64
         ).inverse().unwrap();
         let result = attitude.view_matrix_inv();
 

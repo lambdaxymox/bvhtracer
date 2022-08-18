@@ -55,7 +55,7 @@ impl RenderingPipeline for DepthMappingPipeline {
                     } else {
                         Rgba::new(0, 0, 0, 255)
                     };
-                    frame_buffer[(tile_height * x + u, tile_height * y + v)] = color;
+                    frame_buffer[(tile_width * x + u, tile_height * y + v)] = color;
                     rays_traced += 1;
                 }
             }
@@ -106,7 +106,7 @@ impl RenderingPipeline for UvMappingPipeline {
 
                         Rgba::new(r, g, b, 255)
                     };
-                    frame_buffer[(tile_height * x + u, tile_height * y + v)] = color;
+                    frame_buffer[(tile_width * x + u, tile_height * y + v)] = color;
                     rays_traced += 1;
                 }
             }
@@ -175,7 +175,7 @@ impl RenderingPipeline for NormalMappingPipeline {
 
                         Rgba::new(r, g, b, 255)
                     };
-                    frame_buffer[(tile_height * x + u, tile_height * y + v)] = color;
+                    frame_buffer[(tile_width * x + u, tile_height * y + v)] = color;
                     rays_traced += 1;
                 }
             }
@@ -271,7 +271,7 @@ impl RenderingPipeline for PathTracer {
 
                         Rgba::new(r, g, b, 255)
                     };
-                    frame_buffer[(x * tile_height + u, y * tile_height + v)] = color;
+                    frame_buffer[(x * tile_width + u, y * tile_height + v)] = color;
                 }
             }
         }
