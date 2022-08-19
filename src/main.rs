@@ -84,14 +84,14 @@ pub trait AppState {
 }
 
 struct App {
-    frame_buffer: TextureBuffer2D<Rgba<u8>, Vec<u8>>,
+    frame_buffer: FrameBuffer<Rgba<u8>>,
     state: Box<dyn AppState>,
     renderer: Renderer,
 }
     
 impl App {
     fn new(state: Box<dyn AppState>, renderer: Renderer, width: usize, height: usize) -> Self {
-        let frame_buffer = TextureBuffer2D::from_fill(
+        let frame_buffer = FrameBuffer::from_value(
             width, 
             height,
             Rgba::from([0, 0, 0, 255])
@@ -128,7 +128,7 @@ impl AppStateQuad {
             1_f32, 
             -1_f32, 
             1_f32, 
-            0.001_f32, 
+            1_f32, 
             100_f32, 
         );
         let attitude_spec = CameraAttitudeSpec::new(
@@ -191,11 +191,6 @@ impl AppStateQuad {
         let active_scene = SceneBuilder::new(camera)
             .with_object(scene_object)
             .build();
-
-        let ray = active_scene.active_camera().get_ray_world(0.5, 0.5);
-        println!("{:?}", ray);
-        let intersection = active_scene.intersect(&ray);
-        println!("{:?}", intersection);
         
         Self { active_scene, }
     }
@@ -676,8 +671,9 @@ fn main() -> io::Result<()> {
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {:?}", elapsed);
 
-    let renderer = Renderer::new(Box::new(DepthMappingPipeline::new()));
-    // let renderer = Renderer::new(Box::new(PathTracer::new(SCREEN_WIDTH, SCREEN_HEIGHT)));
+    // let renderer = Renderer::new(Box::new(UvMappingPipeline::new()));
+    // let renderer = Renderer::new(Box::new(NormalMappingPipeline::new()));
+    let renderer = Renderer::new(Box::new(PathTracer::new()));
     let mut app = App::new(state, renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     println!("Rendering scene.");
@@ -686,7 +682,7 @@ fn main() -> io::Result<()> {
     let elapsed = now.elapsed().unwrap();
     println!("Rendering time = {} s", elapsed.as_secs_f64());
 
-    app.frame_buffer.flip_vertical();
+    app.frame_buffer.photometric_mut().flip_vertical();
 
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 
@@ -806,7 +802,7 @@ fn main() -> io::Result<()> {
         vao
     };
 
-    let tex = send_to_gpu_texture(&app.frame_buffer, gl::REPEAT).unwrap();
+    let tex = send_to_gpu_texture(&app.frame_buffer.photometric(), gl::REPEAT).unwrap();
     // Loop until the user closes the window
     while !window.should_close() {
         let (width, height) = window.get_framebuffer_size();
@@ -833,8 +829,8 @@ fn main() -> io::Result<()> {
         app.render();
         let elapsed = now.elapsed().unwrap();
         println!("Rendering time = {:?}", elapsed);
-        app.frame_buffer.flip_vertical();
-        update_to_gpu_texture(tex, &app.frame_buffer);
+        app.frame_buffer.photometric_mut().flip_vertical();
+        update_to_gpu_texture(tex, &app.frame_buffer.photometric());
        
         unsafe {
             let m_trans_location = gl::GetUniformLocation(shader_program, gl_str("m_trans").as_ptr());

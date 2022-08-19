@@ -324,7 +324,7 @@ where
             width, 
             height, 
             data: vec![<P::Subpixel as Zero>::zero(); size],
-             _marker: PhantomData,
+            _marker: PhantomData,
         }
     }
 

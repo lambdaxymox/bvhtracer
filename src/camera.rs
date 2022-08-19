@@ -559,7 +559,7 @@ where
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         write!(
             formatter,
-            "Orthographicrojection [{}]",
+            "OrthographicProjection [{}]",
             self.matrix
         )
     }
@@ -1287,9 +1287,6 @@ where
             S::zero(),    S::zero(), S::zero(),       S::one()
         );
         let view_matrix = rotation_matrix * translation_matrix;
-        eprintln!("TRANSLATION MATRIX:\n{:?}", translation_matrix);
-        eprintln!("ROTATION MATRIX:\n{:?}", rotation_matrix);
-        eprintln!("VIEW MATRIX:\n{:?}", view_matrix);
         let view_matrix_inv = view_matrix.inverse().unwrap();
 
         Self {

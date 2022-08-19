@@ -8,10 +8,66 @@ use cglinalg::{
     Magnitude,
     Vector3,
 };
+use std::ops;
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct FrameBuffer<P> 
+where
+    P: Pixel,
+{
+    radiometric: Vec<Vector3<f32>>,
+    photometric: TextureBuffer2D<P, Vec<P::Subpixel>>,
+}
+
+impl<P> FrameBuffer<P> 
+where
+    P: Pixel,
+{
+    pub fn from_value(width: usize, height: usize, value: P) -> Self {
+        let photometric = TextureBuffer2D::from_fill(width, height, value);
+        
+        Self {
+            radiometric: vec![Vector3::zero(); width * height],
+            photometric: photometric,
+        }
+    }
+
+    pub fn radiometric(&self) -> &[Vector3<f32>] {
+        &self.radiometric
+    }
+
+    pub fn radiometric_mut(&mut self) -> &mut [Vector3<f32>] {
+        &mut self.radiometric
+    }
+
+    pub fn photometric(&self) -> &TextureBuffer2D<P, Vec<P::Subpixel>> {
+        &self.photometric
+    }
+
+    pub fn photometric_mut(&mut self) -> &mut TextureBuffer2D<P, Vec<P::Subpixel>> {
+        &mut self.photometric
+    }
+
+    #[inline]
+    pub fn width(&self) -> usize {
+        self.photometric.width()
+    }
+
+    #[inline]
+    pub fn height(&self) -> usize {
+        self.photometric.height()
+    }
+
+    #[inline]
+    pub fn dimensions(&self) -> (usize, usize) {
+        (self.width(), self.height())
+    }
+}
 
 
 pub trait RenderingPipeline {
-    fn render(&mut self, scene: &Scene, frame_buffer: &mut TextureBuffer2D<Rgba<u8>, Vec<u8>>) -> usize;
+    fn render(&mut self, scene: &Scene, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize;
 }
 
 pub struct DepthMappingPipeline {}
@@ -23,7 +79,7 @@ impl DepthMappingPipeline {
 }
 
 impl RenderingPipeline for DepthMappingPipeline {
-    fn render(&mut self, scene: &Scene, frame_buffer: &mut TextureBuffer2D<Rgba<u8>, Vec<u8>>) -> usize {
+    fn render(&mut self, scene: &Scene, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
         let mut rays_traced = 0;
         let tile_width = 8;
         let tile_height = 8;
@@ -55,7 +111,7 @@ impl RenderingPipeline for DepthMappingPipeline {
                     } else {
                         Rgba::new(0, 0, 0, 255)
                     };
-                    frame_buffer[(tile_width * x + u, tile_height * y + v)] = color;
+                    frame_buffer.photometric_mut()[(tile_width * x + u, tile_height * y + v)] = color;
                     rays_traced += 1;
                 }
             }
@@ -74,7 +130,7 @@ impl UvMappingPipeline {
 }
 
 impl RenderingPipeline for UvMappingPipeline {
-    fn render(&mut self, scene: &Scene, frame_buffer: &mut TextureBuffer2D<Rgba<u8>, Vec<u8>>) -> usize {
+    fn render(&mut self, scene: &Scene, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
         let mut rays_traced = 0;
         let tile_width = 8;
         let tile_height = 8;
@@ -106,7 +162,7 @@ impl RenderingPipeline for UvMappingPipeline {
 
                         Rgba::new(r, g, b, 255)
                     };
-                    frame_buffer[(tile_width * x + u, tile_height * y + v)] = color;
+                    frame_buffer.photometric_mut()[(tile_width * x + u, tile_height * y + v)] = color;
                     rays_traced += 1;
                 }
             }
@@ -151,7 +207,7 @@ impl NormalMappingPipeline {
 }
 
 impl RenderingPipeline for NormalMappingPipeline {
-    fn render(&mut self, scene: &Scene, frame_buffer: &mut TextureBuffer2D<Rgba<u8>, Vec<u8>>) -> usize {
+    fn render(&mut self, scene: &Scene, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
         let mut rays_traced = 0;
         let tile_width = 8;
         let tile_height = 8;
@@ -175,7 +231,7 @@ impl RenderingPipeline for NormalMappingPipeline {
 
                         Rgba::new(r, g, b, 255)
                     };
-                    frame_buffer[(tile_width * x + u, tile_height * y + v)] = color;
+                    frame_buffer.photometric_mut()[(tile_width * x + u, tile_height * y + v)] = color;
                     rays_traced += 1;
                 }
             }
@@ -186,14 +242,19 @@ impl RenderingPipeline for NormalMappingPipeline {
 }
 
 pub struct PathTracer {
-    accumulator: Vec<Vector3<f32>>,
+    // accumulator: Vec<Vector3<f32>>,
 }
 
 impl PathTracer {
+    /*
     pub fn new(width: usize, height: usize) -> Self {
         Self {
             accumulator: vec![Vector3::zero(); width * height],
         }
+    }
+    */
+    pub fn new() -> Self {
+        Self {}
     }
 
     fn path_trace(&mut self, scene: &Scene, ray: &Ray<f32>) -> Vector3<f32> {
@@ -233,7 +294,8 @@ impl PathTracer {
 }
 
 impl RenderingPipeline for PathTracer {
-    fn render(&mut self, scene: &Scene, frame_buffer: &mut TextureBuffer2D<Rgba<u8>, Vec<u8>>) -> usize {
+    // fn render(&mut self, scene: &Scene, frame_buffer: &mut TextureBuffer2D<Rgba<u8>, Vec<u8>>) -> usize {
+    fn render(&mut self, scene: &Scene, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
         let mut rays_traced = 0;
         let tile_width = 8;
         let tile_height = 8;
@@ -251,7 +313,7 @@ impl RenderingPipeline for PathTracer {
                     );
                     let pixel_address = (x * tile_width + u) + (y * tile_height + v) * frame_buffer.width();
                     let pixel = self.path_trace(scene, &ray);
-                    self.accumulator[pixel_address] = pixel;
+                    frame_buffer.radiometric_mut()[pixel_address] = pixel;
                     rays_traced += 1;
                 }
             }
@@ -263,7 +325,7 @@ impl RenderingPipeline for PathTracer {
             for v in 0..tile_height {
                 for u in 0..tile_width {
                     let pixel_address = (x * tile_width + u) + (y * tile_height + v) * frame_buffer.width();
-                    let pixel = self.accumulator[pixel_address];
+                    let pixel = frame_buffer.radiometric()[pixel_address];
                     let color = {
                         let r = u8::min(255, (255_f32 * pixel.x) as u8);
                         let g = u8::min(255, (255_f32 * pixel.y) as u8);
@@ -271,7 +333,7 @@ impl RenderingPipeline for PathTracer {
 
                         Rgba::new(r, g, b, 255)
                     };
-                    frame_buffer[(x * tile_width + u, y * tile_height + v)] = color;
+                    frame_buffer.photometric_mut()[(x * tile_width + u, y * tile_height + v)] = color;
                 }
             }
         }
@@ -289,7 +351,7 @@ impl Renderer {
         Self { pipeline, }
     }
 
-    pub fn render(&mut self, scene: &Scene, frame_buffer: &mut TextureBuffer2D<Rgba<u8>, Vec<u8>>) -> usize {
+    pub fn render(&mut self, scene: &Scene, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
         self.pipeline.render(scene, frame_buffer)
     }
 }
