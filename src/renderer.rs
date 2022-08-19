@@ -241,18 +241,9 @@ impl RenderingPipeline for NormalMappingPipeline {
     }
 }
 
-pub struct PathTracer {
-    // accumulator: Vec<Vector3<f32>>,
-}
+pub struct PathTracer {}
 
 impl PathTracer {
-    /*
-    pub fn new(width: usize, height: usize) -> Self {
-        Self {
-            accumulator: vec![Vector3::zero(); width * height],
-        }
-    }
-    */
     pub fn new() -> Self {
         Self {}
     }
