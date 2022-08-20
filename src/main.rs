@@ -498,7 +498,9 @@ struct AppStateTrippyTeapots {
 
 impl AppStateTrippyTeapots {
     fn new() -> Self {
-        let rot_mat = Matrix4x4::from_affine_angle_x(Radians(0.5));
+        let rot_mat_x = Matrix4x4::from_affine_angle_x(Radians(0.0));
+        let rot_mat_z = Matrix4x4::from_affine_angle_z(Radians(2.5));
+        let rot_mat = rot_mat_z * rot_mat_x;
         let _p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
         let _p1 = Vector3::new(1_f32, 1_f32, 2_f32);
         let _p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
@@ -518,7 +520,7 @@ impl AppStateTrippyTeapots {
             Vector3::new(0_f32, -1.5_f32, -6.5_f32),
             Vector3::unit_z(),
             Vector3::unit_x(),
-            Vector3::unit_y(),
+            -Vector3::unit_y(),
             Vector3::unit_z()
         );
         let camera = Camera::new(&model_spec, &attitude_spec);
@@ -667,7 +669,7 @@ fn main() -> io::Result<()> {
     use std::time::SystemTime;
     println!("Building scene.");
     let now = SystemTime::now();
-    let state = Box::new(AppStateQuad::new());
+    let state = Box::new(AppStateTrippyTeapots::new());
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {:?}", elapsed);
 

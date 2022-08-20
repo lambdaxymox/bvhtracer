@@ -33,18 +33,22 @@ where
         }
     }
 
+    #[inline]
     pub fn radiometric(&self) -> &[Vector3<f32>] {
         &self.radiometric
     }
 
+    #[inline]
     pub fn radiometric_mut(&mut self) -> &mut [Vector3<f32>] {
         &mut self.radiometric
     }
 
+    #[inline]
     pub fn photometric(&self) -> &TextureBuffer2D<P, Vec<P::Subpixel>> {
         &self.photometric
     }
 
+    #[inline]
     pub fn photometric_mut(&mut self) -> &mut TextureBuffer2D<P, Vec<P::Subpixel>> {
         &mut self.photometric
     }
