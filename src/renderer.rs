@@ -81,6 +81,76 @@ pub trait RenderingPipeline {
     fn render(&mut self, scene: &Scene, accumulation_buffer: &mut AccumulationBuffer<f32>, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize;
 }
 
+pub struct IntersectionMappingPipeline {
+    hit_value: Rgba<u8>,
+    miss_value: Rgba<u8>,
+}
+
+impl IntersectionMappingPipeline {
+    pub fn new(hit_value: Rgba<u8>, miss_value: Rgba<u8>) -> Self {
+        Self { hit_value, miss_value, }
+    }
+
+    fn path_trace(&mut self, scene: &Scene, ray: &Ray<f32>) -> Vector3<f32> {
+        if let Some(intersection) = scene.intersect(&ray) {
+            Vector3::from_fill(1_f32)
+        } else {
+            Vector3::zero()
+        }
+    }
+
+    fn shade_pixel(&mut self, radiance: &Vector3<f32>) -> Rgba<u8> {
+        if !radiance.is_zero() {
+            self.hit_value
+        } else {
+            self.miss_value
+        }
+    }
+}
+
+impl RenderingPipeline for IntersectionMappingPipeline {
+    fn render(&mut self, scene: &Scene, accumulation_buffer: &mut AccumulationBuffer<f32>, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
+        let mut rays_traced = 0;
+        let tile_width = 8;
+        let tile_height = 8;
+        let tile_count_x = 80;
+        let tile_count_y = 80;
+        let tile_count = tile_count_x * tile_count_y;
+        for tile in 0..tile_count {
+            let x = tile % tile_count_x;
+            let y = tile / tile_count_y;
+            for v in 0..tile_height {
+                for u in 0..tile_width {
+                    let ray = scene.active_camera().get_ray_world(
+                        (tile_width * x + u) as f32 / frame_buffer.width() as f32,
+                        (tile_height * y + v) as f32 / frame_buffer.height() as f32,
+                    );
+                    let radiance = self.path_trace(scene, &ray);
+                    let pixel_address = (x * tile_width + u) + (y * tile_height + v) * frame_buffer.width();
+                    accumulation_buffer.data[pixel_address] = radiance;
+                    rays_traced += 1;
+                }
+            }
+        }
+
+        for tile in 0..tile_count {
+            let x = tile % tile_count_x;
+            let y = tile / tile_count_y;
+            for v in 0..tile_height {
+                for u in 0..tile_width {
+                    let pixel_address = (x * tile_width + u) + (y * tile_height + v) * frame_buffer.width();
+                    let radiance = accumulation_buffer.data[pixel_address];
+                    let color = self.shade_pixel(&radiance);
+                    frame_buffer.data[(x * tile_width + u, y * tile_height + v)] = color;
+                }
+            }
+        }
+
+        rays_traced
+    }
+}
+
+
 pub struct DepthMappingPipeline {}
 
 impl DepthMappingPipeline {

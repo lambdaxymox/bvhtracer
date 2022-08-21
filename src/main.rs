@@ -675,7 +675,11 @@ fn main() -> io::Result<()> {
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {:?}", elapsed);
 
-    let renderer = Renderer::new(Box::new(DepthMappingPipeline::new()));
+    let renderer = Renderer::new(Box::new(IntersectionMappingPipeline::new(
+        Rgba::new(0, 255, 0, 255),
+        Rgba::new(0, 0, 255, 255),
+    )));
+    // let renderer = Renderer::new(Box::new(DepthMappingPipeline::new()));
     // let renderer = Renderer::new(Box::new(UvMappingPipeline::new()));
     // let renderer = Renderer::new(Box::new(NormalMappingPipeline::new()));
     // let renderer = Renderer::new(Box::new(PathTracer::new()));
