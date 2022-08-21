@@ -675,7 +675,8 @@ fn main() -> io::Result<()> {
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {:?}", elapsed);
 
-    let renderer = Renderer::new(Box::new(UvMappingPipeline::new()));
+    let renderer = Renderer::new(Box::new(DepthMappingPipeline::new()));
+    // let renderer = Renderer::new(Box::new(UvMappingPipeline::new()));
     // let renderer = Renderer::new(Box::new(NormalMappingPipeline::new()));
     // let renderer = Renderer::new(Box::new(PathTracer::new()));
     let mut app = App::new(state, renderer, SCREEN_WIDTH, SCREEN_HEIGHT);

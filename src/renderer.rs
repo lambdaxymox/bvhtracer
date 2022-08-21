@@ -132,9 +132,22 @@ impl RenderingPipeline for DepthMappingPipeline {
                         (tile_height * y + v) as f32 / frame_buffer.height() as f32,
                     );
                     let radiance = self.path_trace(scene, &ray);
-                    let color = self.shade_pixel(&radiance);
-                    frame_buffer.data[(tile_width * x + u, tile_height * y + v)] = color;
+                    let pixel_address = (x * tile_width + u) + (y * tile_height + v) * frame_buffer.width();
+                    accumulation_buffer.data[pixel_address] = radiance;
                     rays_traced += 1;
+                }
+            }
+        }
+
+        for tile in 0..tile_count {
+            let x = tile % tile_count_x;
+            let y = tile / tile_count_y;
+            for v in 0..tile_height {
+                for u in 0..tile_width {
+                    let pixel_address = (x * tile_width + u) + (y * tile_height + v) * frame_buffer.width();
+                    let radiance = accumulation_buffer.data[pixel_address];
+                    let color = self.shade_pixel(&radiance);
+                    frame_buffer.data[(x * tile_width + u, y * tile_height + v)] = color;
                 }
             }
         }
@@ -189,9 +202,22 @@ impl RenderingPipeline for UvMappingPipeline {
                         (tile_height * y + v) as f32 / frame_buffer.height() as f32,
                     );
                     let radiance = self.path_trace(scene, &ray);
-                    let color = self.shade_pixel(&radiance);
-                    frame_buffer.data[(tile_width * x + u, tile_height * y + v)] = color;
+                    let pixel_address = (x * tile_width + u) + (y * tile_height + v) * frame_buffer.width();
+                    accumulation_buffer.data[pixel_address] = radiance;
                     rays_traced += 1;
+                }
+            }
+        }
+
+        for tile in 0..tile_count {
+            let x = tile % tile_count_x;
+            let y = tile / tile_count_y;
+            for v in 0..tile_height {
+                for u in 0..tile_width {
+                    let pixel_address = (x * tile_width + u) + (y * tile_height + v) * frame_buffer.width();
+                    let radiance = accumulation_buffer.data[pixel_address];
+                    let color = self.shade_pixel(&radiance);
+                    frame_buffer.data[(x * tile_width + u, y * tile_height + v)] = color;
                 }
             }
         }
@@ -259,10 +285,23 @@ impl RenderingPipeline for NormalMappingPipeline {
                         (tile_width * x + u) as f32 / frame_buffer.width() as f32,
                         (tile_height * y + v) as f32 / frame_buffer.height() as f32,
                     );
+                    let pixel_address = (x * tile_width + u) + (y * tile_height + v) * frame_buffer.width();
                     let radiance = self.path_trace(scene, &ray);
-                    let color = self.shade_pixel(&radiance);
-                    frame_buffer.data[(tile_width * x + u, tile_height * y + v)] = color;
+                    accumulation_buffer.data[pixel_address] = radiance;
                     rays_traced += 1;
+                }
+            }
+        }
+
+        for tile in 0..tile_count {
+            let x = tile % tile_count_x;
+            let y = tile / tile_count_y;
+            for v in 0..tile_height {
+                for u in 0..tile_width {
+                    let pixel_address = (x * tile_width + u) + (y * tile_height + v) * frame_buffer.width();
+                    let radiance = accumulation_buffer.data[pixel_address];
+                    let color = self.shade_pixel(&radiance);
+                    frame_buffer.data[(x * tile_width + u, y * tile_height + v)] = color;
                 }
             }
         }
