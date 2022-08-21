@@ -6,18 +6,38 @@ use crate::query::{
 };
 use cglinalg::{
     Magnitude,
+    SimdScalarFloat,
     Vector3,
 };
 use std::ops;
 
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct AccumulationBuffer<S> {
+    data: Vec<Vector3<S>>,
+}
+
+impl<S> AccumulationBuffer<S>
+where
+    S: SimdScalarFloat,
+{
+    pub fn new(width: usize, height: usize) -> Self {
+        Self::from_fill(width, height, Vector3::zero())
+    }
+
+    pub fn from_fill(width: usize, height: usize, value: Vector3<S>) -> Self {
+        Self {
+            data: vec![value; width * height],
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct FrameBuffer<P> 
 where
     P: Pixel,
 {
-    radiometric: Vec<Vector3<f32>>,
-    photometric: TextureBuffer2D<P, Vec<P::Subpixel>>,
+    data: TextureBuffer2D<P, Vec<P::Subpixel>>,
 }
 
 impl<P> FrameBuffer<P> 
@@ -25,42 +45,29 @@ where
     P: Pixel,
 {
     pub fn from_fill(width: usize, height: usize, value: P) -> Self {
-        let photometric = TextureBuffer2D::from_fill(width, height, value);
-        
         Self {
-            radiometric: vec![Vector3::zero(); width * height],
-            photometric: photometric,
+            data: TextureBuffer2D::from_fill(width, height, value),
         }
     }
 
     #[inline]
-    pub fn radiometric(&self) -> &[Vector3<f32>] {
-        &self.radiometric
-    }
-
-    #[inline]
-    pub fn radiometric_mut(&mut self) -> &mut [Vector3<f32>] {
-        &mut self.radiometric
-    }
-
-    #[inline]
     pub fn photometric(&self) -> &TextureBuffer2D<P, Vec<P::Subpixel>> {
-        &self.photometric
+        &self.data
     }
 
     #[inline]
     pub fn photometric_mut(&mut self) -> &mut TextureBuffer2D<P, Vec<P::Subpixel>> {
-        &mut self.photometric
+        &mut self.data
     }
 
     #[inline]
     pub fn width(&self) -> usize {
-        self.photometric.width()
+        self.data.width()
     }
 
     #[inline]
     pub fn height(&self) -> usize {
-        self.photometric.height()
+        self.data.height()
     }
 
     #[inline]
@@ -71,7 +78,7 @@ where
 
 
 pub trait RenderingPipeline {
-    fn render(&mut self, scene: &Scene, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize;
+    fn render(&mut self, scene: &Scene, accumulation_buffer: &mut AccumulationBuffer<f32>, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize;
 }
 
 pub struct DepthMappingPipeline {}
@@ -108,7 +115,7 @@ impl DepthMappingPipeline {
 }
 
 impl RenderingPipeline for DepthMappingPipeline {
-    fn render(&mut self, scene: &Scene, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
+    fn render(&mut self, scene: &Scene, accumulation_buffer: &mut AccumulationBuffer<f32>, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
         let mut rays_traced = 0;
         let tile_width = 8;
         let tile_height = 8;
@@ -126,7 +133,7 @@ impl RenderingPipeline for DepthMappingPipeline {
                     );
                     let radiance = self.path_trace(scene, &ray);
                     let color = self.shade_pixel(&radiance);
-                    frame_buffer.photometric_mut()[(tile_width * x + u, tile_height * y + v)] = color;
+                    frame_buffer.data[(tile_width * x + u, tile_height * y + v)] = color;
                     rays_traced += 1;
                 }
             }
@@ -165,7 +172,7 @@ impl UvMappingPipeline {
 }
 
 impl RenderingPipeline for UvMappingPipeline {
-    fn render(&mut self, scene: &Scene, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
+    fn render(&mut self, scene: &Scene, accumulation_buffer: &mut AccumulationBuffer<f32>, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
         let mut rays_traced = 0;
         let tile_width = 8;
         let tile_height = 8;
@@ -183,7 +190,7 @@ impl RenderingPipeline for UvMappingPipeline {
                     );
                     let radiance = self.path_trace(scene, &ray);
                     let color = self.shade_pixel(&radiance);
-                    frame_buffer.photometric_mut()[(tile_width * x + u, tile_height * y + v)] = color;
+                    frame_buffer.data[(tile_width * x + u, tile_height * y + v)] = color;
                     rays_traced += 1;
                 }
             }
@@ -236,7 +243,7 @@ impl NormalMappingPipeline {
 }
 
 impl RenderingPipeline for NormalMappingPipeline {
-    fn render(&mut self, scene: &Scene, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
+    fn render(&mut self, scene: &Scene, accumulation_buffer: &mut AccumulationBuffer<f32>, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
         let mut rays_traced = 0;
         let tile_width = 8;
         let tile_height = 8;
@@ -254,7 +261,7 @@ impl RenderingPipeline for NormalMappingPipeline {
                     );
                     let radiance = self.path_trace(scene, &ray);
                     let color = self.shade_pixel(&radiance);
-                    frame_buffer.photometric_mut()[(tile_width * x + u, tile_height * y + v)] = color;
+                    frame_buffer.data[(tile_width * x + u, tile_height * y + v)] = color;
                     rays_traced += 1;
                 }
             }
@@ -316,7 +323,7 @@ impl PathTracer {
 }
 
 impl RenderingPipeline for PathTracer {
-    fn render(&mut self, scene: &Scene, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
+    fn render(&mut self, scene: &Scene, accumulation_buffer: &mut AccumulationBuffer<f32>, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
         let mut rays_traced = 0;
         let tile_width = 8;
         let tile_height = 8;
@@ -334,7 +341,7 @@ impl RenderingPipeline for PathTracer {
                     );
                     let pixel_address = (x * tile_width + u) + (y * tile_height + v) * frame_buffer.width();
                     let radiance = self.path_trace(scene, &ray);
-                    frame_buffer.radiometric_mut()[pixel_address] = radiance;
+                    accumulation_buffer.data[pixel_address] = radiance;
                     rays_traced += 1;
                 }
             }
@@ -346,9 +353,9 @@ impl RenderingPipeline for PathTracer {
             for v in 0..tile_height {
                 for u in 0..tile_width {
                     let pixel_address = (x * tile_width + u) + (y * tile_height + v) * frame_buffer.width();
-                    let radiance = frame_buffer.radiometric()[pixel_address];
+                    let radiance = accumulation_buffer.data[pixel_address];
                     let color = self.shade_pixel(&radiance);
-                    frame_buffer.photometric_mut()[(x * tile_width + u, y * tile_height + v)] = color;
+                    frame_buffer.data[(x * tile_width + u, y * tile_height + v)] = color;
                 }
             }
         }
@@ -366,8 +373,8 @@ impl Renderer {
         Self { pipeline, }
     }
 
-    pub fn render(&mut self, scene: &Scene, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
-        self.pipeline.render(scene, frame_buffer)
+    pub fn render(&mut self, scene: &Scene, accumulation_buffer: &mut AccumulationBuffer<f32>, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
+        self.pipeline.render(scene, accumulation_buffer, frame_buffer)
     }
 }
 

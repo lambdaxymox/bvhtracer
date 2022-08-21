@@ -84,6 +84,7 @@ pub trait AppState {
 }
 
 struct App {
+    accumulation_buffer: AccumulationBuffer<f32>,
     frame_buffer: FrameBuffer<Rgba<u8>>,
     state: Box<dyn AppState>,
     renderer: Renderer,
@@ -91,13 +92,14 @@ struct App {
     
 impl App {
     fn new(state: Box<dyn AppState>, renderer: Renderer, width: usize, height: usize) -> Self {
+        let accumulation_buffer = AccumulationBuffer::new(width, height);
         let frame_buffer = FrameBuffer::from_fill(
             width, 
             height,
             Rgba::from([0, 0, 0, 255])
         );
     
-        Self { frame_buffer, state, renderer, }
+        Self { accumulation_buffer, frame_buffer, state, renderer, }
     }
 
     fn update(&mut self, elapsed: f64) {
@@ -105,7 +107,7 @@ impl App {
     }
 
     fn render(&mut self) -> usize {
-        self.renderer.render(self.state.active_scene(), &mut self.frame_buffer)
+        self.renderer.render(self.state.active_scene(), &mut self.accumulation_buffer, &mut self.frame_buffer)
     }
 }
 
