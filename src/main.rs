@@ -91,7 +91,7 @@ struct App {
     
 impl App {
     fn new(state: Box<dyn AppState>, renderer: Renderer, width: usize, height: usize) -> Self {
-        let frame_buffer = FrameBuffer::from_value(
+        let frame_buffer = FrameBuffer::from_fill(
             width, 
             height,
             Rgba::from([0, 0, 0, 255])
@@ -673,9 +673,9 @@ fn main() -> io::Result<()> {
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {:?}", elapsed);
 
-    // let renderer = Renderer::new(Box::new(UvMappingPipeline::new()));
+    let renderer = Renderer::new(Box::new(UvMappingPipeline::new()));
     // let renderer = Renderer::new(Box::new(NormalMappingPipeline::new()));
-    let renderer = Renderer::new(Box::new(PathTracer::new()));
+    // let renderer = Renderer::new(Box::new(PathTracer::new()));
     let mut app = App::new(state, renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     println!("Rendering scene.");
