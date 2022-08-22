@@ -84,7 +84,6 @@ pub trait PixelShader {
     fn evaluate(&self, accumulation_buffer: &mut AccumulationBuffer<f32>, radiance: &Vector3<f32>) -> Rgba<u8>;
 }
 
-
 pub struct IntersectionAccumulator {
     hit_value: Vector3<f32>,
     miss_value: Vector3<f32>,
