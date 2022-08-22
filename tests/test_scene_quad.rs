@@ -351,15 +351,6 @@ fn test_camera_plane_solid_angle() {
     assert_eq!(result, expected);
 }
 
-fn test_scene_intersection_outside_border() {
-    let scene = scene();
-    let test_case = test_case();
-}
-
-fn test_scene_intersection_inside_border() {
-    let scene = scene();
-    let test_case = test_case();
-}
 
 #[test]
 fn test_scene_intersection_entire_viewport() {
@@ -371,14 +362,17 @@ fn test_scene_intersection_entire_viewport() {
         for x in 0..width {
             let u = x as f32 / width as f32;
             let v = y as f32 / height as f32;
-            let ray = scene.active_camera().get_ray_eye(u, v);
+            let ray = scene.active_camera().get_ray_world(u, v);
             let u_in_solid_angle = u >= test_case.uv_top_left.x && u <= test_case.uv_top_right.x;
             let v_in_solid_angle = v >= test_case.uv_top_left.y && v <= test_case.uv_bottom_left.y;
             let uv_in_solid_angle = u_in_solid_angle && v_in_solid_angle;
             let expected = if uv_in_solid_angle { true } else { false };
             let result = scene.intersect(&ray);
-
-            assert_eq!(result.is_some(), expected, "u = {}; v = {}; result = {:?}", u, v, result);
+            assert_eq!(
+                result.is_some(), expected, 
+                "u = {}; v = {}; result = {:?}; u_in_solid_angle = {}; v_in_solid_angle = {}", 
+                u, v, result, u_in_solid_angle, v_in_solid_angle
+            );
         }
     }
 }
