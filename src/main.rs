@@ -84,6 +84,8 @@ pub trait AppState {
 }
 
 struct App {
+    pixel_shader: Box<dyn PixelShader>,
+    accumulator: Box<dyn Accumulator>,
     accumulation_buffer: AccumulationBuffer<f32>,
     frame_buffer: FrameBuffer<Rgba<u8>>,
     state: Box<dyn AppState>,
@@ -91,7 +93,7 @@ struct App {
 }
     
 impl App {
-    fn new(state: Box<dyn AppState>, renderer: Renderer, width: usize, height: usize) -> Self {
+    fn new(pixel_shader: Box<dyn PixelShader>, accumulator: Box<dyn Accumulator>, state: Box<dyn AppState>, renderer: Renderer, width: usize, height: usize) -> Self {
         let accumulation_buffer = AccumulationBuffer::new(width, height);
         let frame_buffer = FrameBuffer::from_fill(
             width, 
@@ -99,7 +101,7 @@ impl App {
             Rgba::from([0, 0, 0, 255])
         );
     
-        Self { accumulation_buffer, frame_buffer, state, renderer, }
+        Self { pixel_shader, accumulator, accumulation_buffer, frame_buffer, state, renderer, }
     }
 
     fn update(&mut self, elapsed: f64) {
@@ -107,7 +109,7 @@ impl App {
     }
 
     fn render(&mut self) -> usize {
-        self.renderer.render(self.state.active_scene(), &mut self.accumulation_buffer, &mut self.frame_buffer)
+        self.renderer.render(self.state.active_scene(), &mut *self.accumulator, &*self.pixel_shader, &mut self.accumulation_buffer, &mut self.frame_buffer)
     }
 }
 
@@ -674,16 +676,39 @@ fn main() -> io::Result<()> {
     let state = Box::new(AppStateTrippyTeapots::new());
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {:?}", elapsed);
-
+    /*
+    let accumulator = Box::new(IntersectionAccumulator::new(
+        Vector3::from_fill(1_f32), 
+        Vector3::zero()
+    ));
+    let pixel_shader = Box::new(IntersectionShader::new(
+        Rgba::new(255, 255, 255, 255), 
+        Rgba::new(0, 0, 0, 255),
+    ));
     let renderer = Renderer::new(Box::new(IntersectionMappingPipeline::new(
-        Rgba::new(0, 255, 0, 255),
-        Rgba::new(0, 0, 255, 255),
+        Rgba::new(255, 255, 255, 255),
+        Rgba::new(0, 0, 0, 255),
     )));
-    // let renderer = Renderer::new(Box::new(DepthMappingPipeline::new()));
-    // let renderer = Renderer::new(Box::new(UvMappingPipeline::new()));
-    // let renderer = Renderer::new(Box::new(NormalMappingPipeline::new()));
-    // let renderer = Renderer::new(Box::new(PathTracer::new()));
-    let mut app = App::new(state, renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
+    */
+    /*
+    let accumulator = Box::new(DepthAccumulator::new());
+    let pixel_shader = Box::new(DepthMappingShader::new(80_f32, 3_f32));
+    let renderer = Renderer::new(Box::new(DepthMappingPipeline::new()));
+    */
+    /*
+    let accumulator = Box::new(UvMappingAccumulator::new());
+    let pixel_shader = Box::new(UvMappingShader::new());
+    let renderer = Renderer::new(Box::new(UvMappingPipeline::new()));
+    */
+    /*
+    let accumulator = Box::new(NormalMappingAccumulator::new());
+    let pixel_shader = Box::new(NormalMappingShader::new());
+    let renderer = Renderer::new(Box::new(NormalMappingPipeline::new()));
+    */
+    let accumulator = Box::new(TextureMaterialAccumulator::new());
+    let pixel_shader = Box::new(TextureMaterialShader::new());
+    let renderer = Renderer::new(Box::new(PathTracer::new()));
+    let mut app = App::new(pixel_shader, accumulator, state, renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     println!("Rendering scene.");
     let now = SystemTime::now();
