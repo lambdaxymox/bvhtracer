@@ -80,6 +80,11 @@ pub trait Accumulator {
     fn evaluate(&mut self, scene: &Scene, ray: &Ray<f32>) -> Vector3<f32>;
 }
 
+pub trait PixelShader {
+    fn evaluate(&self, accumulation_buffer: &mut AccumulationBuffer<f32>, radiance: &Vector3<f32>) -> Rgba<u8>;
+}
+
+
 pub struct IntersectionAccumulator {
     hit_value: Vector3<f32>,
     miss_value: Vector3<f32>,
@@ -99,10 +104,6 @@ impl Accumulator for IntersectionAccumulator {
             self.miss_value
         }
     }
-}
-
-pub trait PixelShader {
-    fn evaluate(&self, accumulation_buffer: &mut AccumulationBuffer<f32>, radiance: &Vector3<f32>) -> Rgba<u8>;
 }
 
 pub struct IntersectionShader {
@@ -126,8 +127,8 @@ impl PixelShader for IntersectionShader {
     }
 }
 
-pub trait RenderingPipeline {
-    fn render(&mut self, scene: &Scene, accumulator: &mut dyn Accumulator, pixel_shader: &dyn PixelShader, accumulation_buffer: &mut AccumulationBuffer<f32>, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize;
+pub trait Integrator {
+    fn evaluate(&mut self, scene: &Scene, accumulator: &mut dyn Accumulator, pixel_shader: &dyn PixelShader, accumulation_buffer: &mut AccumulationBuffer<f32>, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize;
 }
 
 pub struct DepthAccumulator {}
@@ -346,8 +347,8 @@ impl PathTracer {
     }
 }
 
-impl RenderingPipeline for PathTracer {
-    fn render(&mut self, scene: &Scene, accumulator: &mut dyn Accumulator, pixel_shader: &dyn PixelShader, accumulation_buffer: &mut AccumulationBuffer<f32>, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
+impl Integrator for PathTracer {
+    fn evaluate(&mut self, scene: &Scene, accumulator: &mut dyn Accumulator, pixel_shader: &dyn PixelShader, accumulation_buffer: &mut AccumulationBuffer<f32>, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
         let mut rays_traced = 0;
         let tile_width = 8;
         let tile_height = 8;
@@ -390,16 +391,16 @@ impl RenderingPipeline for PathTracer {
 
 
 pub struct Renderer {
-    pipeline: Box<dyn RenderingPipeline>,
+    integrator: Box<dyn Integrator>,
 }
 
 impl Renderer {
-    pub fn new(pipeline: Box<dyn RenderingPipeline>) -> Self {
-        Self { pipeline, }
+    pub fn new(pipeline: Box<dyn Integrator>) -> Self {
+        Self { integrator: pipeline, }
     }
 
     pub fn render(&mut self, scene: &Scene, accumulator: &mut dyn Accumulator, pixel_shader: &dyn PixelShader, accumulation_buffer: &mut AccumulationBuffer<f32>, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
-        self.pipeline.render(scene, accumulator, pixel_shader, accumulation_buffer, frame_buffer)
+        self.integrator.evaluate(scene, accumulator, pixel_shader, accumulation_buffer, frame_buffer)
     }
 }
 
