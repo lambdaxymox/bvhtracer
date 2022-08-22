@@ -130,6 +130,7 @@ pub trait RenderingPipeline {
     fn render(&mut self, scene: &Scene, accumulator: &mut dyn Accumulator, pixel_shader: &dyn PixelShader, accumulation_buffer: &mut AccumulationBuffer<f32>, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize;
 }
 
+/*
 pub struct IntersectionMappingPipeline {
     hit_value: Rgba<u8>,
     miss_value: Rgba<u8>,
@@ -182,6 +183,7 @@ impl RenderingPipeline for IntersectionMappingPipeline {
         rays_traced
     }
 }
+*/
 
 pub struct DepthAccumulator {}
 
@@ -231,6 +233,7 @@ impl PixelShader for DepthMappingShader {
     }
 }
 
+/*
 pub struct DepthMappingPipeline {}
 
 impl DepthMappingPipeline {
@@ -280,7 +283,7 @@ impl RenderingPipeline for DepthMappingPipeline {
         rays_traced
     }
 }
-
+*/
 
 pub struct UvMappingAccumulator {}
 
@@ -322,6 +325,7 @@ impl PixelShader for UvMappingShader {
     }
 }
 
+/*
 pub struct UvMappingPipeline {}
 
 impl UvMappingPipeline {
@@ -371,7 +375,7 @@ impl RenderingPipeline for UvMappingPipeline {
         rays_traced
     }
 }
-
+*/
 pub struct NormalMappingAccumulator {}
 
 impl NormalMappingAccumulator {
@@ -425,7 +429,7 @@ impl PixelShader for NormalMappingShader {
         Rgba::new(r, g, b, 255)
     }
 }
-
+/*
 pub struct NormalMappingPipeline {}
 
 impl NormalMappingPipeline {
@@ -475,7 +479,7 @@ impl RenderingPipeline for NormalMappingPipeline {
         rays_traced
     }
 }
-
+*/
 pub struct TextureMaterialAccumulator {}
 
 impl TextureMaterialAccumulator {
