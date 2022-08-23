@@ -43,6 +43,7 @@ use cglinalg::{
     Vector3,
     Radians,
     Degrees,
+    Unit,
 };
 use glfw::{
     Action, 
@@ -202,6 +203,82 @@ impl AppStateQuad {
 
 impl AppState for AppStateQuad {
     fn update(&mut self, _elapsed: f64) {
+    }
+
+    fn active_scene(&self) -> &Scene {
+        &self.active_scene
+    }
+
+    fn active_scene_mut(&mut self) -> &mut Scene {
+        &mut self.active_scene
+    }
+}
+
+
+struct AppStateCube {
+    active_scene: Scene,
+    axis: Unit<Vector3<f32>>,
+    angular_frequency: f64,
+}
+
+impl AppStateCube {
+    fn new() -> Self {
+        use cglinalg::Magnitude;
+        /*
+        let model_spec = PerspectiveFovSpec::new(
+            Degrees(90_f32), 
+            1_f32, 
+            0.001_f32, 
+            100_f32, 
+        );
+        */
+        let model_spec = PerspectiveSpec::new(
+            -1_f32, 
+            1_f32, 
+            -1_f32, 
+            1_f32, 
+            1_f32, 
+            100_f32, 
+        );
+        let position = Vector3::new(0_f32, 4_f32, 0_f32);
+        let forward = (Vector3::zero() - position).normalize();
+        let attitude_spec = CameraAttitudeSpec::new(
+            position,
+            forward,
+            -Vector3::unit_x(),
+            Vector3::unit_z(),
+            -forward
+        );
+        let camera = Camera::new(&model_spec, &attitude_spec);
+        let mesh_reader = File::open("assets/cube.obj").unwrap();
+        let material_reader = File::open("assets/bricks_rgb.png").unwrap();
+        let model = SimpleModelDecoder::new(mesh_reader, material_reader)
+            .read_model()
+            .unwrap();
+        let scene_object = SceneObjectBuilder::new(model.clone())
+            .with_transform(&(
+                Matrix4x4::from_affine_translation(&Vector3::new(-1_f32, -1_f32, -1_f32)) * 
+                Matrix4x4::from_affine_scale(2_f32))
+            )
+            .build();
+        let active_scene = SceneBuilder::new(camera)
+            .with_object(scene_object)
+            .build();
+        let axis = Unit::from_value(Vector3::unit_z());
+        let angular_frequency = 1_f64;
+
+        Self { active_scene, axis, angular_frequency, }
+    }
+}
+
+impl AppState for AppStateCube {
+    fn update(&mut self, elapsed: f64) {
+        println!("elapsed = {}", elapsed);
+        let angle = Radians((self.angular_frequency * elapsed) as f32);
+        let rotation_matrix = Matrix4x4::from_affine_axis_angle(&self.axis, angle);
+        let old_transform = self.active_scene.get_unchecked(0).get_transform();
+        let new_transform = rotation_matrix * old_transform;
+        self.active_scene.get_mut_unchecked(0).set_transform(&new_transform);
     }
 
     fn active_scene(&self) -> &Scene {
@@ -673,10 +750,10 @@ fn main() -> io::Result<()> {
     use std::time::SystemTime;
     println!("Building scene.");
     let now = SystemTime::now();
-    let state = Box::new(AppStateTrippyTeapots::new());
+    let state = Box::new(AppStateCube::new());
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {:?}", elapsed);
-    
+    /*
     let accumulator = Box::new(IntersectionAccumulator::new(
         Vector3::from_fill(1_f32), 
         Vector3::zero()
@@ -686,7 +763,7 @@ fn main() -> io::Result<()> {
         Rgba::new(0, 0, 0, 255),
     ));
     let renderer = Renderer::new(Box::new(PathTracer::new()));
-    
+    */
     /*
     let accumulator = Box::new(DepthAccumulator::new());
     let pixel_shader = Box::new(DepthMappingShader::new(80_f32, 3_f32));
@@ -697,11 +774,11 @@ fn main() -> io::Result<()> {
     let pixel_shader = Box::new(UvMappingShader::new());
     let renderer = Renderer::new(Box::new(PathTracer::new()));
     */
-    /*
+    
     let accumulator = Box::new(NormalMappingAccumulator::new());
     let pixel_shader = Box::new(NormalMappingShader::new());
     let renderer = Renderer::new(Box::new(PathTracer::new()));
-    */
+    
     /*
     let accumulator = Box::new(TextureMaterialAccumulator::new());
     let pixel_shader = Box::new(TextureMaterialShader::new());
@@ -836,10 +913,14 @@ fn main() -> io::Result<()> {
     };
 
     let tex = send_to_gpu_texture(&app.frame_buffer.photometric(), gl::REPEAT).unwrap();
-    // Loop until the user closes the window
+    // The time elapsed since the last call to glfwGetTime().
+    let mut time_elapsed = 0_f64;
+    let mut current_time = 0_f64;
     while !window.should_close() {
         let (width, height) = window.get_framebuffer_size();
-        let time_elapsed = glfw.get_time();
+        let new_time = glfw.get_time();
+        time_elapsed = new_time - current_time;
+        current_time = new_time;
         
         // let (scale_x, scale_y) = window.get_content_scale();
         // gui_scale_mat = Matrix4x4::from_affine_nonuniform_scale(scale_x, scale_y, 1_f32);

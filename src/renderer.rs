@@ -233,16 +233,18 @@ impl Accumulator for NormalMappingAccumulator {
         if let Some(intersection) = scene.intersect(ray) {
             let primitive_index = intersection.instance_primitive.primitive_index();
             let instance_index = intersection.instance_primitive.instance_index();
-            let primitive_normals = { 
+            let normals = { 
                 let model = scene.get_unchecked(instance_index as usize).model().model();
                 let borrow = model.borrow();
                 let normals = borrow.mesh().normals();
                 normals[primitive_index as usize]
             };
             let normal = {
-                let _normal_model_space = primitive_normals[1] * intersection.interaction.u +
-                    primitive_normals[2] * intersection.interaction.v +
-                    primitive_normals[0] * (1_f32 - (intersection.interaction.u + intersection.interaction.v));
+                let _normal_model_space = {
+                    let u = intersection.interaction.u;
+                    let v = intersection.interaction.v;
+                    normals[0] * (1_f32 - u - v) + normals[1] * u + normals[2] * v
+                };
                 let object = scene.get_unchecked(instance_index as usize);
                 let _normal_world_space = (object.get_transform() * _normal_model_space.extend(0_f32)).contract();
                 let normalized = (_normal_world_space).normalize();
@@ -297,15 +299,17 @@ impl Accumulator for TextureMaterialAccumulator {
         if let Some(intersection) = scene.intersect(ray) {
             let primitive_index = intersection.instance_primitive.primitive_index();
             let instance_index = intersection.instance_primitive.instance_index();
-            let primitive_tex_coords = { 
+            let tex_coords = { 
                 let model = scene.get_unchecked(instance_index as usize).model().model();
                 let borrow = model.borrow();
                 let tex_coords = borrow.mesh().tex_coords();
                 tex_coords[primitive_index as usize]
             };
-            let uv_coords = primitive_tex_coords[1] * intersection.interaction.u +
-                primitive_tex_coords[2] * intersection.interaction.v +
-                primitive_tex_coords[0] * (1_f32 - (intersection.interaction.u + intersection.interaction.v));
+            let uv_coords = {
+                let u = intersection.interaction.u;
+                let v = intersection.interaction.v;
+                tex_coords[0] * (1_f32 - u - v) + tex_coords[1] * u + tex_coords[2] * v
+            };
             let texel = {
                 let model = scene.get_unchecked(instance_index as usize).model().model();
                 let borrow = model.borrow();

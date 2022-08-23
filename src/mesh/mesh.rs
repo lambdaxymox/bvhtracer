@@ -124,6 +124,7 @@ where
     }
 
     pub fn primitives(&self) -> &[Triangle<S>] {
+        debug_assert_eq!(self.vertices.len() % 3, 0);
         unsafe {
             let p = self.vertices.as_ptr() as *const Triangle<S>;
             let len = self.vertices.len() / 3;
@@ -133,6 +134,7 @@ where
     }
 
     pub fn primitives_mut(&mut self) -> &mut [Triangle<S>] {
+        debug_assert_eq!(self.vertices.len() % 3, 0);
         unsafe {
             let p = self.vertices.as_ptr() as *mut Triangle<S>;
             let len = self.vertices.len() / 3;
@@ -142,6 +144,7 @@ where
     }
 
     pub fn tex_coords(&self) -> &[TextureCoordinates<S, 3>] {
+        debug_assert_eq!(self.tex_coords.len() % 3, 0);
         unsafe {
             let p = self.tex_coords.as_ptr() as *const TextureCoordinates<S, 3>;
             let len = self.tex_coords.len() / 3;
@@ -151,6 +154,7 @@ where
     }
 
     pub fn normals(&self) -> &[Normals<S, 3>] {
+        debug_assert_eq!(self.normals.len() % 3, 0);
         unsafe {
             let p = self.normals.as_ptr() as *const Normals<S, 3>;
             let len = self.normals.len() / 3;
@@ -192,6 +196,9 @@ where
         self.normals.push(normals[0]);
         self.normals.push(normals[1]);
         self.normals.push(normals[2]);
+
+        debug_assert_eq!(self.vertices.len(), self.tex_coords.len());
+        debug_assert_eq!(self.vertices.len(), self.normals.len());
 
         self
     }
