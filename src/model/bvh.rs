@@ -248,10 +248,12 @@ impl Bvh {
         loop {
             if current_node.is_leaf() {
                 for (primitive_index, primitive) in self.primitive_iter(mesh, current_node) {
-                    if let Some(interaction) = primitive.intersect(&closest_ray) {
-                        closest_ray.t = interaction.t;
-                        closest_interaction = Some(interaction);
-                        closest_primitive_index = primitive_index;
+                    if let Some(interaction) = primitive.intersect(&ray) {
+                        if interaction.t < closest_ray.t {
+                            closest_ray.t = interaction.t;
+                            closest_interaction = Some(interaction);
+                            closest_primitive_index = primitive_index;
+                        }
                     }
                 }
 
