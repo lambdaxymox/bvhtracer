@@ -50,14 +50,12 @@ where
         }
     }
 
-    #[inline]
-    pub fn photometric(&self) -> &TextureBuffer2D<P, Vec<P::Subpixel>> {
-        &self.data
+    pub fn flip_vertical(&mut self) {
+        self.data.flip_vertical();
     }
 
-    #[inline]
-    pub fn photometric_mut(&mut self) -> &mut TextureBuffer2D<P, Vec<P::Subpixel>> {
-        &mut self.data
+    pub fn as_buffer(&self) -> &TextureBuffer2D<P, Vec<P::Subpixel>> {
+        &self.data
     }
 
     #[inline]

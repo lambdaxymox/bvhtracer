@@ -758,7 +758,7 @@ fn main() -> io::Result<()> {
     let elapsed = now.elapsed().unwrap();
     println!("Rendering time = {} s", elapsed.as_secs_f64());
 
-    app.frame_buffer_mut().photometric_mut().flip_vertical();
+    app.frame_buffer_mut().flip_vertical();
 
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 
@@ -878,7 +878,7 @@ fn main() -> io::Result<()> {
         vao
     };
 
-    let tex = send_to_gpu_texture(&app.frame_buffer().photometric(), gl::REPEAT).unwrap();
+    let tex = send_to_gpu_texture(&app.frame_buffer().as_buffer(), gl::REPEAT).unwrap();
     // The time elapsed since the last call to glfwGetTime().
     let mut time_elapsed = 0_f64;
     let mut current_time = 0_f64;
@@ -909,8 +909,8 @@ fn main() -> io::Result<()> {
         app.render();
         let elapsed = now.elapsed().unwrap();
         println!("Rendering time = {:?}", elapsed);
-        app.frame_buffer_mut().photometric_mut().flip_vertical();
-        update_to_gpu_texture(tex, &app.frame_buffer().photometric());
+        app.frame_buffer_mut().flip_vertical();
+        update_to_gpu_texture(tex, &app.frame_buffer().as_buffer());
        
         unsafe {
             let m_trans_location = gl::GetUniformLocation(shader_program, gl_str("m_trans").as_ptr());
