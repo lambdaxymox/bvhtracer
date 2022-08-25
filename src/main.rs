@@ -26,6 +26,7 @@ mod model;
 mod scene;
 mod camera;
 mod renderer;
+mod app;
 
 use crate::backend::*;
 use crate::camera::*;
@@ -36,6 +37,7 @@ use crate::mesh::*;
 use crate::model::*;
 use crate::scene::*;
 use crate::renderer::*;
+use crate::app::*;
 
 use cglinalg::{
     Matrix4x4,
@@ -76,43 +78,6 @@ const SCREEN_WIDTH: usize = 640;
 const SCREEN_HEIGHT: usize = 640;
 
 
-pub trait AppState {
-    fn update(&mut self, elapsed: f64);
-
-    fn active_scene(&self) -> &Scene;
-
-    fn active_scene_mut(&mut self) -> &mut Scene;
-}
-
-struct App {
-    pixel_shader: Box<dyn PixelShader>,
-    accumulator: Box<dyn Accumulator>,
-    accumulation_buffer: AccumulationBuffer<f32>,
-    frame_buffer: FrameBuffer<Rgba<u8>>,
-    state: Box<dyn AppState>,
-    renderer: Renderer,
-}
-    
-impl App {
-    fn new(pixel_shader: Box<dyn PixelShader>, accumulator: Box<dyn Accumulator>, state: Box<dyn AppState>, renderer: Renderer, width: usize, height: usize) -> Self {
-        let accumulation_buffer = AccumulationBuffer::new(width, height);
-        let frame_buffer = FrameBuffer::from_fill(
-            width, 
-            height,
-            Rgba::from([0, 0, 0, 255])
-        );
-    
-        Self { pixel_shader, accumulator, accumulation_buffer, frame_buffer, state, renderer, }
-    }
-
-    fn update(&mut self, elapsed: f64) {
-        self.state.update(elapsed);
-    }
-
-    fn render(&mut self) -> usize {
-        self.renderer.render(self.state.active_scene(), &mut *self.accumulator, &*self.pixel_shader, &mut self.accumulation_buffer, &mut self.frame_buffer)
-    }
-}
 
 struct AppStateQuad {
     active_scene: Scene,
