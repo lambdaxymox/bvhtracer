@@ -570,6 +570,7 @@ impl AppState for AppStateSixteenArmadillos {
     }
 }
 
+
 struct AppStateTrippyTeapots {
     active_scene: Scene,
     a: Vec<f32>,
@@ -636,7 +637,7 @@ impl AppState for AppStateTrippyTeapots {
         let mut i = 0;
         for x in 0..4 {
             for y in 0..4 {
-                let scale_mat = Matrix4x4::from_affine_scale(0.75);
+                let scale_mat = Matrix4x4::from_affine_scale(0.75_f32);
                 let trans_mat = Matrix4x4::from_affine_translation(
                     &Vector3::new((x as f32 - 1.5) * 2.5, 0_f32, (y as f32 - 1.5) * 2.5)
                 );
