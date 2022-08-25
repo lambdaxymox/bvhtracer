@@ -15,7 +15,6 @@ mod gl {
 }
 
 
-mod backend;
 mod geometry;
 mod materials;
 mod texture_buffer;
@@ -28,7 +27,6 @@ mod camera;
 mod renderer;
 mod app;
 
-use crate::backend::*;
 use crate::camera::*;
 use crate::geometry::*;
 use crate::texture_buffer::*;
