@@ -79,71 +79,6 @@ fn test_scene_intersection_lands1() {
     let ray = Ray::from_origin_dir(ray_origin, ray_direction);
 
     assert!(scene.intersect(&ray).is_some());
-    /*
-    let mesh = {
-        let model = scene.get_unchecked(0).model().model();
-        let borrow = model.borrow();
-        borrow.mesh().clone()
-    };
-    let transform = scene.get_unchecked(0).get_transform();
-    let transformed_mesh = mesh.primitives().iter().map(|tri| {
-            let vertex0 = (transform * tri.vertices[0].extend(1_f32)).contract();
-            let vertex1 = (transform * tri.vertices[1].extend(1_f32)).contract();
-            let vertex2 = (transform * tri.vertices[2].extend(1_f32)).contract();
-            Triangle::new(vertex0, vertex1, vertex2)
-        })
-        .collect::<Vec<_>>();
-    let transformed_normals = mesh.normals().iter().map(|normals| {
-            let normals0 = (transform * normals[0].extend(0_f32)).contract().normalize();
-            let normals1 = (transform * normals[1].extend(0_f32)).contract().normalize();
-            let normals2 = (transform * normals[2].extend(0_f32)).contract().normalize();
-            Normals::from([normals0, normals1, normals2])
-        })
-        .collect::<Vec<_>>();
-    eprintln!("transform = {:?}", transform);
-    for i in 0..transformed_mesh.len() {
-        eprintln!("mesh[{}] = {:?};\nnormals[{}] = {:?}", i, transformed_mesh[i], i, transformed_normals[i]);
-    }
-    unimplemented!()
-    */
-}
-
-#[test]
-fn test_scene_intersection_lands2() {
-    let scene = scene();
-    let ray_origin = Vector3::new(0_f32, 4_f32, 0_f32);
-    let target = Vector3::new(-0.5, 1.0, 0.5);
-    let ray_direction = (target - ray_origin).normalize();
-    let ray = Ray::from_origin_dir(ray_origin, ray_direction);
-
-    assert!(scene.intersect(&ray).is_some());
-    /*
-    let mesh = {
-        let model = scene.get_unchecked(0).model().model();
-        let borrow = model.borrow();
-        borrow.mesh().clone()
-    };
-    let transform = scene.get_unchecked(0).get_transform();
-    let transformed_mesh = mesh.primitives().iter().map(|tri| {
-            let vertex0 = (transform * tri.vertices[0].extend(1_f32)).contract();
-            let vertex1 = (transform * tri.vertices[1].extend(1_f32)).contract();
-            let vertex2 = (transform * tri.vertices[2].extend(1_f32)).contract();
-            Triangle::new(vertex0, vertex1, vertex2)
-        })
-        .collect::<Vec<_>>();
-    let transformed_normals = mesh.normals().iter().map(|normals| {
-            let normals0 = (transform * normals[0].extend(0_f32)).contract().normalize();
-            let normals1 = (transform * normals[1].extend(0_f32)).contract().normalize();
-            let normals2 = (transform * normals[2].extend(0_f32)).contract().normalize();
-            Normals::from([normals0, normals1, normals2])
-        })
-        .collect::<Vec<_>>();
-    eprintln!("transform = {:?}", transform);
-    for i in 0..transformed_mesh.len() {
-        eprintln!("mesh[{}] = {:?};\nnormals[{}] = {:?}", i, transformed_mesh[i], i, transformed_normals[i]);
-    }
-    unimplemented!()
-    */
 }
 
 #[test]
@@ -189,6 +124,50 @@ fn test_scene_intersection1_primitive_index() {
 }
 
 #[test]
+fn test_scene_intersection1_normal_world_space() {
+    let scene = scene();
+    let ray_origin = Vector3::new(0_f32, 4_f32, 0_f32);
+    let target = Vector3::new(0.5, 1.0, -0.5);
+    let ray_direction = (target - ray_origin).normalize();
+    let ray = Ray::from_origin_dir(ray_origin, ray_direction);
+    let intersection = scene.intersect(&ray).unwrap();
+    let expected = Normals::from([
+        Vector3::unit_y(),
+        Vector3::unit_y(),
+        Vector3::unit_y(),
+    ]);
+    let transform = scene.get_unchecked(0).get_transform();
+    let normals_model_space = {
+        let model = scene.get_unchecked(0).model().model();
+        let borrow = model.borrow();
+        let mesh = borrow.mesh();
+        let normals = mesh.normals();
+        normals[intersection.instance_primitive.primitive_index() as usize]
+    };
+    let normals_world_space = {
+        let normal0 = (transform * normals_model_space[0].extend(0_f32)).contract().normalize();
+        let normal1 = (transform * normals_model_space[1].extend(0_f32)).contract().normalize();
+        let normal2 = (transform * normals_model_space[2].extend(0_f32)).contract().normalize();
+        Normals::from([normal0, normal1, normal2])
+    };
+    let result = normals_world_space;
+
+    assert_eq!(result, expected);
+}
+
+
+#[test]
+fn test_scene_intersection_lands2() {
+    let scene = scene();
+    let ray_origin = Vector3::new(0_f32, 4_f32, 0_f32);
+    let target = Vector3::new(-0.5, 1.0, 0.5);
+    let ray_direction = (target - ray_origin).normalize();
+    let ray = Ray::from_origin_dir(ray_origin, ray_direction);
+
+    assert!(scene.intersect(&ray).is_some());
+}
+
+#[test]
 fn test_scene_intersection2() {
     let scene = scene();
     let ray_origin = Vector3::new(0_f32, 4_f32, 0_f32);
@@ -229,3 +208,36 @@ fn test_scene_intersection2_primitive_index() {
 
     assert_eq!(result, expected);
 }
+
+#[test]
+fn test_scene_intersection2_normal_world_space() {
+    let scene = scene();
+    let ray_origin = Vector3::new(0_f32, 4_f32, 0_f32);
+    let target = Vector3::new(-0.5, 1.0, 0.5);
+    let ray_direction = (target - ray_origin).normalize();
+    let ray = Ray::from_origin_dir(ray_origin, ray_direction);
+    let intersection = scene.intersect(&ray).unwrap();
+    let expected = Normals::from([
+        Vector3::unit_y(),
+        Vector3::unit_y(),
+        Vector3::unit_y(),
+    ]);
+    let transform = scene.get_unchecked(0).get_transform();
+    let normals_model_space = {
+        let model = scene.get_unchecked(0).model().model();
+        let borrow = model.borrow();
+        let mesh = borrow.mesh();
+        let normals = mesh.normals();
+        normals[intersection.instance_primitive.primitive_index() as usize]
+    };
+    let normals_world_space = {
+        let normal0 = (transform * normals_model_space[0].extend(0_f32)).contract().normalize();
+        let normal1 = (transform * normals_model_space[1].extend(0_f32)).contract().normalize();
+        let normal2 = (transform * normals_model_space[2].extend(0_f32)).contract().normalize();
+        Normals::from([normal0, normal1, normal2])
+    };
+    let result = normals_world_space;
+
+    assert_eq!(result, expected);
+}
+
