@@ -118,99 +118,6 @@ impl fmt::Display for GlRuntimeParameterSet {
     }
 }
 
-/// Print out the GL capabilities on a local machine. This is handy for debugging
-/// OpenGL program problems on other people's machines.
-fn gl_params() -> GlRuntimeParameterSet {
-    let max_combined_texture_image_units = unsafe {
-        let mut raw_value = 0;
-        gl::GetIntegerv(GlRuntimeParameter::MaxCombinedTextureImageUnits as u32, &mut raw_value);
-
-        format!("{}", raw_value)
-    };
-    let max_cube_map_texture_size = unsafe {
-        let mut raw_value = 0;
-        gl::GetIntegerv(GlRuntimeParameter::MaxCubeMapTextureSize as u32, &mut raw_value);
-        
-        format!("{}", raw_value)
-    };
-    let max_draw_buffers = unsafe {
-        let mut raw_value = 0;
-        gl::GetIntegerv(GlRuntimeParameter::MaxDrawBuffers as u32, &mut raw_value);
-      
-        format!("{}", raw_value)
-    };
-    let max_fragment_uniform_components = unsafe {
-        let mut raw_value = 0;
-        gl::GetIntegerv(GlRuntimeParameter::MaxFragmentUniformComponents as u32, &mut raw_value);
-      
-        format!("{}", raw_value)
-    };
-    let max_texture_image_units = unsafe {
-        let mut raw_value = 0;
-        gl::GetIntegerv(GlRuntimeParameter::MaxTextureImageUnits as u32, &mut raw_value);
-      
-        format!("{}", raw_value)
-    };
-    let max_texture_size = unsafe {
-        let mut raw_value = 0;
-        gl::GetIntegerv(GlRuntimeParameter::MaxTextureSize as u32, &mut raw_value);
-    
-        format!("{}", raw_value)
-    };
-    let max_varying_floats = unsafe {
-        let mut raw_value = 0;
-        gl::GetIntegerv(GlRuntimeParameter::MaxVaryingFloats as u32, &mut raw_value);
-      
-        format!("{}", raw_value)
-    };
-    let max_vertex_attributes = unsafe {
-        let mut raw_value = 0;
-        gl::GetIntegerv(GlRuntimeParameter::MaxVertexAttributes as u32, &mut raw_value);
-      
-        format!("{}", raw_value)
-    };
-    let max_vertex_texture_image_units = unsafe {
-        let mut raw_value = 0;
-        gl::GetIntegerv(GlRuntimeParameter::MaxVertexTextureImageUnits as u32, &mut raw_value);
-      
-        format!("{}", raw_value)
-    };
-    let max_vertex_uniform_components = unsafe {
-        let mut raw_value = 0;
-        gl::GetIntegerv(GlRuntimeParameter::MaxVertexUniformComponents as u32, &mut raw_value);
-    
-        format!("{}", raw_value)
-    };
-    let max_viewport_dimensions = unsafe {
-        let mut raw_value: [GLint; 2] = [0; 2];    
-        gl::GetIntegerv(GlRuntimeParameter::MaxViewportDimensions as u32, &mut raw_value[0]);
-
-        format!("(width: {}, height: {})", raw_value[0], raw_value[1])
-    };
-    let stereo = unsafe {
-        let mut raw_value = 0;
-        gl::GetBooleanv(GlRuntimeParameter::Stereo as u32, &mut raw_value);
-
-        format!("{}", raw_value)
-    };
-
-    let mut data = HashMap::new();
-    data.insert(GlRuntimeParameter::MaxCombinedTextureImageUnits, max_combined_texture_image_units);
-    data.insert(GlRuntimeParameter::MaxCubeMapTextureSize, max_cube_map_texture_size);
-    data.insert(GlRuntimeParameter::MaxDrawBuffers, max_draw_buffers);
-    data.insert(GlRuntimeParameter::MaxFragmentUniformComponents, max_fragment_uniform_components);
-    data.insert(GlRuntimeParameter::MaxTextureImageUnits, max_texture_image_units);
-    data.insert(GlRuntimeParameter::MaxTextureSize, max_texture_size);
-    data.insert(GlRuntimeParameter::MaxVaryingFloats, max_varying_floats);
-    data.insert(GlRuntimeParameter::MaxVertexAttributes, max_vertex_attributes);
-    data.insert(GlRuntimeParameter::MaxVertexTextureImageUnits, max_vertex_texture_image_units);
-    data.insert(GlRuntimeParameter::MaxVertexUniformComponents, max_vertex_uniform_components);
-    data.insert(GlRuntimeParameter::MaxViewportDimensions, max_viewport_dimensions);
-    data.insert(GlRuntimeParameter::Stereo, stereo);
-
-    GlRuntimeParameterSet { data, }
-}
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum GlslType {
     GlFloat           = gl::FLOAT as isize,
@@ -391,30 +298,123 @@ pub fn init_gl(width: u32, height: u32) -> Result<GlContext, String> {
     })
 }
 
-/// Updates the timers in a GL context. It returns the elapsed time since the last call to
-/// `update_timers`.
-#[inline]
-pub fn update_timers(context: &mut GlContext) -> f64 {
-    let current_seconds = context.glfw.get_time();
-    let elapsed_seconds = current_seconds - context.running_time_seconds;
-    context.running_time_seconds = current_seconds;
+impl GlContext {
+    /// Updates the timers in a GL context. It returns the elapsed time since the last call to
+    /// `update_timers`.
+    pub fn update_timers(&mut self) -> f64 {
+        let current_seconds = self.glfw.get_time();
+        let elapsed_seconds = current_seconds - self.running_time_seconds;
+        self.running_time_seconds = current_seconds;
 
-    elapsed_seconds
-}
-
-/// Update the framerate and display in the window titlebar.
-#[inline]
-pub fn update_fps_counter(context: &mut GlContext) {     
-    let current_time_seconds = context.glfw.get_time();
-    let elapsed_seconds = current_time_seconds - context.framerate_time_seconds;
-    if elapsed_seconds > 0.5 {
-        context.framerate_time_seconds = current_time_seconds;
-        let fps = context.frame_count as f64 / elapsed_seconds;
-        context.window.set_title(&format!("Googly Blocks @ {:.2}", fps));
-        context.frame_count = 0;
+        elapsed_seconds
     }
 
-    context.frame_count += 1;
+    /// Update the framerate and display in the window titlebar.
+    pub fn update_fps_counter(&mut self) {
+        let current_time_seconds = self.glfw.get_time();
+        let elapsed_seconds = current_time_seconds - self.framerate_time_seconds;
+        if elapsed_seconds > 0.5 {
+            self.framerate_time_seconds = current_time_seconds;
+            let fps = self.frame_count as f64 / elapsed_seconds;
+            self.window.set_title(&format!("OpenGL Window @ {:.2}", fps));
+            self.frame_count = 0;
+        }
+
+        self.frame_count += 1;
+    }
+
+    /// Print out the GL capabilities on a local machine. This is handy for debugging
+    /// OpenGL program problems on other people's machines.
+    pub fn gl_params(&self) -> GlRuntimeParameterSet {
+        let max_combined_texture_image_units = unsafe {
+            let mut raw_value = 0;
+            gl::GetIntegerv(GlRuntimeParameter::MaxCombinedTextureImageUnits as u32, &mut raw_value);
+
+            format!("{}", raw_value)
+        };
+        let max_cube_map_texture_size = unsafe {
+            let mut raw_value = 0;
+            gl::GetIntegerv(GlRuntimeParameter::MaxCubeMapTextureSize as u32, &mut raw_value);
+        
+            format!("{}", raw_value)
+        };
+        let max_draw_buffers = unsafe {
+            let mut raw_value = 0;
+            gl::GetIntegerv(GlRuntimeParameter::MaxDrawBuffers as u32, &mut raw_value);
+      
+            format!("{}", raw_value)
+        };
+        let max_fragment_uniform_components = unsafe {
+            let mut raw_value = 0;
+            gl::GetIntegerv(GlRuntimeParameter::MaxFragmentUniformComponents as u32, &mut raw_value);
+      
+            format!("{}", raw_value)
+        };
+        let max_texture_image_units = unsafe {
+            let mut raw_value = 0;
+            gl::GetIntegerv(GlRuntimeParameter::MaxTextureImageUnits as u32, &mut raw_value);
+      
+            format!("{}", raw_value)
+        };
+        let max_texture_size = unsafe {
+            let mut raw_value = 0;
+            gl::GetIntegerv(GlRuntimeParameter::MaxTextureSize as u32, &mut raw_value);
+    
+            format!("{}", raw_value)
+        };
+        let max_varying_floats = unsafe {
+            let mut raw_value = 0;
+            gl::GetIntegerv(GlRuntimeParameter::MaxVaryingFloats as u32, &mut raw_value);
+      
+            format!("{}", raw_value)
+        };
+        let max_vertex_attributes = unsafe {
+            let mut raw_value = 0;
+            gl::GetIntegerv(GlRuntimeParameter::MaxVertexAttributes as u32, &mut raw_value);
+      
+            format!("{}", raw_value)
+        };
+        let max_vertex_texture_image_units = unsafe {
+            let mut raw_value = 0;
+            gl::GetIntegerv(GlRuntimeParameter::MaxVertexTextureImageUnits as u32, &mut raw_value);
+      
+            format!("{}", raw_value)
+        };
+        let max_vertex_uniform_components = unsafe {
+            let mut raw_value = 0;
+            gl::GetIntegerv(GlRuntimeParameter::MaxVertexUniformComponents as u32, &mut raw_value);
+    
+            format!("{}", raw_value)
+        };
+        let max_viewport_dimensions = unsafe {
+            let mut raw_value: [GLint; 2] = [0; 2];    
+            gl::GetIntegerv(GlRuntimeParameter::MaxViewportDimensions as u32, &mut raw_value[0]);
+
+            format!("(width: {}, height: {})", raw_value[0], raw_value[1])
+        };
+        let stereo = unsafe {
+            let mut raw_value = 0;
+            gl::GetBooleanv(GlRuntimeParameter::Stereo as u32, &mut raw_value);
+
+            format!("{}", raw_value)
+        };
+
+        let mut data = HashMap::new();
+        data.insert(GlRuntimeParameter::MaxCombinedTextureImageUnits, max_combined_texture_image_units);
+        data.insert(GlRuntimeParameter::MaxCubeMapTextureSize, max_cube_map_texture_size);
+        data.insert(GlRuntimeParameter::MaxDrawBuffers, max_draw_buffers);
+        data.insert(GlRuntimeParameter::MaxFragmentUniformComponents, max_fragment_uniform_components);
+        data.insert(GlRuntimeParameter::MaxTextureImageUnits, max_texture_image_units);
+        data.insert(GlRuntimeParameter::MaxTextureSize, max_texture_size);
+        data.insert(GlRuntimeParameter::MaxVaryingFloats, max_varying_floats);
+        data.insert(GlRuntimeParameter::MaxVertexAttributes, max_vertex_attributes);
+        data.insert(GlRuntimeParameter::MaxVertexTextureImageUnits, max_vertex_texture_image_units);
+        data.insert(GlRuntimeParameter::MaxVertexUniformComponents, max_vertex_uniform_components);
+        data.insert(GlRuntimeParameter::MaxViewportDimensions, max_viewport_dimensions);
+        data.insert(GlRuntimeParameter::Stereo, stereo);
+
+        GlRuntimeParameterSet { data, }
+    }
 }
 
 #[derive(Clone, Debug)]

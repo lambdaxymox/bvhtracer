@@ -653,7 +653,7 @@ fn send_to_gpu_texture(buffer: &TextureBuffer2D<Rgba<u8>, Vec<u8>>, wrapping_mod
             0, 
             gl::RGBA as i32, 
             buffer.width() as i32, 
-            buffer.height() as i32, 
+            buffer.height() as i32,
             0,
             gl::RGBA, 
             gl::UNSIGNED_BYTE,
