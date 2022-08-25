@@ -219,25 +219,6 @@ impl Accumulator for UvMappingAccumulator {
     }
 }
 
-/*
-pub struct UvMappingShader {}
-
-impl UvMappingShader {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
-impl PixelShader for UvMappingShader {
-    fn evaluate(&self, accumulation_buffer: &mut AccumulationBuffer<f32>, radiance: &Vector3<f32>) -> Rgba<u8> {
-        let r = u8::min(255, (255_f32 * radiance.x) as u8);
-        let g = u8::min(255, (255_f32 * radiance.y) as u8);
-        let b = u8::min(255, (255_f32 * radiance.z) as u8);
-
-        Rgba::new(r, g, b, 255)
-    }
-}
-*/
 
 pub struct NormalMappingAccumulator {}
 
@@ -277,25 +258,6 @@ impl Accumulator for NormalMappingAccumulator {
     }
 }
 
-/*
-pub struct NormalMappingShader {}
-
-impl NormalMappingShader {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
-impl PixelShader for NormalMappingShader {
-    fn evaluate(&self, accumulation_buffer: &mut AccumulationBuffer<f32>, radiance: &Vector3<f32>) -> Rgba<u8> {
-        let r = u8::min(255, (255_f32 * radiance.x) as u8);
-        let g = u8::min(255, (255_f32 * radiance.y) as u8);
-        let b = u8::min(255, (255_f32 * radiance.z) as u8);
-
-        Rgba::new(r, g, b, 255)
-    }
-}
-*/
 
 pub struct TextureMaterialAccumulator {}
 
@@ -344,25 +306,6 @@ impl Accumulator for TextureMaterialAccumulator {
     }
 }
 
-/*
-pub struct TextureMaterialShader {}
-
-impl TextureMaterialShader {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
-impl PixelShader for TextureMaterialShader {
-    fn evaluate(&self, accumulation_buffer: &mut AccumulationBuffer<f32>, radiance: &Vector3<f32>) -> Rgba<u8> {
-        let r = u8::min(255, (255_f32 * radiance.x) as u8);
-        let g = u8::min(255, (255_f32 * radiance.y) as u8);
-        let b = u8::min(255, (255_f32 * radiance.z) as u8);
-
-        Rgba::new(r, g, b, 255)
-    }
-}
-*/
 
 pub struct PathTracer {}
 
