@@ -76,12 +76,34 @@ where
     }
 }
 
+pub trait Integrator {
+    fn evaluate(&mut self, scene: &Scene, accumulator: &mut dyn Accumulator, pixel_shader: &dyn PixelShader, accumulation_buffer: &mut AccumulationBuffer<f32>, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize;
+}
+
 pub trait Accumulator {
     fn evaluate(&mut self, scene: &Scene, ray: &Ray<f32>) -> Vector3<f32>;
 }
 
 pub trait PixelShader {
     fn evaluate(&self, accumulation_buffer: &mut AccumulationBuffer<f32>, radiance: &Vector3<f32>) -> Rgba<u8>;
+}
+
+pub struct RadianceToRgbShader {}
+
+impl RadianceToRgbShader {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl PixelShader for RadianceToRgbShader {
+    fn evaluate(&self, accumulation_buffer: &mut AccumulationBuffer<f32>, radiance: &Vector3<f32>) -> Rgba<u8> {
+        let r = u8::min(255, (255_f32 * radiance.x) as u8);
+        let g = u8::min(255, (255_f32 * radiance.y) as u8);
+        let b = u8::min(255, (255_f32 * radiance.z) as u8);
+
+        Rgba::new(r, g, b, 255)
+    }
 }
 
 pub struct IntersectionAccumulator {
@@ -124,10 +146,6 @@ impl PixelShader for IntersectionShader {
             self.miss_value
         }
     }
-}
-
-pub trait Integrator {
-    fn evaluate(&mut self, scene: &Scene, accumulator: &mut dyn Accumulator, pixel_shader: &dyn PixelShader, accumulation_buffer: &mut AccumulationBuffer<f32>, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize;
 }
 
 pub struct DepthAccumulator {}
@@ -201,6 +219,7 @@ impl Accumulator for UvMappingAccumulator {
     }
 }
 
+/*
 pub struct UvMappingShader {}
 
 impl UvMappingShader {
@@ -218,7 +237,7 @@ impl PixelShader for UvMappingShader {
         Rgba::new(r, g, b, 255)
     }
 }
-
+*/
 
 pub struct NormalMappingAccumulator {}
 
@@ -258,6 +277,7 @@ impl Accumulator for NormalMappingAccumulator {
     }
 }
 
+/*
 pub struct NormalMappingShader {}
 
 impl NormalMappingShader {
@@ -275,7 +295,7 @@ impl PixelShader for NormalMappingShader {
         Rgba::new(r, g, b, 255)
     }
 }
-
+*/
 
 pub struct TextureMaterialAccumulator {}
 
@@ -324,6 +344,7 @@ impl Accumulator for TextureMaterialAccumulator {
     }
 }
 
+/*
 pub struct TextureMaterialShader {}
 
 impl TextureMaterialShader {
@@ -341,6 +362,7 @@ impl PixelShader for TextureMaterialShader {
         Rgba::new(r, g, b, 255)
     }
 }
+*/
 
 pub struct PathTracer {}
 

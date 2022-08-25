@@ -750,7 +750,7 @@ fn main() -> io::Result<()> {
     use std::time::SystemTime;
     println!("Building scene.");
     let now = SystemTime::now();
-    let state = Box::new(AppStateCube::new());
+    let state = Box::new(AppStateTrippyTeapots::new());
     let elapsed = now.elapsed().unwrap();
     println!("Scene building time = {:?}", elapsed);
     /*
@@ -771,17 +771,17 @@ fn main() -> io::Result<()> {
     */
     /*
     let accumulator = Box::new(UvMappingAccumulator::new());
-    let pixel_shader = Box::new(UvMappingShader::new());
+    let pixel_shader = Box::new(RadianceToRgbShader::new());
     let renderer = Renderer::new(Box::new(PathTracer::new()));
     */
-    
+
     let accumulator = Box::new(NormalMappingAccumulator::new());
-    let pixel_shader = Box::new(NormalMappingShader::new());
+    let pixel_shader = Box::new(RadianceToRgbShader::new());
     let renderer = Renderer::new(Box::new(PathTracer::new()));
-    
+
     /*
     let accumulator = Box::new(TextureMaterialAccumulator::new());
-    let pixel_shader = Box::new(TextureMaterialShader::new());
+    let pixel_shader = Box::new(RadianceToRgbShader::new());
     let renderer = Renderer::new(Box::new(PathTracer::new()));
     */
     let mut app = App::new(pixel_shader, accumulator, state, renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
