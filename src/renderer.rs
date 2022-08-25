@@ -76,8 +76,36 @@ where
     }
 }
 
+pub struct RendererState {
+    pixel_shader: Box<dyn PixelShader>,
+    accumulator: Box<dyn Accumulator>,
+    accumulation_buffer: AccumulationBuffer<f32>,
+    frame_buffer: FrameBuffer<Rgba<u8>>,
+}
+
+impl RendererState {
+    pub fn new(accumulator: Box<dyn Accumulator>, pixel_shader: Box<dyn PixelShader>, width: usize, height: usize) -> Self {
+        let accumulation_buffer = AccumulationBuffer::new(width, height);
+        let frame_buffer = FrameBuffer::from_fill(
+            width, 
+            height,
+            Rgba::from([0, 0, 0, 255])
+        );
+
+        Self { pixel_shader, accumulator, accumulation_buffer, frame_buffer, }
+    }
+
+    pub fn frame_buffer(&self) -> &FrameBuffer<Rgba<u8>> {
+        &self.frame_buffer
+    }
+
+    pub fn frame_buffer_mut(&mut self) -> &mut FrameBuffer<Rgba<u8>> {
+        &mut self.frame_buffer
+    }
+}
+
 pub trait Integrator {
-    fn evaluate(&mut self, scene: &Scene, accumulator: &mut dyn Accumulator, pixel_shader: &dyn PixelShader, accumulation_buffer: &mut AccumulationBuffer<f32>, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize;
+    fn evaluate(&mut self, renderer_state: &mut RendererState, scene: &Scene) -> usize;
 }
 
 pub trait Accumulator {
@@ -316,7 +344,7 @@ impl PathTracer {
 }
 
 impl Integrator for PathTracer {
-    fn evaluate(&mut self, scene: &Scene, accumulator: &mut dyn Accumulator, pixel_shader: &dyn PixelShader, accumulation_buffer: &mut AccumulationBuffer<f32>, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
+    fn evaluate(&mut self, renderer_state: &mut RendererState, scene: &Scene) -> usize {
         let mut rays_traced = 0;
         let tile_width = 8;
         let tile_height = 8;
@@ -329,12 +357,12 @@ impl Integrator for PathTracer {
             for v in 0..tile_height {
                 for u in 0..tile_width {
                     let ray = scene.active_camera().get_ray_world(
-                        (tile_width * x + u) as f32 / frame_buffer.width() as f32,
-                        (tile_height * y + v) as f32 / frame_buffer.height() as f32,
+                        (tile_width * x + u) as f32 / renderer_state.frame_buffer.width() as f32,
+                        (tile_height * y + v) as f32 / renderer_state.frame_buffer.height() as f32,
                     );
-                    let pixel_address = (x * tile_width + u) + (y * tile_height + v) * frame_buffer.width();
-                    let radiance = accumulator.evaluate(scene, &ray);
-                    accumulation_buffer.data[pixel_address] = radiance;
+                    let pixel_address = (x * tile_width + u) + (y * tile_height + v) * renderer_state.frame_buffer.width();
+                    let radiance = renderer_state.accumulator.evaluate(scene, &ray);
+                    renderer_state.accumulation_buffer.data[pixel_address] = radiance;
                     rays_traced += 1;
                 }
             }
@@ -345,10 +373,10 @@ impl Integrator for PathTracer {
             let y = tile / tile_count_y;
             for v in 0..tile_height {
                 for u in 0..tile_width {
-                    let pixel_address = (x * tile_width + u) + (y * tile_height + v) * frame_buffer.width();
-                    let radiance = accumulation_buffer.data[pixel_address];
-                    let color = pixel_shader.evaluate(accumulation_buffer, &radiance);
-                    frame_buffer.data[(x * tile_width + u, y * tile_height + v)] = color;
+                    let pixel_address = (x * tile_width + u) + (y * tile_height + v) * renderer_state.frame_buffer.width();
+                    let radiance = renderer_state.accumulation_buffer.data[pixel_address];
+                    let color = renderer_state.pixel_shader.evaluate(&mut renderer_state.accumulation_buffer, &radiance);
+                    renderer_state.frame_buffer.data[(x * tile_width + u, y * tile_height + v)] = color;
                 }
             }
         }
@@ -367,8 +395,8 @@ impl Renderer {
         Self { integrator: pipeline, }
     }
 
-    pub fn render(&mut self, scene: &Scene, accumulator: &mut dyn Accumulator, pixel_shader: &dyn PixelShader, accumulation_buffer: &mut AccumulationBuffer<f32>, frame_buffer: &mut FrameBuffer<Rgba<u8>>) -> usize {
-        self.integrator.evaluate(scene, accumulator, pixel_shader, accumulation_buffer, frame_buffer)
+    pub fn render(&mut self, renderer_state: &mut RendererState, scene: &Scene) -> usize {
+        self.integrator.evaluate(renderer_state, scene)
     }
 }
 
