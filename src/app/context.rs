@@ -184,6 +184,65 @@ impl GlslType {
     }
 }
 
+#[derive(Clone, Debug)]
+pub enum ShaderCompilationError {
+    ShaderNotFound(String),
+    CouldNotParseShader(String),
+    CouldNotCompileShader(String),
+    CouldNotLinkShader,
+    ShaderValidationFailed,
+}
+
+impl fmt::Display for ShaderCompilationError {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            ShaderCompilationError::ShaderNotFound(ref file_name) => {
+                write!(formatter, "Could not open the shader file for reading: {}", file_name)
+            }
+            ShaderCompilationError::CouldNotParseShader(ref file_name) => {
+                write!(formatter, "The shader file exists, but there was an error in reading it: {}", file_name)
+            }
+            ShaderCompilationError::CouldNotCompileShader(ref file_name) => {
+                write!(formatter, "The shader could not be compiled: {}", file_name)
+            }
+            ShaderCompilationError::CouldNotLinkShader => {
+                write!(formatter, "The shader program could not be linked.")
+            }
+            ShaderCompilationError::ShaderValidationFailed => {
+                write!(formatter, "Shader validation failed.")
+            }
+        }
+    }
+}
+
+/// A record containing all the relevant compilation log information for a
+/// given GLSL shader compiled at run time.
+pub struct ShaderLog {
+    index: GLuint,
+    log: String,
+}
+
+impl fmt::Display for ShaderLog {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "Shader info log for GL index {}:", self.index).unwrap();
+        writeln!(f, "{}", self.log)
+    }
+}
+
+/// A record containing all the relevant compilation log information for a
+/// given GLSL shader program compiled at run time.
+pub struct ProgramLog {
+    index: GLuint,
+    log: String,
+}
+
+impl fmt::Display for ProgramLog {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "Program info log for GL index {}:", self.index).unwrap();
+        writeln!(f, "{}", self.log)
+    }
+}
+
 /// A record for storing all the OpenGL state needed on the application side
 /// of the graphics application in order to manage OpenGL and GLFW.
 pub struct GlContext {
@@ -415,236 +474,199 @@ impl GlContext {
 
         GlRuntimeParameterSet { data, }
     }
-}
 
-#[derive(Clone, Debug)]
-pub enum ShaderCompilationError {
-    ShaderNotFound(String),
-    CouldNotParseShader(String),
-    CouldNotCompileShader(String),
-    CouldNotLinkShader,
-    ShaderValidationFailed,
-}
+    /// Load a shader source file.
+    pub fn parse_shader_source<P: AsRef<Path>, R: Read>(&self,
+        reader: &mut R, file_name: P, shader_str: &mut [u8]) -> Result<usize, ShaderCompilationError> {
 
-impl fmt::Display for ShaderCompilationError {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            ShaderCompilationError::ShaderNotFound(ref file_name) => {
-                write!(formatter, "Could not open the shader file for reading: {}", file_name)
+        shader_str[0] = 0;
+        let bytes_read = match reader.read(shader_str) {
+            Ok(val) => val,
+            Err(_) => {
+                let disp = file_name.as_ref().display().to_string();
+                return Err(ShaderCompilationError::CouldNotParseShader(disp));
             }
-            ShaderCompilationError::CouldNotParseShader(ref file_name) => {
-                write!(formatter, "The shader file exists, but there was an error in reading it: {}", file_name)
-            }
-            ShaderCompilationError::CouldNotCompileShader(ref file_name) => {
-                write!(formatter, "The shader could not be compiled: {}", file_name)
-            }
-            ShaderCompilationError::CouldNotLinkShader => {
-                write!(formatter, "The shader program could not be linked.")
-            }
-            ShaderCompilationError::ShaderValidationFailed => {
-                write!(formatter, "Shader validation failed.")
-            }
+        };
+
+        // Append \0 character to end of the shader string to mark the end of a C string.
+        shader_str[bytes_read] = 0;
+
+        Ok(bytes_read)
+    }
+
+    /// Query the shader information log generated during shader compilation from
+    /// OpenGL.
+    pub fn get_shader_fragment_log(&self, shader_index: GLuint) -> ShaderLog {
+        let mut actual_length = 0;
+        unsafe {
+            gl::GetShaderiv(shader_index, gl::INFO_LOG_LENGTH, &mut actual_length);
         }
-    }
-}
-
-/// Load a shader source file.
-pub fn parse_shader<P: AsRef<Path>, R: Read>(
-    reader: &mut R, file_name: P, shader_str: &mut [u8]) -> Result<usize, ShaderCompilationError> {
-
-    shader_str[0] = 0;
-    let bytes_read = match reader.read(shader_str) {
-        Ok(val) => val,
-        Err(_) => {
-            let disp = file_name.as_ref().display().to_string();
-            return Err(ShaderCompilationError::CouldNotParseShader(disp));
+        let mut raw_log = vec![0_i8; actual_length as usize];
+        unsafe {
+            gl::GetShaderInfoLog(shader_index, raw_log.len() as i32, &mut actual_length, &mut raw_log[0]);
         }
-    };
-
-    // Append \0 character to end of the shader string to mark the end of a C string.
-    shader_str[bytes_read] = 0;
-
-    Ok(bytes_read)
-}
-
-/// A record containing all the relevant compilation log information for a
-/// given GLSL shader compiled at run time.
-pub struct ShaderLog {
-    index: GLuint,
-    log: String,
-}
-
-impl fmt::Display for ShaderLog {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "Shader info log for GL index {}:", self.index).unwrap();
-        writeln!(f, "{}", self.log)
-    }
-}
-
-/// Query the shader information log generated during shader compilation from
-/// OpenGL.
-pub fn shader_info_log(shader_index: GLuint) -> ShaderLog {
-    let mut actual_length = 0;
-    unsafe {
-        gl::GetShaderiv(shader_index, gl::INFO_LOG_LENGTH, &mut actual_length);
-    }
-    let mut raw_log = vec![0_i8; actual_length as usize];
-    unsafe {
-        gl::GetShaderInfoLog(shader_index, raw_log.len() as i32, &mut actual_length, &mut raw_log[0]);
-    }
     
-    let mut log = String::new();
-    for raw_log_i in raw_log.iter().take(actual_length as usize) {
-        log.push(*raw_log_i as u8 as char);
-    }
-
-    ShaderLog { index: shader_index, log }
-}
-
-/// Create a shader from source files.
-pub fn create_shader<P: AsRef<Path>, R: Read>(
-    _context: &GlContext,
-    reader: &mut R, file_name: P, kind: GLenum) -> Result<GLuint, ShaderCompilationError> {
-
-    let disp = file_name.as_ref().display();
-    // info!("Creating shader from {}.\n", disp);
-
-    let mut shader_string = vec![0; MAX_SHADER_LENGTH];
-
-    let bytes_read = match parse_shader(reader, &file_name, &mut shader_string) {
-        Ok(val) => val,
-        Err(e) => {
-            // error!("{}", e);
-            return Err(e);
+        let mut log = String::new();
+        for raw_log_i in raw_log.iter().take(actual_length as usize) {
+            log.push(*raw_log_i as u8 as char);
         }
-    };
 
-    if bytes_read >= (MAX_SHADER_LENGTH - 1) {
-        // info!(
-        //    "WARNING: The shader was truncated because the shader code 
-        //    was longer than MAX_SHADER_LENGTH {} bytes.", MAX_SHADER_LENGTH
-        //);
+        ShaderLog { index: shader_index, log }
     }
 
-    let shader = unsafe { gl::CreateShader(kind) };
-    let p = shader_string.as_ptr() as *const GLchar;
-    unsafe {
-        gl::ShaderSource(shader, 1, &p, ptr::null());
-        gl::CompileShader(shader);
-    }
+    /// Create a shader from source files.
+    pub fn compile_shader_fragment<P: AsRef<Path>, R: Read>(
+        &self,
+        reader: &mut R, file_name: P, kind: GLenum) -> Result<GLuint, ShaderCompilationError> {
 
-    // Check for shader compile errors.
-    let mut params = -1;
-    unsafe {
-        gl::GetShaderiv(shader, gl::COMPILE_STATUS, &mut params);
-    }
+        let disp = file_name.as_ref().display();
+        // info!("Creating shader from {}.\n", disp);
 
-    if params != gl::TRUE as i32 {
-        let log = shader_info_log(shader);
-        // error!("ERROR: GL shader index {} did not compile\n{}", shader, log);
-        return Err(
-            ShaderCompilationError::CouldNotCompileShader(format!("{}", disp))
-        );
-    }
-    // info!("Shader compiled with index {}.\n", shader);
+        let mut shader_string = vec![0; MAX_SHADER_LENGTH];
+
+        let bytes_read = match self.parse_shader_source(reader, &file_name, &mut shader_string) {
+            Ok(val) => val,
+            Err(e) => {
+                // error!("{}", e);
+                return Err(e);
+            }
+        };
+
+        if bytes_read >= (MAX_SHADER_LENGTH - 1) {
+            // info!(
+            //    "WARNING: The shader was truncated because the shader code 
+            //    was longer than MAX_SHADER_LENGTH {} bytes.", MAX_SHADER_LENGTH
+            //);
+        }
+
+        let shader = unsafe { gl::CreateShader(kind) };
+        let p = shader_string.as_ptr() as *const GLchar;
+        unsafe {
+            gl::ShaderSource(shader, 1, &p, ptr::null());
+            gl::CompileShader(shader);
+        }
+
+        // Check for shader compile errors.
+        let mut params = -1;
+        unsafe {
+            gl::GetShaderiv(shader, gl::COMPILE_STATUS, &mut params);
+        }
+
+        if params != gl::TRUE as i32 {
+            let log = self.get_shader_fragment_log(shader);
+            // error!("ERROR: GL shader index {} did not compile\n{}", shader, log);
+            return Err(
+                ShaderCompilationError::CouldNotCompileShader(format!("{}", disp))
+            );
+        }
+        // info!("Shader compiled with index {}.\n", shader);
     
-    Ok(shader)
-}
-
-
-/// A record containing all the relevant compilation log information for a
-/// given GLSL shader program compiled at run time.
-pub struct ProgramLog {
-    index: GLuint,
-    log: String,
-}
-
-impl fmt::Display for ProgramLog {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "Program info log for GL index {}:", self.index).unwrap();
-        writeln!(f, "{}", self.log)
-    }
-}
-
-/// Query the shader program information log generated during shader compilation
-/// from OpenGL.
-pub fn program_info_log(program_index: GLuint) -> ProgramLog {
-    let mut actual_length = 0;
-    unsafe {
-        gl::GetProgramiv(program_index, gl::INFO_LOG_LENGTH, &mut actual_length);
-    }
-    let mut raw_log = vec![0_i8; actual_length as usize];
-    unsafe {
-        gl::GetProgramInfoLog(program_index, raw_log.len() as i32, &mut actual_length, &mut raw_log[0]);
+        Ok(shader)
     }
 
-    let mut log = String::new();
-    for raw_log_i in raw_log.iter().take(actual_length as usize) {
-        log.push(*raw_log_i as u8 as char);
+    /// Query the shader program information log generated during shader compilation
+    /// from OpenGL.
+    pub fn get_shader_log(&self, program_index: GLuint) -> ProgramLog {
+        let mut actual_length = 0;
+        unsafe {
+            gl::GetProgramiv(program_index, gl::INFO_LOG_LENGTH, &mut actual_length);
+        }
+        let mut raw_log = vec![0_i8; actual_length as usize];
+        unsafe {
+            gl::GetProgramInfoLog(program_index, raw_log.len() as i32, &mut actual_length, &mut raw_log[0]);
+        }
+
+        let mut log = String::new();
+        for raw_log_i in raw_log.iter().take(actual_length as usize) {
+            log.push(*raw_log_i as u8 as char);
+        }
+
+        ProgramLog { index: program_index, log }
     }
 
-    ProgramLog { index: program_index, log }
-}
+    /// Validate that the shader program `sp` can execute with the current OpenGL program state.
+    /// Use this for information purposes in application development. Return `true` if the program and
+    /// OpenGL state contain no errors.
+    pub fn validate_shader_program(&self, sp: GLuint) -> bool {
+        let mut params = -1;
+        unsafe {
+            gl::ValidateProgram(sp);
+            gl::GetProgramiv(sp, gl::VALIDATE_STATUS, &mut params);
+        }
 
-/// Validate that the shader program `sp` can execute with the current OpenGL program state.
-/// Use this for information purposes in application development. Return `true` if the program and
-/// OpenGL state contain no errors.
-pub fn validate_shader_program(sp: GLuint) -> bool {
-    let mut params = -1;
-    unsafe {
-        gl::ValidateProgram(sp);
-        gl::GetProgramiv(sp, gl::VALIDATE_STATUS, &mut params);
-    }
-
-    if params != gl::TRUE as i32 {
-        // error!("Program {} GL_VALIDATE_STATUS = GL_FALSE\n", sp);
-        // error!("{}", program_info_log(sp));
+        if params != gl::TRUE as i32 {
+            // error!("Program {} GL_VALIDATE_STATUS = GL_FALSE\n", sp);
+            // error!("{}", program_info_log(sp));
         
-        return false;
-    }
+            return false;
+        }
 
-    // info!("Program {} GL_VALIDATE_STATUS = {}\n", sp, params);
+        // info!("Program {} GL_VALIDATE_STATUS = {}\n", sp, params);
     
-    true
+        true
+    }
+
+    /// Compile and link a shader program.
+    pub fn link_shader_program(
+        &self,
+        vertex_shader: GLuint, fragment_shader: GLuint) -> Result<GLuint, ShaderCompilationError> {
+
+        let program = unsafe { gl::CreateProgram() };
+        // info!("Created program {}. Attaching shaders {} and {}.\n",
+        //     program, vertex_shader, fragment_shader
+        // );
+
+        unsafe {
+            gl::AttachShader(program, vertex_shader);
+            gl::AttachShader(program, fragment_shader);
+
+            // Link the shader program. If binding input attributes, do that before linking.
+            gl::LinkProgram(program);
+        }
+
+        let mut params = -1;
+        unsafe {
+            gl::GetProgramiv(program, gl::LINK_STATUS, &mut params);
+        }
+        if params != gl::TRUE as i32 {
+            // error!("ERROR: could not link shader program GL index {}\n", program);
+            // error!("{}", program_info_log(program));
+            return Err(ShaderCompilationError::CouldNotLinkShader);
+        }
+
+        unsafe {
+            // Delete shaders here to free memory.
+            gl::DeleteShader(vertex_shader);
+            gl::DeleteShader(fragment_shader);
+        }
+
+        Ok(program)
+    }
+
+    /// Compile and link a shader program directly from any readable sources.
+    pub fn compile_shader<R1: Read, P1: AsRef<Path>, R2: Read, P2: AsRef<Path>>(
+        &self,
+        vert_reader: &mut R1, vert_file_name: P1,
+        frag_reader: &mut R2, frag_file_name: P2) -> Result<GLuint, ShaderCompilationError> {
+
+        let vertex_shader = self.compile_shader_fragment(
+            vert_reader, 
+            vert_file_name, 
+            gl::VERTEX_SHADER
+        )?;
+        let fragment_shader = self.compile_shader_fragment(
+            frag_reader, 
+            frag_file_name, 
+            gl::FRAGMENT_SHADER
+        )?;
+        let program = self.link_shader_program(vertex_shader, fragment_shader)?;
+
+        Ok(program)
+    }
 }
 
-/// Compile and link a shader program.
-pub fn create_program(
-    _context: &GlContext,
-    vertex_shader: GLuint, fragment_shader: GLuint) -> Result<GLuint, ShaderCompilationError> {
 
-    let program = unsafe { gl::CreateProgram() };
-    // info!("Created program {}. Attaching shaders {} and {}.\n",
-    //     program, vertex_shader, fragment_shader
-    // );
-
-    unsafe {
-        gl::AttachShader(program, vertex_shader);
-        gl::AttachShader(program, fragment_shader);
-
-        // Link the shader program. If binding input attributes, do that before linking.
-        gl::LinkProgram(program);
-    }
-
-    let mut params = -1;
-    unsafe {
-        gl::GetProgramiv(program, gl::LINK_STATUS, &mut params);
-    }
-    if params != gl::TRUE as i32 {
-        // error!("ERROR: could not link shader program GL index {}\n", program);
-        // error!("{}", program_info_log(program));
-        return Err(ShaderCompilationError::CouldNotLinkShader);
-    }
-
-    unsafe {
-        // Delete shaders here to free memory.
-        gl::DeleteShader(vertex_shader);
-        gl::DeleteShader(fragment_shader);
-    }
-
-    Ok(program)
-}
-
+/*
 /// Compile and link a shader program directly from the files.
 pub fn create_program_from_files<P: AsRef<Path>, Q: AsRef<Path>>(
     context: &GlContext,
@@ -675,21 +697,6 @@ pub fn create_program_from_files<P: AsRef<Path>, Q: AsRef<Path>>(
 
     Ok(program)
 }
+*/
 
-/// Compile and link a shader program directly from any readable sources.
-pub fn create_program_from_reader<R1: Read, P1: AsRef<Path>, R2: Read, P2: AsRef<Path>>(
-    context: &GlContext,
-    vert_reader: &mut R1, vert_file_name: P1,
-    frag_reader: &mut R2, frag_file_name: P2) -> Result<GLuint, ShaderCompilationError> {
-
-    let vertex_shader = create_shader(
-        context, vert_reader, vert_file_name, gl::VERTEX_SHADER
-    )?;
-    let fragment_shader = create_shader(
-        context, frag_reader, frag_file_name, gl::FRAGMENT_SHADER
-    )?;
-    let program = create_program(context, vertex_shader, fragment_shader)?;
-
-    Ok(program)
-}
 
