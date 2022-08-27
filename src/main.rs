@@ -638,8 +638,42 @@ impl AppState for AppStateTrippyTeapots {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum GlWrappingMode {
+    GlClampToEdge       = gl::CLAMP_TO_EDGE as isize,
+    GlClampToBorder     = gl::CLAMP_TO_BORDER as isize,
+    GlMirroredRepeat    = gl::MIRRORED_REPEAT as isize,
+    GlRepeat            = gl::REPEAT as isize,
+    // GlMirrorClampToEdge = gl::MIRRORED_CLAMP_TO_EDGE as isize,
+}
+
+impl GlWrappingMode {
+    pub const fn as_isize(self) -> isize {
+        self as isize
+    }
+
+    pub const fn as_i32(self) -> i32 {
+        self as i32
+    }
+}
+use std::fmt;
+impl fmt::Display for GlWrappingMode {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        let st = match *self {
+            GlClampToEdge       => "GL_CLAMP_TO_EDGE",
+            GlClampToBorder     => "GL_CLAMP_TO_BORDER",
+            GlMirroredRepeat    => "GL_MIRRORED_REPEAT",
+            GlRepeat            => "GL_REPEAT",
+            // GlMirrorClampToEdge => "GL_MIRRORED_CLAMP_TO_EDGE",
+        };
+
+        write!(formatter, "{}", st)
+    }
+}
+
+
 /// Load texture image into the GPU.
-fn send_to_gpu_texture(buffer: &TextureBuffer2D<Rgba<u8>, Vec<u8>>, wrapping_mode: GLuint) -> Result<GLuint, String> {
+fn send_to_gpu_texture(buffer: &TextureBuffer2D<Rgba<u8>, Vec<u8>>, wrapping_mode: GlWrappingMode) -> Result<GLuint, String> {
     let mut tex = 0;
     unsafe {
         gl::GenTextures(1, &mut tex);
@@ -660,8 +694,8 @@ fn send_to_gpu_texture(buffer: &TextureBuffer2D<Rgba<u8>, Vec<u8>>, wrapping_mod
             buffer.as_ptr() as *const c_void
         );
         gl::GenerateMipmap(gl::TEXTURE_2D);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, wrapping_mode as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, wrapping_mode as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, wrapping_mode.as_i32());
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, wrapping_mode.as_i32());
         gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
         gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_LINEAR as i32);
     }
@@ -876,7 +910,7 @@ fn main() -> io::Result<()> {
         vao
     };
 
-    let tex = send_to_gpu_texture(&app.frame_buffer().as_buffer(), gl::REPEAT).unwrap();
+    let tex = send_to_gpu_texture(&app.frame_buffer().as_buffer(), GlWrappingMode::GlRepeat).unwrap();
     // The time elapsed since the last call to glfwGetTime().
     let mut time_elapsed = 0_f64;
     let mut current_time = 0_f64;
