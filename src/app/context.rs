@@ -467,6 +467,14 @@ impl GlContext {
         self.height
     }
 
+    pub fn viewport_dimensions(&self) -> (u32, u32) {
+        (self.width, self.height)
+    }
+
+    pub fn get_framebuffer_size(&self) -> (i32, i32) {
+        self.window.get_framebuffer_size()
+    }
+
     pub fn channel_depth(&self) -> u32 {
         self.channel_depth
     }
@@ -481,6 +489,10 @@ impl GlContext {
 
     pub fn frame_count(&self) -> u32 {
         self.frame_count
+    }
+
+    pub fn swap_buffers(&mut self) {
+        self.window.swap_buffers();
     }
 
     /// Returns the current value of the OpenGL context timer, in units of seconds.
@@ -876,6 +888,10 @@ impl GlContext {
         unsafe {
             gl::GenerateMipmap(gl::TEXTURE_2D);
         }
+    }
+
+    pub fn poll_events(&mut self) {
+        self.glfw.poll_events();
     }
 }
 

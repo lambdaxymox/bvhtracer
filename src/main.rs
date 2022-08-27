@@ -793,7 +793,7 @@ fn main() -> io::Result<()> {
     // The time elapsed since the last call to glfwGetTime().
     let mut current_time = 0_f64;
     while !context.window_should_close() {
-        let (width, height) = context.window.get_framebuffer_size();
+        let (width, height) = context.get_framebuffer_size();
         let new_time = context.get_time();
         let time_elapsed = new_time - current_time;
         current_time = new_time;
@@ -802,7 +802,7 @@ fn main() -> io::Result<()> {
         // gui_scale_mat = Matrix4x4::from_affine_nonuniform_scale(scale_x, scale_y, 1_f32);
 
         // Poll for and process events
-        context.glfw.poll_events();
+        context.poll_events();
         for (_, event) in glfw::flush_messages(&context.events) {
             match event {
                 glfw::WindowEvent::Key(Key::Escape, _, Action::Press, _) => {
@@ -831,7 +831,7 @@ fn main() -> io::Result<()> {
             gl::UniformMatrix4fv(m_trans_location, 1, gl::FALSE, trans_mat.as_ptr());
             gl::UniformMatrix4fv(m_gui_scale_location, 1, gl::FALSE, gui_scale_mat.as_ptr());
     
-            gl::Viewport(0, 0, width, height);
+            gl::Viewport(0, 0, width as i32, height as i32);
             gl::ClearBufferfv(gl::COLOR, 0, &[0.2_f32, 0.2_f32, 0.2_f32, 1.0_f32] as *const GLfloat);
             gl::UseProgram(shader_program);
             gl::ActiveTexture(gl::TEXTURE0);
@@ -841,7 +841,7 @@ fn main() -> io::Result<()> {
         }
 
         // Swap front and back buffers
-        context.window.swap_buffers();
+        context.swap_buffers();
     }
 
     Ok(())
