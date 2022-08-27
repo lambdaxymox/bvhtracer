@@ -664,6 +664,7 @@ impl GpuTextureBuffer2D for TextureBuffer2D<Rgba<u8>, Vec<u8>> {
     }
 }
 
+
 fn main() -> io::Result<()> {
     use std::time::SystemTime;
     println!("Building scene.");
@@ -726,10 +727,19 @@ fn main() -> io::Result<()> {
     let mut gui_scale_mat = Matrix4x4::identity();
 
     let shader_program = {
-        let vertex_shader_source = include_bytes!("../shaders/shaders.vert.glsl");
-        let fragment_shader_source = include_bytes!("../shaders/shaders.frag.glsl");
+        let vertex_shader_source = include_str!("../shaders/shaders.vert.glsl");
+        let fragment_shader_source = include_str!("../shaders/shaders.frag.glsl");
+        let shader_source = ShaderSource::new(
+            vertex_shader_source, 
+            "shaders.vert.glsl", 
+            fragment_shader_source, 
+            "shaders.frag.glsl"
+        );
+        /*
         let mut vertex_reader = io::Cursor::new(vertex_shader_source);
         let mut fragment_reader = io::Cursor::new(fragment_shader_source);
+        */
+        /*
         let _shader_program = context.compile_shader(
                 &mut vertex_reader, 
                 "shaders.vert.glsl", 
@@ -737,7 +747,8 @@ fn main() -> io::Result<()> {
                 "shaders.frag.glsl"
             )
             .unwrap();
-
+        */
+        let _shader_program = context.compile_shader(&shader_source).unwrap();
         _shader_program
     };
    

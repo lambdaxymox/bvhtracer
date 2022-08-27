@@ -25,6 +25,7 @@ use std::fs::{
 use std::io::{
     Read, 
     BufReader,
+    Cursor,
 };
 use std::collections::{
     HashMap,
@@ -311,6 +312,28 @@ pub trait GpuTextureBuffer2D {
     fn as_ptr(&self) -> *const u8;
 
     fn as_mut_ptr(&mut self) -> *mut u8;
+}
+
+#[derive(Clone, Debug)]
+pub struct ShaderSource<'a> {
+    vertex_shader_source: &'a str,
+    vertex_shader_name: &'a str,
+    fragment_shader_source: &'a str,
+    fragment_shader_name: &'a str,
+}
+
+impl<'a> ShaderSource<'a> {
+    pub fn new(
+        vertex_shader_source: &'a str, 
+        vertex_shader_name: &'a str, 
+        fragment_shader_source: &'a str, 
+        fragment_shader_name: &'a str,
+    ) -> Self 
+    {
+        Self { 
+            vertex_shader_source, vertex_shader_name, fragment_shader_source, fragment_shader_name, 
+        }
+    }
 }
 
 /// A record for storing all the OpenGL state needed on the application side
@@ -601,6 +624,48 @@ impl GlContext {
         ShaderLog { index: shader_index, log }
     }
 
+    /// Query the shader program information log generated during shader compilation
+    /// from OpenGL.
+    pub fn get_shader_log(&self, program_index: GLuint) -> ProgramLog {
+        let mut actual_length = 0;
+        unsafe {
+            gl::GetProgramiv(program_index, gl::INFO_LOG_LENGTH, &mut actual_length);
+        }
+        let mut raw_log = vec![0_i8; actual_length as usize];
+        unsafe {
+            gl::GetProgramInfoLog(program_index, raw_log.len() as i32, &mut actual_length, &mut raw_log[0]);
+        }
+
+        let mut log = String::new();
+        for raw_log_i in raw_log.iter().take(actual_length as usize) {
+            log.push(*raw_log_i as u8 as char);
+        }
+
+        ProgramLog { index: program_index, log }
+    }
+
+    /// Validate that the shader program `sp` can execute with the current OpenGL program state.
+    /// Use this for information purposes in application development. Return `true` if the program and
+    /// OpenGL state contain no errors.
+    pub fn validate_shader_program(&self, sp: GLuint) -> bool {
+        let mut params = -1;
+        unsafe {
+            gl::ValidateProgram(sp);
+            gl::GetProgramiv(sp, gl::VALIDATE_STATUS, &mut params);
+        }
+
+        if params != gl::TRUE as i32 {
+            // error!("Program {} GL_VALIDATE_STATUS = GL_FALSE\n", sp);
+            // error!("{}", program_info_log(sp));
+        
+            return false;
+        }
+
+        // info!("Program {} GL_VALIDATE_STATUS = {}\n", sp, params);
+    
+        true
+    }
+
     /// Create a shader from source files.
     pub fn compile_shader_fragment<P: AsRef<Path>, R: Read>(
         &self,
@@ -651,48 +716,6 @@ impl GlContext {
         Ok(shader)
     }
 
-    /// Query the shader program information log generated during shader compilation
-    /// from OpenGL.
-    pub fn get_shader_log(&self, program_index: GLuint) -> ProgramLog {
-        let mut actual_length = 0;
-        unsafe {
-            gl::GetProgramiv(program_index, gl::INFO_LOG_LENGTH, &mut actual_length);
-        }
-        let mut raw_log = vec![0_i8; actual_length as usize];
-        unsafe {
-            gl::GetProgramInfoLog(program_index, raw_log.len() as i32, &mut actual_length, &mut raw_log[0]);
-        }
-
-        let mut log = String::new();
-        for raw_log_i in raw_log.iter().take(actual_length as usize) {
-            log.push(*raw_log_i as u8 as char);
-        }
-
-        ProgramLog { index: program_index, log }
-    }
-
-    /// Validate that the shader program `sp` can execute with the current OpenGL program state.
-    /// Use this for information purposes in application development. Return `true` if the program and
-    /// OpenGL state contain no errors.
-    pub fn validate_shader_program(&self, sp: GLuint) -> bool {
-        let mut params = -1;
-        unsafe {
-            gl::ValidateProgram(sp);
-            gl::GetProgramiv(sp, gl::VALIDATE_STATUS, &mut params);
-        }
-
-        if params != gl::TRUE as i32 {
-            // error!("Program {} GL_VALIDATE_STATUS = GL_FALSE\n", sp);
-            // error!("{}", program_info_log(sp));
-        
-            return false;
-        }
-
-        // info!("Program {} GL_VALIDATE_STATUS = {}\n", sp, params);
-    
-        true
-    }
-
     /// Compile and link a shader program.
     pub fn link_shader_program(
         &self,
@@ -731,22 +754,25 @@ impl GlContext {
     }
 
     /// Compile and link a shader program directly from any readable sources.
-    pub fn compile_shader<R1: Read, P1: AsRef<Path>, R2: Read, P2: AsRef<Path>>(
-        &self,
+    pub fn compile_shader(&self, shader_source: &ShaderSource,
+        /*
         vertex_reader: &mut R1, 
         vertex_shader_name: P1,
         fragment_reader: &mut R2, 
         fragment_shader_name: P2
+        */
     ) -> Result<GLuint, ShaderCompilationError> 
     {
+        let mut vertex_reader = Cursor::new(shader_source.vertex_shader_source);
         let vertex_shader = self.compile_shader_fragment(
-            vertex_reader, 
-            vertex_shader_name, 
+            &mut vertex_reader,
+            shader_source.vertex_shader_name,
             gl::VERTEX_SHADER
         )?;
+        let mut fragment_reader = Cursor::new(shader_source.fragment_shader_source);
         let fragment_shader = self.compile_shader_fragment(
-            fragment_reader, 
-            fragment_shader_name, 
+            &mut fragment_reader, 
+            shader_source.fragment_shader_name,
             gl::FRAGMENT_SHADER
         )?;
         let program = self.link_shader_program(vertex_shader, fragment_shader)?;
