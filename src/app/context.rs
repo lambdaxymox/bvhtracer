@@ -430,6 +430,13 @@ pub fn init_gl(width: u32, height: u32) -> Result<GlContext, String> {
 }
 
 impl GlContext {
+    /// Returns the current value of the OpenGL context timer, in units of seconds.
+    /// 
+    /// The timer measures time elapsed since GLFW was initialized.
+    pub fn get_time(&self) -> f64 {
+        self.glfw.get_time()
+    }
+
     /// Updates the timers in a GL context. It returns the elapsed time since the last call to
     /// `update_timers`.
     pub fn update_timers(&mut self) -> f64 {

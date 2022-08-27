@@ -797,7 +797,7 @@ fn main() -> io::Result<()> {
     let mut current_time = 0_f64;
     while !context.window.should_close() {
         let (width, height) = context.window.get_framebuffer_size();
-        let new_time = context.glfw.get_time();
+        let new_time = context.get_time();
         let time_elapsed = new_time - current_time;
         current_time = new_time;
         
