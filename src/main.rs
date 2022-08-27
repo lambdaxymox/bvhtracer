@@ -712,6 +712,7 @@ fn main() -> io::Result<()> {
 
     app.frame_buffer_mut().flip_vertical();
 
+    /*
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 
     // We must place the window hints before creating the window because
@@ -742,7 +743,8 @@ fn main() -> io::Result<()> {
 
     // Load the OpenGl function pointers.
     gl::load_with(|symbol| { window.get_proc_address(symbol) as *const _ });
-
+    */
+    let mut context = init_gl(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32).unwrap();
     let vertices: Vec<[f32; 2]> = vec![
         [1.0, 1.0], [-1.0,  1.0], [-1.0, -1.0],
         [1.0, 1.0], [-1.0, -1.0], [ 1.0, -1.0], 
@@ -833,9 +835,9 @@ fn main() -> io::Result<()> {
     // The time elapsed since the last call to glfwGetTime().
     let mut time_elapsed = 0_f64;
     let mut current_time = 0_f64;
-    while !window.should_close() {
-        let (width, height) = window.get_framebuffer_size();
-        let new_time = glfw.get_time();
+    while !context.window.should_close() {
+        let (width, height) = context.window.get_framebuffer_size();
+        let new_time = context.glfw.get_time();
         time_elapsed = new_time - current_time;
         current_time = new_time;
         
@@ -843,11 +845,11 @@ fn main() -> io::Result<()> {
         // gui_scale_mat = Matrix4x4::from_affine_nonuniform_scale(scale_x, scale_y, 1_f32);
 
         // Poll for and process events
-        glfw.poll_events();
-        for (_, event) in glfw::flush_messages(&events) {
+        context.glfw.poll_events();
+        for (_, event) in glfw::flush_messages(&context.events) {
             match event {
                 glfw::WindowEvent::Key(Key::Escape, _, Action::Press, _) => {
-                    window.set_should_close(true)
+                    context.window.set_should_close(true)
                 },
                 _ => {},
             }
@@ -882,7 +884,7 @@ fn main() -> io::Result<()> {
         }
 
         // Swap front and back buffers
-        window.swap_buffers();
+        context.window.swap_buffers();
     }
 
     Ok(())
