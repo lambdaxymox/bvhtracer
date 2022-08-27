@@ -30,6 +30,7 @@ use std::io::{
 use std::collections::{
     HashMap,
 };
+use std::error;
 use std::sync::mpsc::Receiver;
 use std::ptr;
 use std::fmt;
@@ -320,6 +321,8 @@ impl fmt::Display for ShaderCompilationError {
     }
 }
 
+impl error::Error for ShaderCompilationError {}
+
 /// A record containing all the relevant compilation log information for a
 /// given GLSL shader compiled at run time.
 pub struct ShaderLog {
@@ -445,15 +448,39 @@ pub struct GlContext {
     pub glfw: glfw::Glfw,
     pub window: glfw::Window,
     pub events: Receiver<(f64, glfw::WindowEvent)>,
-    pub width: u32,
-    pub height: u32,
-    pub channel_depth: u32,
-    pub running_time_seconds: f64,
-    pub framerate_time_seconds: f64,
-    pub frame_count: u32,
+    width: u32,
+    height: u32,
+    channel_depth: u32,
+    running_time_seconds: f64,
+    framerate_time_seconds: f64,
+    frame_count: u32,
 }
 
 impl GlContext {
+    pub fn viewport_width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn viewport_height(&self) -> u32 {
+        self.height
+    }
+
+    pub fn channel_depth(&self) -> u32 {
+        self.channel_depth
+    }
+
+    pub fn running_time_seconds(&self) -> f64 {
+        self.running_time_seconds
+    }
+
+    pub fn framerate_time_seconds(&self) -> f64 {
+        self.framerate_time_seconds
+    }
+
+    pub fn frame_count(&self) -> u32 {
+        self.frame_count
+    }
+
     /// Returns the current value of the OpenGL context timer, in units of seconds.
     /// 
     /// The timer measures time elapsed since GLFW was initialized.
