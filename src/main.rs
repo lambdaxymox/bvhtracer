@@ -725,29 +725,7 @@ fn main() -> io::Result<()> {
     let trans_mat = Matrix4x4::identity();
     let mut gui_scale_mat = Matrix4x4::identity();
 
-    let shader_program = unsafe {
-        /*
-        let vertex_shader_source = include_bytes!("../shaders/shaders.vert.glsl");
-        let p = vertex_shader_source.as_ptr() as *const i8;
-        let length = vertex_shader_source.len() as i32;
-        let vertex_shader = gl::CreateShader(gl::VERTEX_SHADER);
-        gl::ShaderSource(vertex_shader, 1, &p, [length].as_ptr());
-        gl::CompileShader(vertex_shader);
-
-        let fragment_shader_source = include_bytes!("../shaders/shaders.frag.glsl");
-        let p = fragment_shader_source.as_ptr() as *const i8;
-        let length = fragment_shader_source.len() as i32;
-        let fragment_shader = gl::CreateShader(gl::FRAGMENT_SHADER);
-        gl::ShaderSource(fragment_shader, 1, &p, [length].as_ptr());
-        gl::CompileShader(fragment_shader);
-       
-        let shader_program = gl::CreateProgram();
-        gl::AttachShader(shader_program, vertex_shader);
-        gl::AttachShader(shader_program, fragment_shader);
-        gl::LinkProgram(shader_program);
-
-        shader_program
-        */
+    let shader_program = {
         let vertex_shader_source = include_bytes!("../shaders/shaders.vert.glsl");
         let fragment_shader_source = include_bytes!("../shaders/shaders.frag.glsl");
         let mut vertex_reader = io::Cursor::new(vertex_shader_source);
