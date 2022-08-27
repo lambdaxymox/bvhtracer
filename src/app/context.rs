@@ -667,7 +667,7 @@ impl GlContext {
     }
 
     /// Create a shader from source files.
-    pub fn compile_shader_fragment<P: AsRef<Path>, R: Read>(
+    fn compile_shader_fragment<P: AsRef<Path>, R: Read>(
         &self,
         reader: &mut R, file_name: P, kind: GLenum) -> Result<GLuint, ShaderCompilationError> {
 
@@ -717,7 +717,7 @@ impl GlContext {
     }
 
     /// Compile and link a shader program.
-    pub fn link_shader_program(
+    fn link_shader_program(
         &self,
         vertex_shader: GLuint, fragment_shader: GLuint) -> Result<GLuint, ShaderCompilationError> {
 
@@ -812,7 +812,6 @@ impl GlContext {
         };
         debug_assert_eq!(max_aniso_result, gl::NO_ERROR);
         unsafe {
-            // Set the maximum!
             gl::TexParameterf(gl::TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, max_aniso);
         }
 
