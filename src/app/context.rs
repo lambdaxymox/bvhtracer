@@ -737,7 +737,7 @@ impl GlContext {
     }
 
     /// Load texture image into the GPU.
-    pub fn send_to_gpu_texture<Buf>(buffer: &Buf, wrapping_mode: GlWrappingMode) -> Result<GLuint, String>
+    pub fn send_to_gpu_texture<Buf>(&self, buffer: &Buf, wrapping_mode: GlWrappingMode) -> Result<GLuint, String>
     where
         Buf: GpuTextureBuffer2D,
     {
@@ -783,7 +783,7 @@ impl GlContext {
         Ok(tex)
     }
 
-    pub fn update_to_gpu_texture<Buf>(tex: GLuint, buffer: &Buf) 
+    pub fn update_to_gpu_texture<Buf>(&self, tex: GLuint, buffer: &Buf) 
     where
         Buf: GpuTextureBuffer2D,
     {

@@ -792,14 +792,13 @@ fn main() -> io::Result<()> {
         vao
     };
 
-    let tex = GlContext::send_to_gpu_texture(app.frame_buffer().as_buffer(), GlWrappingMode::GlRepeat).unwrap();
+    let tex = context.send_to_gpu_texture(app.frame_buffer().as_buffer(), GlWrappingMode::GlRepeat).unwrap();
     // The time elapsed since the last call to glfwGetTime().
-    let mut time_elapsed = 0_f64;
     let mut current_time = 0_f64;
     while !context.window.should_close() {
         let (width, height) = context.window.get_framebuffer_size();
         let new_time = context.glfw.get_time();
-        time_elapsed = new_time - current_time;
+        let time_elapsed = new_time - current_time;
         current_time = new_time;
         
         // let (scale_x, scale_y) = window.get_content_scale();
@@ -824,7 +823,7 @@ fn main() -> io::Result<()> {
         let elapsed = now.elapsed().unwrap();
         println!("Rendering time = {:?}", elapsed);
         app.frame_buffer_mut().flip_vertical();
-        GlContext::update_to_gpu_texture(tex, app.frame_buffer().as_buffer());
+        context.update_to_gpu_texture(tex, app.frame_buffer().as_buffer());
        
         unsafe {
             let m_trans_location = gl::GetUniformLocation(shader_program, gl_str("m_trans").as_ptr());
