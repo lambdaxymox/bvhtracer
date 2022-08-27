@@ -638,75 +638,6 @@ impl AppState for AppStateTrippyTeapots {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum GlWrappingMode {
-    GlClampToEdge       = gl::CLAMP_TO_EDGE as isize,
-    GlClampToBorder     = gl::CLAMP_TO_BORDER as isize,
-    GlMirroredRepeat    = gl::MIRRORED_REPEAT as isize,
-    GlRepeat            = gl::REPEAT as isize,
-    // GlMirrorClampToEdge = gl::MIRRORED_CLAMP_TO_EDGE as isize,
-}
-
-impl GlWrappingMode {
-    pub const fn as_isize(self) -> isize {
-        self as isize
-    }
-
-    pub const fn as_i32(self) -> i32 {
-        self as i32
-    }
-}
-use std::fmt;
-impl fmt::Display for GlWrappingMode {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        let st = match *self {
-            GlClampToEdge       => "GL_CLAMP_TO_EDGE",
-            GlClampToBorder     => "GL_CLAMP_TO_BORDER",
-            GlMirroredRepeat    => "GL_MIRRORED_REPEAT",
-            GlRepeat            => "GL_REPEAT",
-            // GlMirrorClampToEdge => "GL_MIRRORED_CLAMP_TO_EDGE",
-        };
-
-        write!(formatter, "{}", st)
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum GpuTextureFormat {
-    Rgba8 = gl::RGBA as isize,
-    Rgb8 = gl::RGB as isize,
-}
-
-impl GpuTextureFormat {
-    pub const fn as_isize(self) -> isize {
-        self as isize
-    }
-
-    pub const fn as_u32(self) -> u32 {
-        self as u32
-    }
-
-    pub const fn as_i32(self) -> i32 {
-        self as i32
-    }
-}
-
-pub trait GpuTextureBuffer2D {
-    fn format(&self) -> GpuTextureFormat;
-
-    fn width(&self) -> usize;
-
-    fn height(&self) -> usize;
-
-    fn dimensions(&self) -> (usize, usize) {
-        (self.width(), self.height())
-    }
-
-    fn as_ptr(&self) -> *const u8;
-
-    fn as_mut_ptr(&mut self) -> *mut u8;
-}
-
 impl GpuTextureBuffer2D for TextureBuffer2D<Rgba<u8>, Vec<u8>> {
     fn format(&self) -> GpuTextureFormat { 
         GpuTextureFormat::Rgba8
@@ -732,84 +663,6 @@ impl GpuTextureBuffer2D for TextureBuffer2D<Rgba<u8>, Vec<u8>> {
         TextureBuffer2D::as_mut_ptr(self) as *mut u8
     }
 }
-
-/// Load texture image into the GPU.
-fn send_to_gpu_texture<Buf>(buffer: &Buf, wrapping_mode: GlWrappingMode) -> Result<GLuint, String>
-where
-    Buf: GpuTextureBuffer2D,
-{
-    let mut tex = 0;
-    unsafe {
-        gl::GenTextures(1, &mut tex);
-    }
-    debug_assert!(tex > 0);
-    unsafe {
-        gl::ActiveTexture(gl::TEXTURE0);
-        gl::BindTexture(gl::TEXTURE_2D, tex);
-        gl::TexImage2D(
-            gl::TEXTURE_2D, 
-            0, 
-            buffer.format().as_i32(),
-            buffer.width() as i32, 
-            buffer.height() as i32,
-            0,
-            buffer.format().as_u32(), 
-            gl::UNSIGNED_BYTE,
-            buffer.as_ptr() as *const c_void
-        );
-        gl::GenerateMipmap(gl::TEXTURE_2D);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, wrapping_mode.as_i32());
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, wrapping_mode.as_i32());
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_LINEAR as i32);
-    }
-
-    let mut max_aniso = 0.0;
-    unsafe {
-        gl::GetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &mut max_aniso);
-    }
-    let max_aniso_result = unsafe {
-        gl::GetError()
-    };
-    debug_assert_eq!(max_aniso_result, gl::NO_ERROR);
-    unsafe {
-        // Set the maximum!
-        gl::TexParameterf(gl::TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, max_aniso);
-    }
-
-    Ok(tex)
-}
-
-fn update_to_gpu_texture<Buf>(tex: GLuint, buffer: &Buf) 
-where
-    Buf: GpuTextureBuffer2D,
-{
-    // SAFETY: This function does not check whether the texture handle actually exists on the GPU yet.
-    // send_to_gpu_texture should be called first.
-    unsafe {
-        gl::BindTexture(gl::TEXTURE_2D, tex);
-        gl::TexSubImage2D(
-            gl::TEXTURE_2D, 
-            0, 
-            0, 
-            0, 
-            buffer.width() as i32, 
-            buffer.height() as i32,
-            buffer.format().as_u32(), 
-            gl::UNSIGNED_BYTE, 
-            buffer.as_ptr() as *const c_void
-        );
-        gl::BindTexture(gl::TEXTURE_2D, 0);
-    }
-    let err = unsafe {
-        gl::GetError()
-    };
-    debug_assert_eq!(err, gl::NO_ERROR);
-    unsafe {
-        gl::GenerateMipmap(gl::TEXTURE_2D);
-    }
-}
-
 
 fn main() -> io::Result<()> {
     use std::time::SystemTime;
@@ -976,7 +829,7 @@ fn main() -> io::Result<()> {
         vao
     };
 
-    let tex = send_to_gpu_texture(app.frame_buffer().as_buffer(), GlWrappingMode::GlRepeat).unwrap();
+    let tex = GlContext::send_to_gpu_texture(app.frame_buffer().as_buffer(), GlWrappingMode::GlRepeat).unwrap();
     // The time elapsed since the last call to glfwGetTime().
     let mut time_elapsed = 0_f64;
     let mut current_time = 0_f64;
@@ -1008,7 +861,7 @@ fn main() -> io::Result<()> {
         let elapsed = now.elapsed().unwrap();
         println!("Rendering time = {:?}", elapsed);
         app.frame_buffer_mut().flip_vertical();
-        update_to_gpu_texture(tex, app.frame_buffer().as_buffer());
+        GlContext::update_to_gpu_texture(tex, app.frame_buffer().as_buffer());
        
         unsafe {
             let m_trans_location = gl::GetUniformLocation(shader_program, gl_str("m_trans").as_ptr());
