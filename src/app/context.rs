@@ -754,15 +754,7 @@ impl GlContext {
     }
 
     /// Compile and link a shader program directly from any readable sources.
-    pub fn compile_shader(&self, shader_source: &ShaderSource,
-        /*
-        vertex_reader: &mut R1, 
-        vertex_shader_name: P1,
-        fragment_reader: &mut R2, 
-        fragment_shader_name: P2
-        */
-    ) -> Result<GLuint, ShaderCompilationError> 
-    {
+    pub fn compile_shader(&self, shader_source: &ShaderSource) -> Result<GLuint, ShaderCompilationError> {
         let mut vertex_reader = Cursor::new(shader_source.vertex_shader_source);
         let vertex_shader = self.compile_shader_fragment(
             &mut vertex_reader,

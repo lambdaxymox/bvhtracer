@@ -735,21 +735,7 @@ fn main() -> io::Result<()> {
             fragment_shader_source, 
             "shaders.frag.glsl"
         );
-        /*
-        let mut vertex_reader = io::Cursor::new(vertex_shader_source);
-        let mut fragment_reader = io::Cursor::new(fragment_shader_source);
-        */
-        /*
-        let _shader_program = context.compile_shader(
-                &mut vertex_reader, 
-                "shaders.vert.glsl", 
-                &mut fragment_reader,
-                "shaders.frag.glsl"
-            )
-            .unwrap();
-        */
-        let _shader_program = context.compile_shader(&shader_source).unwrap();
-        _shader_program
+        context.compile_shader(&shader_source).unwrap()
     };
    
     let vao = unsafe {
