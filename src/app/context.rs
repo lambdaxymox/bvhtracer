@@ -461,6 +461,14 @@ impl GlContext {
         self.frame_count += 1;
     }
 
+    pub fn window_should_close(&self) -> bool {
+        self.window.should_close()
+    }
+
+    pub fn set_window_should_close(&mut self, value: bool) {
+        self.window.set_should_close(value);
+    }
+
     /// Print out the GL capabilities on a local machine. This is handy for debugging
     /// OpenGL program problems on other people's machines.
     pub fn gpu_capabilities(&self) -> GlRuntimeParameterSet {

@@ -787,7 +787,7 @@ fn main() -> io::Result<()> {
         gl::EnableVertexAttribArray(v_pos_location);
         gl::EnableVertexAttribArray(v_tex_location);
 
-        // debug_assert!(validate_shader_program(shader_program));
+        debug_assert!(context.validate_shader_program(shader_program));
 
         vao
     };
@@ -795,7 +795,7 @@ fn main() -> io::Result<()> {
     let tex = context.send_to_gpu_texture(app.frame_buffer().as_buffer(), GlWrappingMode::GlRepeat).unwrap();
     // The time elapsed since the last call to glfwGetTime().
     let mut current_time = 0_f64;
-    while !context.window.should_close() {
+    while !context.window_should_close() {
         let (width, height) = context.window.get_framebuffer_size();
         let new_time = context.get_time();
         let time_elapsed = new_time - current_time;
@@ -809,7 +809,7 @@ fn main() -> io::Result<()> {
         for (_, event) in glfw::flush_messages(&context.events) {
             match event {
                 glfw::WindowEvent::Key(Key::Escape, _, Action::Press, _) => {
-                    context.window.set_should_close(true)
+                    context.window.set_should_close(true);
                 },
                 _ => {},
             }
