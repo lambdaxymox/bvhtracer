@@ -59,6 +59,109 @@ pub fn gl_str(st: &str) -> CString {
     CString::new(st).unwrap()
 }
 
+#[cfg(target_os = "macos")]
+fn __init_glfw() -> Glfw {
+    // Start a GL context and OS window using the GLFW helper library.
+    let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
+
+    // We must place the window hints before creating the window because
+    // glfw cannot change the properties of a window after it has been created.
+    glfw.window_hint(glfw::WindowHint::Resizable(false));
+    glfw.window_hint(glfw::WindowHint::Samples(Some(4)));
+    glfw.window_hint(glfw::WindowHint::ContextVersionMajor(3));
+    glfw.window_hint(glfw::WindowHint::ContextVersionMinor(3));
+    glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
+    glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
+    glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
+
+    glfw
+}
+
+#[cfg(target_os = "windows")]
+fn __init_glfw() -> Glfw {
+    // Start a GL context and OS window using the GLFW helper library.
+    let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
+
+    // We must place the window hints before creating the window because
+    // glfw cannot change the properties of a window after it has been created.
+    glfw.window_hint(glfw::WindowHint::Resizable(false));
+    glfw.window_hint(glfw::WindowHint::Samples(Some(4)));
+    glfw.window_hint(glfw::WindowHint::ContextVersionMajor(3));
+    glfw.window_hint(glfw::WindowHint::ContextVersionMinor(3));
+    glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
+    glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
+
+    glfw
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+fn __init_glfw() -> Glfw {
+    // Start a GL context and OS window using the GLFW helper library.
+    let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
+
+    // We must place the window hints before creating the window because
+    // glfw cannot change the properties of a window after it has been created.
+    glfw.window_hint(glfw::WindowHint::Resizable(false));
+    glfw.window_hint(glfw::WindowHint::Samples(Some(4)));
+    glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
+    glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
+
+    glfw
+}
+
+/// Initialize a new OpenGL context and start a new GLFW window. 
+pub fn init_gl(width: u32, height: u32) -> Result<GlContext, String> {
+    // Start GL context and O/S window using the GLFW helper library.
+    // info!("Starting GLFW");
+    // info!("Using GLFW version {}", glfw::get_version_string());
+
+    // Start a GL context and OS window using the GLFW helper library.
+    let glfw = __init_glfw();
+
+    // info!("Started GLFW successfully");
+    let maybe_glfw_window = glfw.create_window(
+        width, height, "OpenGL Window", glfw::WindowMode::Windowed
+    );
+    let (mut window, events) = match maybe_glfw_window {
+        Some(tuple) => tuple,
+        None => {
+            // error!("Failed to create GLFW window");
+            return Err(String::new());
+        }
+    };
+
+    window.make_current();
+    window.set_key_polling(true);
+    window.set_size_polling(true);
+    window.set_refresh_polling(true);
+    window.set_size_polling(true);
+    window.set_sticky_keys(true);
+
+    // Load the OpenGl function pointers.
+    gl::load_with(|symbol| { window.get_proc_address(symbol) as *const _ });
+
+    // Get renderer and version information.
+    let renderer = glubyte_ptr_to_string(unsafe { gl::GetString(gl::RENDERER) });
+    // info!("Renderer: {}", renderer);
+
+    let version = glubyte_ptr_to_string(unsafe { gl::GetString(gl::VERSION) });
+    // info!("OpenGL version supported: {}", version);
+    // info!("{}", gl_params());
+
+    Ok(GlContext {
+        glfw: glfw, 
+        window: window, 
+        events: events,
+        width: width,
+        height: height,
+        channel_depth: 3,
+        running_time_seconds: 0.0,
+        framerate_time_seconds: 0.0,
+        frame_count: 0,
+    })
+}
+
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum GlRuntimeParameter {
     MaxCombinedTextureImageUnits = gl::MAX_COMBINED_TEXTURE_IMAGE_UNITS as isize,
@@ -348,108 +451,6 @@ pub struct GlContext {
     pub running_time_seconds: f64,
     pub framerate_time_seconds: f64,
     pub frame_count: u32,
-}
-
-#[cfg(target_os = "macos")]
-fn __init_glfw() -> Glfw {
-    // Start a GL context and OS window using the GLFW helper library.
-    let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
-
-    // We must place the window hints before creating the window because
-    // glfw cannot change the properties of a window after it has been created.
-    glfw.window_hint(glfw::WindowHint::Resizable(false));
-    glfw.window_hint(glfw::WindowHint::Samples(Some(4)));
-    glfw.window_hint(glfw::WindowHint::ContextVersionMajor(3));
-    glfw.window_hint(glfw::WindowHint::ContextVersionMinor(3));
-    glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
-    glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
-    glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
-
-    glfw
-}
-
-#[cfg(target_os = "windows")]
-fn __init_glfw() -> Glfw {
-    // Start a GL context and OS window using the GLFW helper library.
-    let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
-
-    // We must place the window hints before creating the window because
-    // glfw cannot change the properties of a window after it has been created.
-    glfw.window_hint(glfw::WindowHint::Resizable(false));
-    glfw.window_hint(glfw::WindowHint::Samples(Some(4)));
-    glfw.window_hint(glfw::WindowHint::ContextVersionMajor(3));
-    glfw.window_hint(glfw::WindowHint::ContextVersionMinor(3));
-    glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
-    glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
-
-    glfw
-}
-
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
-fn __init_glfw() -> Glfw {
-    // Start a GL context and OS window using the GLFW helper library.
-    let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
-
-    // We must place the window hints before creating the window because
-    // glfw cannot change the properties of a window after it has been created.
-    glfw.window_hint(glfw::WindowHint::Resizable(false));
-    glfw.window_hint(glfw::WindowHint::Samples(Some(4)));
-    glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
-    glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
-
-    glfw
-}
-
-/// Initialize a new OpenGL context and start a new GLFW window. 
-pub fn init_gl(width: u32, height: u32) -> Result<GlContext, String> {
-    // Start GL context and O/S window using the GLFW helper library.
-    // info!("Starting GLFW");
-    // info!("Using GLFW version {}", glfw::get_version_string());
-
-    // Start a GL context and OS window using the GLFW helper library.
-    let glfw = __init_glfw();
-
-    // info!("Started GLFW successfully");
-    let maybe_glfw_window = glfw.create_window(
-        width, height, "OpenGL Window", glfw::WindowMode::Windowed
-    );
-    let (mut window, events) = match maybe_glfw_window {
-        Some(tuple) => tuple,
-        None => {
-            // error!("Failed to create GLFW window");
-            return Err(String::new());
-        }
-    };
-
-    window.make_current();
-    window.set_key_polling(true);
-    window.set_size_polling(true);
-    window.set_refresh_polling(true);
-    window.set_size_polling(true);
-    window.set_sticky_keys(true);
-
-    // Load the OpenGl function pointers.
-    gl::load_with(|symbol| { window.get_proc_address(symbol) as *const _ });
-
-    // Get renderer and version information.
-    let renderer = glubyte_ptr_to_string(unsafe { gl::GetString(gl::RENDERER) });
-    // info!("Renderer: {}", renderer);
-
-    let version = glubyte_ptr_to_string(unsafe { gl::GetString(gl::VERSION) });
-    // info!("OpenGL version supported: {}", version);
-    // info!("{}", gl_params());
-
-    Ok(GlContext {
-        glfw: glfw, 
-        window: window, 
-        events: events,
-        width: width,
-        height: height,
-        channel_depth: 3,
-        running_time_seconds: 0.0,
-        framerate_time_seconds: 0.0,
-        frame_count: 0,
-    })
 }
 
 impl GlContext {
