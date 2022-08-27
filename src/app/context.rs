@@ -388,7 +388,7 @@ pub fn init_gl(width: u32, height: u32) -> Result<GlContext, String> {
 
     // info!("Started GLFW successfully");
     let maybe_glfw_window = glfw.create_window(
-        width, height, "Googly Blocks", glfw::WindowMode::Windowed
+        width, height, "OpenGL Window", glfw::WindowMode::Windowed
     );
     let (mut window, events) = match maybe_glfw_window {
         Some(tuple) => tuple,
