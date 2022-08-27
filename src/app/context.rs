@@ -111,7 +111,7 @@ fn __init_glfw() -> Glfw {
 }
 
 /// Initialize a new OpenGL context and start a new GLFW window. 
-pub fn init_gl(width: u32, height: u32) -> Result<GlContext, String> {
+pub fn init_gl(title: &str, width: u32, height: u32) -> Result<GlContext, String> {
     // Start GL context and O/S window using the GLFW helper library.
     // info!("Starting GLFW");
     // info!("Using GLFW version {}", glfw::get_version_string());
@@ -121,7 +121,7 @@ pub fn init_gl(width: u32, height: u32) -> Result<GlContext, String> {
 
     // info!("Started GLFW successfully");
     let maybe_glfw_window = glfw.create_window(
-        width, height, "OpenGL Window", glfw::WindowMode::Windowed
+        width, height, title, glfw::WindowMode::Windowed
     );
     let (mut window, events) = match maybe_glfw_window {
         Some(tuple) => tuple,
@@ -153,6 +153,7 @@ pub fn init_gl(width: u32, height: u32) -> Result<GlContext, String> {
         glfw: glfw, 
         window: window, 
         events: events,
+        window_title: String::from(title),
         width: width,
         height: height,
         channel_depth: 3,
@@ -448,6 +449,7 @@ pub struct GlContext {
     pub glfw: glfw::Glfw,
     pub window: glfw::Window,
     pub events: Receiver<(f64, glfw::WindowEvent)>,
+    window_title: String,
     width: u32,
     height: u32,
     channel_depth: u32,
@@ -505,7 +507,7 @@ impl GlContext {
         if elapsed_seconds > 0.5 {
             self.framerate_time_seconds = current_time_seconds;
             let fps = self.frame_count as f64 / elapsed_seconds;
-            self.window.set_title(&format!("OpenGL Window @ {:.2}", fps));
+            self.window.set_title(&format!("{} @ {:.2} fps", self.window_title, fps));
             self.frame_count = 0;
         }
 

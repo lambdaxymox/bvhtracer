@@ -713,7 +713,7 @@ fn main() -> io::Result<()> {
 
     app.frame_buffer_mut().flip_vertical();
 
-    let mut context = init_gl(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32).unwrap();
+    let mut context = init_gl("OpenGL Window", SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32).unwrap();
     let vertices: Vec<[f32; 2]> = vec![
         [1.0, 1.0], [-1.0,  1.0], [-1.0, -1.0],
         [1.0, 1.0], [-1.0, -1.0], [ 1.0, -1.0], 
