@@ -476,7 +476,7 @@ impl GlContext {
     }
 
     /// Load a shader source file.
-    pub fn parse_shader_source<P: AsRef<Path>, R: Read>(&self,
+    fn parse_shader_source<P: AsRef<Path>, R: Read>(&self,
         reader: &mut R, file_name: P, shader_str: &mut [u8]) -> Result<usize, ShaderCompilationError> {
 
         shader_str[0] = 0;
@@ -664,39 +664,4 @@ impl GlContext {
         Ok(program)
     }
 }
-
-
-/*
-/// Compile and link a shader program directly from the files.
-pub fn create_program_from_files<P: AsRef<Path>, Q: AsRef<Path>>(
-    context: &GlContext,
-    vert_file_name: P, frag_file_name: Q) -> Result<GLuint, ShaderCompilationError> {
-
-    let mut vert_reader = BufReader::new(match File::open(&vert_file_name) {
-        Ok(val) => val,
-        Err(_) => {
-            let disp = vert_file_name.as_ref().display().to_string();
-            return Err(ShaderCompilationError::ShaderNotFound(disp));
-        }
-    });
-    let mut frag_reader = BufReader::new(match File::open(&frag_file_name) {
-        Ok(val) => val,
-        Err(_) => {
-            let disp = frag_file_name.as_ref().display().to_string();
-            return Err(ShaderCompilationError::ShaderNotFound(disp));
-        }
-    });
-
-    let vertex_shader = create_shader(
-        context, &mut vert_reader, vert_file_name, gl::VERTEX_SHADER
-    )?;
-    let fragment_shader = create_shader(
-        context, &mut frag_reader, frag_file_name, gl::FRAGMENT_SHADER
-    )?;
-    let program = create_program(context, vertex_shader, fragment_shader)?;
-
-    Ok(program)
-}
-*/
-
 
