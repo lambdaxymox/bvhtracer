@@ -734,19 +734,19 @@ impl GlContext {
     pub fn compile_shader<R1: Read, P1: AsRef<Path>, R2: Read, P2: AsRef<Path>>(
         &self,
         vertex_reader: &mut R1, 
-        vertex_shader_file_name: P1,
+        vertex_shader_name: P1,
         fragment_reader: &mut R2, 
-        fragment_shader_file_name: P2
+        fragment_shader_name: P2
     ) -> Result<GLuint, ShaderCompilationError> 
     {
         let vertex_shader = self.compile_shader_fragment(
             vertex_reader, 
-            vertex_shader_file_name, 
+            vertex_shader_name, 
             gl::VERTEX_SHADER
         )?;
         let fragment_shader = self.compile_shader_fragment(
             fragment_reader, 
-            fragment_shader_file_name, 
+            fragment_shader_name, 
             gl::FRAGMENT_SHADER
         )?;
         let program = self.link_shader_program(vertex_shader, fragment_shader)?;
