@@ -726,6 +726,7 @@ fn main() -> io::Result<()> {
     let mut gui_scale_mat = Matrix4x4::identity();
 
     let shader_program = unsafe {
+        /*
         let vertex_shader_source = include_bytes!("../shaders/shaders.vert.glsl");
         let p = vertex_shader_source.as_ptr() as *const i8;
         let length = vertex_shader_source.len() as i32;
@@ -746,6 +747,20 @@ fn main() -> io::Result<()> {
         gl::LinkProgram(shader_program);
 
         shader_program
+        */
+        let vertex_shader_source = include_bytes!("../shaders/shaders.vert.glsl");
+        let fragment_shader_source = include_bytes!("../shaders/shaders.frag.glsl");
+        let mut vertex_reader = io::Cursor::new(vertex_shader_source);
+        let mut fragment_reader = io::Cursor::new(fragment_shader_source);
+        let _shader_program = context.compile_shader(
+                &mut vertex_reader, 
+                "shaders.vert.glsl", 
+                &mut fragment_reader,
+                "shaders.frag.glsl"
+            )
+            .unwrap();
+
+        _shader_program
     };
    
     let vao = unsafe {
