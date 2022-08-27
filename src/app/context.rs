@@ -463,7 +463,7 @@ impl GlContext {
 
     /// Print out the GL capabilities on a local machine. This is handy for debugging
     /// OpenGL program problems on other people's machines.
-    pub fn gl_params(&self) -> GlRuntimeParameterSet {
+    pub fn gpu_capabilities(&self) -> GlRuntimeParameterSet {
         let max_combined_texture_image_units = unsafe {
             let mut raw_value = 0;
             gl::GetIntegerv(GlRuntimeParameter::MaxCombinedTextureImageUnits as u32, &mut raw_value);
