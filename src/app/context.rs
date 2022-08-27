@@ -47,7 +47,7 @@ const MAX_SHADER_LENGTH: usize = 262144;
 
 
 #[inline]
-pub fn glubyte_ptr_to_string(cstr: *const GLubyte) -> String {
+fn glubyte_ptr_to_string(cstr: *const GLubyte) -> String {
     unsafe {
         CStr::from_ptr(cstr as *const i8).to_string_lossy().into_owned()
     }
