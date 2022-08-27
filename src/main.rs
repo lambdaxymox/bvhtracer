@@ -712,38 +712,6 @@ fn main() -> io::Result<()> {
 
     app.frame_buffer_mut().flip_vertical();
 
-    /*
-    let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
-
-    // We must place the window hints before creating the window because
-    // glfw cannot change the properties of a window after it has been created.
-    glfw.window_hint(glfw::WindowHint::Resizable(false));
-    glfw.window_hint(glfw::WindowHint::Samples(Some(4)));
-    glfw.window_hint(glfw::WindowHint::ContextVersionMajor(3));
-    glfw.window_hint(glfw::WindowHint::ContextVersionMinor(3));
-    glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
-    glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
-
-    // Create a windowed mode window and its OpenGL context
-    let (mut window, events) = glfw.create_window(
-            SCREEN_WIDTH as u32, 
-            SCREEN_HEIGHT as u32, 
-            "GLFW Window", 
-            glfw::WindowMode::Windowed
-        )
-        .expect("Failed to create GLFW window.");
-
-    // Make the window's context current
-    window.make_current();
-    window.set_key_polling(true);
-    window.set_size_polling(true);
-    window.set_refresh_polling(true);
-    window.set_size_polling(true);
-    window.set_sticky_keys(true);
-
-    // Load the OpenGl function pointers.
-    gl::load_with(|symbol| { window.get_proc_address(symbol) as *const _ });
-    */
     let mut context = init_gl(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32).unwrap();
     let vertices: Vec<[f32; 2]> = vec![
         [1.0, 1.0], [-1.0,  1.0], [-1.0, -1.0],
