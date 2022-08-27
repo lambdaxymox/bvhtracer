@@ -371,6 +371,8 @@ fn __init_glfw() -> Glfw {
     // glfw cannot change the properties of a window after it has been created.
     glfw.window_hint(glfw::WindowHint::Resizable(false));
     glfw.window_hint(glfw::WindowHint::Samples(Some(4)));
+    glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
+    glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
 
     glfw
 }
