@@ -7,9 +7,6 @@ mod gl {
     include!(concat!(env!("OUT_DIR"), "/gl_bindings.rs"));
 }
 
-const SCREEN_WIDTH: usize = 640;
-const SCREEN_HEIGHT: usize = 640;
-
 
 use bvhtracer::*;
 use crate::app::*;
@@ -18,35 +15,8 @@ use cglinalg::{
     Matrix4x4,
     Vector2,
     Vector3,
-    Radians,
-    Degrees,
-    Unit,
-};
-use glfw::{
-    Action, 
-    Context, 
-    Key
-};
-use gl::types::{
-    GLuint, 
-    GLfloat
-};
-use rand::{
-    Rng,
-    SeedableRng, 
-};
-use rand_isaac::{
-    IsaacRng,
-};
-use std::fs::{
-    File,
 };
 use std::io;
-use std::mem;
-use std::ptr;
-use std::ffi::{
-    c_void,
-};
 
 
 impl GpuTextureBuffer2D for TextureBuffer2D<Rgba<u8>, Vec<u8>> {

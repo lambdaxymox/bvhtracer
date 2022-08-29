@@ -5,22 +5,14 @@ use bvhtracer::*;
 
 use cglinalg::{
     Matrix4x4,
-    Vector2,
-    Vector3,
-    Radians,
-    Degrees,
-    Unit,
 };
 use glfw::{
     Action, 
-    Context, 
     Key
 };
-use gl::types::{
-    GLuint, 
-    GLfloat
+use gl::types::{ 
+    GLfloat,
 };
-use std::io;
 use std::mem;
 use std::ptr;
 use std::ffi::{
