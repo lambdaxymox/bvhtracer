@@ -3,11 +3,6 @@ extern crate bvhtracer_demos;
 extern crate cglinalg;
 
 
-#[allow(clippy::all)]
-mod gl {
-    include!(concat!(env!("OUT_DIR"), "/gl_bindings.rs"));
-}
-
 const SCREEN_WIDTH: usize = 640;
 const SCREEN_HEIGHT: usize = 640;
 

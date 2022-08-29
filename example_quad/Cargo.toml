@@ -20,6 +20,3 @@ path = "../bvhtracer"
 [dependencies.bvhtracer_demos]
 path = "../bvhtracer_demos"
 
-[build-dependencies]
-gl_generator = "0.14.0"
-
