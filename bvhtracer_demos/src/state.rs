@@ -9,14 +9,7 @@ mod gl {
 
 
 use bvhtracer::*;
-use crate::app::*;
 use crate::context::*;
-use cglinalg::{
-    Matrix4x4,
-    Vector3,
-    Radians,
-};
-use std::io;
 
 
 impl GpuTextureBuffer2D for TextureBuffer2D<Rgba<u8>, Vec<u8>> {
