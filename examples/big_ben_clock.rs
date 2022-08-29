@@ -5,6 +5,6 @@ use std::io;
 
 
 fn main() -> io::Result<()> {
-    example_big_ben_clock::run()
+    example_big_ben_clock::main()
 }
 

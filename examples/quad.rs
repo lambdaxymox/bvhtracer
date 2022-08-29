@@ -5,6 +5,6 @@ use std::io;
 
 
 fn main() -> io::Result<()> {
-    example_quad::run()
+    example_quad::main()
 }
 

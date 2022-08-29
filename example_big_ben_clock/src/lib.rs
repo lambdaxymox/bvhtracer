@@ -111,7 +111,7 @@ impl AppState for AppStateBigBenClock {
 }
 
 
-pub fn run() -> io::Result<()> {
+pub fn main() -> io::Result<()> {
     use std::time::SystemTime;
     println!("Building scene.");
     let now = SystemTime::now();

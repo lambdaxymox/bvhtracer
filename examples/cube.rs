@@ -5,6 +5,6 @@ use std::io;
 
 
 fn main() -> io::Result<()> {
-    example_cube::run()
+    example_cube::main()
 }
 

@@ -5,6 +5,6 @@ use std::io;
 
 
 fn main() -> io::Result<()> {
-    example_sixteen_armadillos::run()
+    example_sixteen_armadillos::main()
 }
 
