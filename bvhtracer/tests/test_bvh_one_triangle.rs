@@ -31,14 +31,6 @@ fn scene() -> ModelInstance {
     builder.with_mesh(mesh).build()
 }
 
-/*
-#[test]
-fn test_one_triangle_should_have_one_volume() {
-    let scene = scene();
-
-    assert_eq!(scene.bvh.nodes_used(), 2);
-}
-*/
 
 #[test]
 fn test_one_triangle_intersection_hits() {

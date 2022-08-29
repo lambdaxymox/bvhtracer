@@ -51,14 +51,6 @@ struct TestCase {
 
 
 fn scene() -> Scene {
-    /*
-    let model_spec = PerspectiveFovSpec::new(
-            Degrees(90_f32), 
-            1_f32, 
-            0.001_f32, 
-            100_f32, 
-    );
-    */
     let model_spec = PerspectiveSpec::new(
         -1_f32, 
          1_f32, 
