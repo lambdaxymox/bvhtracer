@@ -41,27 +41,6 @@ pub fn run() -> io::Result<()> {
         Rgba::new(0, 0, 0, 255),
     ));
     let renderer = Renderer::new(Box::new(PathTracer::new()));
-
-    /*
-    let accumulator = Box::new(DepthAccumulator::new());
-    let pixel_shader = Box::new(DepthMappingShader::new(80_f32, 3_f32));
-    let renderer = Renderer::new(Box::new(PathTracer::new()));
-    */
-    /*
-    let accumulator = Box::new(UvMappingAccumulator::new());
-    let pixel_shader = Box::new(RadianceToRgbShader::new());
-    let renderer = Renderer::new(Box::new(PathTracer::new()));
-    */
-    /*
-    let accumulator = Box::new(NormalMappingAccumulator::new());
-    let pixel_shader = Box::new(RadianceToRgbShader::new());
-    let renderer = Renderer::new(Box::new(PathTracer::new()));
-    */
-    /*
-    let accumulator = Box::new(TextureMaterialAccumulator::new());
-    let pixel_shader = Box::new(RadianceToRgbShader::new());
-    let renderer = Renderer::new(Box::new(PathTracer::new()));
-    */
     let context = init_gl("OpenGL Window", SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32).unwrap();
     let mut app = App::new(context, pixel_shader, accumulator, state, renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
     app.run();

@@ -28,34 +28,7 @@ pub fn run() -> io::Result<()> {
     let now = SystemTime::now();
     let state = Box::new(AppStateQuad::new());
     let elapsed = now.elapsed().unwrap();
-    println!("Scene building time = {:?}", elapsed);
-    /*
-    let accumulator = Box::new(IntersectionAccumulator::new(
-        Vector3::from_fill(1_f32), 
-        Vector3::zero()
-    ));
-    let pixel_shader = Box::new(IntersectionShader::new(
-        Rgba::new(255, 255, 255, 255), 
-        Rgba::new(0, 0, 0, 255),
-    ));
-    let renderer = Renderer::new(Box::new(PathTracer::new()));
-    */
-    /*
-    let accumulator = Box::new(DepthAccumulator::new());
-    let pixel_shader = Box::new(DepthMappingShader::new(80_f32, 3_f32));
-    let renderer = Renderer::new(Box::new(PathTracer::new()));
-    */
-    /*
-    let accumulator = Box::new(UvMappingAccumulator::new());
-    let pixel_shader = Box::new(RadianceToRgbShader::new());
-    let renderer = Renderer::new(Box::new(PathTracer::new()));
-    */
-    /*
-    let accumulator = Box::new(NormalMappingAccumulator::new());
-    let pixel_shader = Box::new(RadianceToRgbShader::new());
-    let renderer = Renderer::new(Box::new(PathTracer::new()));
-    */
-    
+    println!("Scene building time = {:?}", elapsed);    
     let accumulator = Box::new(TextureMaterialAccumulator::new());
     let pixel_shader = Box::new(RadianceToRgbShader::new());
     let renderer = Renderer::new(Box::new(PathTracer::new()));
