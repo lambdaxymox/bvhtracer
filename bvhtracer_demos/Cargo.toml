@@ -1,5 +1,5 @@
 [package]
-name = "example_big_ben_clock"
+name = "bvhtracer_demos"
 version = "0.1.0"
 edition = "2021"
 
@@ -16,9 +16,6 @@ version = "0.16.1"
 
 [dependencies.bvhtracer]
 path = "../bvhtracer"
-
-[dependencies.bvhtracer_demos]
-path = "../bvhtracer_demos"
 
 [build-dependencies]
 gl_generator = "0.14.0"

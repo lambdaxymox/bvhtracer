@@ -9,8 +9,11 @@ mod gl {
 
 
 use bvhtracer::*;
+use bvhtracer_demos::*;
+/*
 use crate::app::*;
 use crate::context::*;
+*/
 use cglinalg::{
     Matrix4x4,
     Vector2,
@@ -18,7 +21,7 @@ use cglinalg::{
 };
 use std::io;
 
-
+/*
 impl GpuTextureBuffer2D for TextureBuffer2D<Rgba<u8>, Vec<u8>> {
     fn format(&self) -> GpuTextureFormat { 
         GpuTextureFormat::Rgba8
@@ -44,7 +47,7 @@ impl GpuTextureBuffer2D for TextureBuffer2D<Rgba<u8>, Vec<u8>> {
         TextureBuffer2D::as_mut_ptr(self) as *mut u8
     }
 }
-
+*/
 
 pub struct AppStateQuad {
     active_scene: Scene,

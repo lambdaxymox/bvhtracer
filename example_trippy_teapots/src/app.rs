@@ -22,6 +22,7 @@ use std::time::{
     SystemTime,
 };
 
+/*
 
 pub trait AppState {
     fn update(&mut self, elapsed: f64);
@@ -209,4 +210,4 @@ impl App {
         }
     }
 }
-
+*/

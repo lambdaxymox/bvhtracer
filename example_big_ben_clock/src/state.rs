@@ -1,4 +1,5 @@
 extern crate bvhtracer;
+extern crate bvhtracer_demos;
 extern crate cglinalg;
 
 
@@ -9,14 +10,17 @@ mod gl {
 
 
 use bvhtracer::*;
+use bvhtracer_demos::*;
+/*
 use crate::app::*;
 use crate::context::*;
+*/
 use cglinalg::{
     Vector3,
 };
 use std::io;
 
-
+/*
 impl GpuTextureBuffer2D for TextureBuffer2D<Rgba<u8>, Vec<u8>> {
     fn format(&self) -> GpuTextureFormat { 
         GpuTextureFormat::Rgba8
@@ -42,7 +46,7 @@ impl GpuTextureBuffer2D for TextureBuffer2D<Rgba<u8>, Vec<u8>> {
         TextureBuffer2D::as_mut_ptr(self) as *mut u8
     }
 }
-
+*/
 
 pub struct AppStateBigBenClock {
     active_scene: Scene,

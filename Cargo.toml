@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "bvhtracer",
+    "bvhtracer_demos",
     "example_trippy_teapots",
     "example_big_ben_clock",
     "example_cube",

@@ -22,7 +22,7 @@ use std::time::{
     SystemTime,
 };
 
-
+/*
 pub trait AppState {
     fn update(&mut self, elapsed: f64);
 
@@ -30,6 +30,7 @@ pub trait AppState {
 
     fn active_scene_mut(&mut self) -> &mut Scene;
 }
+
 
 pub struct App {
     context: GlContext,
@@ -209,4 +210,4 @@ impl App {
         }
     }
 }
-
+*/

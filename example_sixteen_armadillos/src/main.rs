@@ -1,4 +1,5 @@
 extern crate bvhtracer;
+extern crate bvhtracer_demos;
 extern crate cglinalg;
 
 
@@ -15,8 +16,11 @@ mod context;
 mod state;
 
 use bvhtracer::*;
+use bvhtracer_demos::*;
+/*
 use crate::app::*;
 use crate::context::*;
+*/
 use crate::state::*;
 
 use std::io;
