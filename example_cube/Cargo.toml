@@ -1,0 +1,22 @@
+[package]
+name = "example_cube"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+rand = "0.8.5"
+rand_isaac = "0.3.0"
+glfw = "0.45.0"
+
+
+[dependencies.cglinalg]
+git = "https://github.com/lambdaxymox/cglinalg/"
+version = "0.16.1"
+
+[dependencies.bvhtracer]
+path = "../bvhtracer"
+
+[build-dependencies]
+gl_generator = "0.14.0"
+

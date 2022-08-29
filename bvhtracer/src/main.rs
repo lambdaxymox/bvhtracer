@@ -76,7 +76,7 @@ const SCREEN_WIDTH: usize = 640;
 const SCREEN_HEIGHT: usize = 640;
 
 
-
+/*
 struct AppStateQuad {
     active_scene: Scene,
 }
@@ -176,8 +176,8 @@ impl AppState for AppStateQuad {
         &mut self.active_scene
     }
 }
-
-
+*/
+/*
 struct AppStateCube {
     active_scene: Scene,
     axis: Unit<Vector3<f32>>,
@@ -252,17 +252,17 @@ impl AppState for AppStateCube {
         &mut self.active_scene
     }
 }
+*/
+/*
 
-
-
-struct AppStateBigBenClock {
+pub struct AppStateBigBenClock {
     active_scene: Scene,
     r: f32,
     originals: Vec<Triangle<f32>>,
 }
 
 impl AppStateBigBenClock {
-    fn new() -> Self {
+    pub fn new() -> Self {
         let focal_offset = 1.5;
         let model_spec = PerspectiveSpec::new(
             -1_f32, 
@@ -349,9 +349,9 @@ impl AppState for AppStateBigBenClock {
         &mut self.active_scene
     }
 }
+*/
 
-
-
+/*
 struct AppStateTwoArmadillos {
     angle: f32,
     active_scene: Scene,
@@ -431,8 +431,8 @@ impl AppState for AppStateTwoArmadillos {
         &mut self.active_scene
     }
 }
-
-
+*/
+/*
 struct AppStateSixteenArmadillos {
     active_scene: Scene,
     a: Vec<f32>,
@@ -532,8 +532,8 @@ impl AppState for AppStateSixteenArmadillos {
         &mut self.active_scene
     }
 }
-
-
+*/
+/*
 struct AppStateTrippyTeapots {
     active_scene: Scene,
     a: Vec<f32>,
@@ -637,7 +637,7 @@ impl AppState for AppStateTrippyTeapots {
         &mut self.active_scene
     }
 }
-
+*/
 impl GpuTextureBuffer2D for TextureBuffer2D<Rgba<u8>, Vec<u8>> {
     fn format(&self) -> GpuTextureFormat { 
         GpuTextureFormat::Rgba8
@@ -664,7 +664,7 @@ impl GpuTextureBuffer2D for TextureBuffer2D<Rgba<u8>, Vec<u8>> {
     }
 }
 
-
+/*
 fn main() -> io::Result<()> {
     use std::time::SystemTime;
     println!("Building scene.");
@@ -707,6 +707,10 @@ fn main() -> io::Result<()> {
     let mut app = App::new(context, pixel_shader, accumulator, state, renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
     app.run();
 
+    Ok(())
+}
+*/
+fn main() -> io::Result<()> {
     Ok(())
 }
 

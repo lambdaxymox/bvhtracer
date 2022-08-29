@@ -1,0 +1,48 @@
+[package]
+name = "examples"
+version = "0.1.0"
+publish = false
+edition = "2021"
+
+[dependencies.example_trippy_teapots]
+path = "../example_trippy_teapots"
+
+[dependencies.example_two_armadillos]
+path = "../example_two_armadillos"
+
+[dependencies.example_sixteen_armadillos]
+path = "../example_sixteen_armadillos"
+
+[dependencies.example_quad]
+path = "../example_quad"
+
+[dependencies.example_cube]
+path = "../example_cube"
+
+[dependencies.example_big_ben_clock]
+path = "../example_big_ben_clock"
+
+[[example]]
+name = "trippy_teapots"
+path = "trippy_teapots.rs"
+
+[[example]]
+name = "two_armadillos"
+path = "two_armadillos.rs"
+
+[[example]]
+name = "sixteen_armadillos"
+path = "sixteen_armadillos.rs"
+
+[[example]]
+name = "quad"
+path = "quad.rs"
+
+[[example]]
+name = "cube"
+path = "cube.rs"
+
+[[example]]
+name = "big_ben_clock"
+path = "big_ben_clock.rs"
+
