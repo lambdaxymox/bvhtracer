@@ -11,16 +11,11 @@ mod gl {
 const SCREEN_WIDTH: usize = 640;
 const SCREEN_HEIGHT: usize = 640;
 
-mod app;
-mod context;
+
 mod state;
 
 use bvhtracer::*;
 use bvhtracer_demos::*;
-/*
-use crate::app::*;
-use crate::context::*;
-*/
 use crate::state::*;
 use cglinalg::{
     Vector3,
