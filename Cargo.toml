@@ -70,7 +70,12 @@
 members = [
     "bvhtracer",
     "example_trippy_teapots",
+    "example_big_ben_clock",
+    "example_cube",
+    "example_quad",
+    "example_sixteen_armadillos",
     "example_two_armadillos",
+    "example_trippy_teapots",
     "examples",
 ]
 
