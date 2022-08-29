@@ -4,23 +4,16 @@ version = "0.1.0"
 publish = false
 edition = "2021"
 
-[dependencies.example_trippy_teapots]
-path = "../example_trippy_teapots"
+[dependencies.bvhtracer]
+path = "../bvhtracer"
 
-[dependencies.example_two_armadillos]
-path = "../example_two_armadillos"
+[dependencies.bvhtracer_demos]
+path = "../bvhtracer_demos"
 
-[dependencies.example_sixteen_armadillos]
-path = "../example_sixteen_armadillos"
+[dependencies.cglinalg]
+git = "https://github.com/lambdaxymox/cglinalg/"
+version = "0.16.1"
 
-[dependencies.example_quad]
-path = "../example_quad"
-
-[dependencies.example_cube]
-path = "../example_cube"
-
-[dependencies.example_big_ben_clock]
-path = "../example_big_ben_clock"
 
 [[example]]
 name = "trippy_teapots"
