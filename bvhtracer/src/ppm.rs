@@ -7,7 +7,10 @@ pub struct PpmEncoder<'a, W: 'a> {
     writer: &'a mut W,
 }
 
-impl<'a, W: io::Write + 'a> PpmEncoder<'a, W> {
+impl<'a, W> PpmEncoder<'a, W> 
+where
+    W : io::Write + 'a,
+{
     pub fn new(writer: &'a mut W) -> Self {
         Self { writer, }
     }
