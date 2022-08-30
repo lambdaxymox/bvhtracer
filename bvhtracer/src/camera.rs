@@ -1272,14 +1272,6 @@ where
         let translation_matrix = Matrix4x4::from_affine_translation(
             &(-spec.position)
         );
-        /*
-        let rotation_matrix = Matrix4x4::new(
-            spec.right.x,   spec.right.y,   spec.right.z,   S::zero(),
-            spec.up.x,      spec.up.y,      spec.up.z,      S::zero(),
-            -spec.forward.x, -spec.forward.y, -spec.forward.z, S::zero(),
-            S::zero(),      S::zero(),      S::zero(),      S::one()
-        );
-        */
         let rotation_matrix = Matrix4x4::new(
             spec.right.x, spec.up.x, -spec.forward.x, S::zero(),
             spec.right.y, spec.up.y, -spec.forward.y, S::zero(),
