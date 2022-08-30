@@ -35,7 +35,7 @@ impl AppStateCube {
             100_f32, 
         );
         */
-        let model_spec = PerspectiveSpec::new(
+        let model_spec = NdcBoxSpec::new(
             -1_f32, 
             1_f32, 
             -1_f32, 

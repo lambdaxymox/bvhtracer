@@ -72,6 +72,43 @@ pub trait CameraModel {
     fn set_active(&mut self, projection: ActiveProjection);
 }
 
+#[derive(Clone, Debug)]
+pub struct FovSpec<S> {
+    /// The vertical field of view angle of the viewport.
+    fovy: Degrees<S>,
+    /// The ratio of the horizontal width to the vertical height.
+    aspect: S,
+    /// The position of the near plane along the **negative z-axis**.
+    near: S,
+    /// The position of the far plane along the **negative z-axis**.
+    far: S,
+}
+
+impl<S> FovSpec<S> {
+    #[inline]
+    pub const fn new(fovy: Degrees<S>, aspect: S, near: S, far: S) -> Self {
+        Self {
+            fovy: fovy,
+            aspect: aspect,
+            near: near,
+            far: far,
+        }
+    }
+}
+
+
+impl<S> fmt::Display for FovSpec<S> 
+where 
+    S: fmt::Display 
+{
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+       write!(
+           formatter,
+           "FovSpec [fovy={}, aspect={}, near={}, far={}]",
+           self.fovy, self.aspect, self.near, self.far
+       )
+    }
+}
 
 /// A perspective projection based on the `near` plane, the `far` plane and 
 /// the vertical field of view angle `fovy` and the horizontal/vertical aspect 
@@ -90,51 +127,6 @@ pub trait CameraModel {
 /// bottom planes are the same distance from the eye position along the vertical 
 /// axis on opposite side. They ensure that the `left` and `right` planes are 
 /// equidistant from the eye on opposite sides along the horizontal axis. 
-#[repr(C)]
-#[derive(Clone, Debug)]
-pub struct PerspectiveFovSpec<S> {
-    /// The vertical field of view angle of the perspective transformation
-    /// viewport.
-    fovy: Degrees<S>,
-    /// The ratio of the horizontal width to the vertical height.
-    aspect: S,
-    /// The position of the near plane along the **negative z-axis**.
-    near: S,
-    /// The position of the far plane along the **negative z-axis**.
-    far: S,
-}
-
-impl<S> PerspectiveFovSpec<S> {
-    /// Construct a new perspective projection operation specification
-    /// based on the vertical field of view angle `fovy`, the `near` plane, the 
-    /// `far` plane, and aspect ratio `aspect`.
-    #[inline]
-    pub const fn new(fovy: Degrees<S>, aspect: S, near: S, far: S) -> Self {
-        Self {
-            fovy: fovy,
-            aspect: aspect,
-            near: near,
-            far: far,
-        }
-    }
-}
-
-impl<S> fmt::Display for PerspectiveFovSpec<S> 
-where 
-    S: fmt::Display 
-{
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-       write!(
-           formatter,
-           "PerspectiveFovSpec [fovy={}, aspect={}, near={}, far={}]",
-           self.fovy, self.aspect, self.near, self.far
-       )
-    }
-}
-
-
-/// A perspective projection transformation for converting from camera space to
-/// normalized device coordinates based on the perspective field of view model.
 ///
 /// Orthographic projections differ from perspective projections because
 /// orthographic projections keeps parallel lines parallel, whereas perspective 
@@ -185,7 +177,7 @@ where
     S: SimdScalarFloat 
 {
     type Scalar = S;
-    type Spec = PerspectiveFovSpec<S>;
+    type Spec = FovSpec<S>;
     type Projection = Matrix4x4<S>;
 
     #[inline]
@@ -245,11 +237,10 @@ where
 }
 
 
-/// A perspective projection based on arbitrary `left`, `right`, `bottom`,
-/// `top`, `near`, and `far` planes.
+/// A projection based on arbitrary `left`, `right`, `bottom`, `top`, `near`, and 
+/// `far` planes.
 ///
-/// We assume the following constraints to construct a useful perspective 
-/// projection
+/// We assume the following constraints to construct a useful projection
 /// ```text
 /// left   < right
 /// bottom < top
@@ -258,7 +249,7 @@ where
 /// Each parameter in the specification is a description of the position along
 /// an axis of a plane that the axis is perpendicular to.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct PerspectiveSpec<S> {
+pub struct NdcBoxSpec<S> {
     /// The horizontal position of the left-hand plane in camera space.
     /// The left-hand plane is a plane parallel to the **yz-plane** at
     /// the origin.
@@ -281,8 +272,7 @@ pub struct PerspectiveSpec<S> {
     far: S,
 }
 
-impl<S> PerspectiveSpec<S> {
-    /// Construct a new perspective specification.
+impl<S> NdcBoxSpec<S> {
     #[inline]
     pub const fn new(left: S, right: S, bottom: S, top: S, near: S, far: S) -> Self {
         Self {
@@ -296,14 +286,14 @@ impl<S> PerspectiveSpec<S> {
     }
 }
 
-impl<S> fmt::Display for PerspectiveSpec<S> 
+impl<S> fmt::Display for NdcBoxSpec<S> 
 where 
     S: fmt::Display
 {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         write!(
             formatter,
-            "PerspectiveSpec [left={}, right={}, bottom={}, top={}, near={}, far={}]",
+            "NdcSpec [left={}, right={}, bottom={}, top={}, near={}, far={}]",
             self.left, self.right, self.bottom, self.top, self.near, self.far
         )
     }
@@ -373,7 +363,7 @@ where
     S: SimdScalarFloat
 {
     type Scalar = S;
-    type Spec = PerspectiveSpec<S>;
+    type Spec = NdcBoxSpec<S>;
     type Projection = Matrix4x4<S>;
 
     #[inline]
@@ -437,71 +427,6 @@ where
 
     fn set_active(&mut self, projection: ActiveProjection) {
 
-    }
-}
-
-
-/// A description of an orthographic projection with arbitrary `left`, `right`, 
-/// `top`, `bottom`, `near`, and `far` planes.
-///
-/// We assume the following constraints to construct a useful orthographic 
-/// projection
-/// ```text
-/// left   < right
-/// bottom < top
-/// near   < far   (along the negative z-axis).
-/// ```
-/// Each parameter in the specification is a description of the position along 
-/// an axis of a plane that the axis is perpendicular to.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct OrthographicSpec<S> {
-    /// The horizontal position of the left-hand plane in camera space.
-    /// The left-hand plane is a plane parallel to the **yz-plane** at
-    /// the origin.
-    left: S,
-    /// The horizontal position of the right-hand plane in camera space.
-    /// The right-hand plane is a plane parallel to the **yz-plane** at
-    /// the origin.
-    right: S,
-    /// The vertical position of the **bottom plane** in camera space.
-    /// The bottom plane is a plane parallel to the **xz-plane** at the origin.
-    bottom: S,
-    /// The vertical position of the **top plane** in camera space.
-    /// the top plane is a plane parallel to the **xz-plane** at the origin.
-    top: S,
-    /// The distance along the **negative z-axis** of the **near plane** from the eye.
-    /// The near plane is a plane parallel to the **xy-plane** at the origin.
-    near: S,
-    /// the distance along the **negative z-axis** of the **far plane** from the eye.
-    /// The far plane is a plane parallel to the **xy-plane** at the origin.
-    far: S,
-}
-
-impl<S> OrthographicSpec<S> {
-    /// Construct a new orthographic specification.
-    #[inline]
-    pub const fn new(left: S, right: S, bottom: S, top: S, near: S, far: S) -> Self {
-        Self {
-            left: left,
-            right: right,
-            bottom: bottom,
-            top: top,
-            near: near,
-            far: far,
-        }
-    }
-}
-
-impl<S> fmt::Display for OrthographicSpec<S>
-where 
-    S: fmt::Display
-{
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            formatter,
-            "OrthographicSpec [left={}, right={}, bottom={}, top={}, near={}, far={}]",
-            self.left, self.right, self.bottom, self.top, self.near, self.far
-        )
     }
 }
 
@@ -570,7 +495,7 @@ where
     S: SimdScalarFloat
 {
     type Scalar = S;
-    type Spec = OrthographicSpec<S>;
+    type Spec = NdcBoxSpec<S>;
     type Projection = Matrix4x4<S>;
 
     #[inline]
@@ -637,7 +562,6 @@ where
     }
 }
 
-
 /// An orthographic projection based on the `near` plane, the `far` plane and 
 /// the vertical field of view angle `fovy` and the horizontal/vertical aspect 
 /// ratio `aspect`.
@@ -655,50 +579,6 @@ where
 /// bottom planes are the same distance from the eye position along the vertical 
 /// axis on opposite side. They ensure that the `left` and `right` planes are 
 /// equidistant from the eye on opposite sides along the horizontal axis. 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct OrthographicFovSpec<S> {
-    /// The vertical field of view angle of the orthographic camera model 
-    /// viewport.
-    fovy: Degrees<S>,
-    /// The ratio of the horizontal width to the vertical height.
-    aspect: S,
-    /// The position of the near plane along the **negative z-axis**.
-    near: S,
-    /// The position of the far plane along the **negative z-axis**.
-    far: S,
-}
-
-impl<S> OrthographicFovSpec<S> {
-    /// Construct a new orthographic projection operation specification
-    /// based on the vertical field of view angle `fovy`, the `near` plane, the 
-    /// `far` plane, and aspect ratio `aspect`.
-    #[inline]
-    pub const fn new(fovy: Degrees<S>, aspect: S, near: S, far: S) -> Self {
-        Self {
-            fovy: fovy,
-            aspect: aspect,
-            near: near,
-            far: far,
-        }
-    }
-}
-
-impl<S> fmt::Display for OrthographicFovSpec<S> 
-where 
-    S: fmt::Display
-{
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            formatter,
-            "OrthographicFovSpec [fovy={}, aspect={}, near={}, far={}]",
-            self.fovy, self.aspect, self.near, self.far
-        )
-    }
-}
-
-
-/// An orthographic projection camera model for converting from camera space to
-/// normalized device coordinates.
 ///
 /// Orthographic projections differ from perspective projections in that 
 /// orthographic projections keeps parallel lines parallel, whereas perspective 
@@ -750,7 +630,7 @@ where
     S: SimdScalarFloat
 {
     type Scalar = S;
-    type Spec = OrthographicFovSpec<S>;
+    type Spec = FovSpec<S>;
     type Projection = Matrix4x4<S>;
 
     #[inline]
