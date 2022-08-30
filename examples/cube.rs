@@ -78,7 +78,6 @@ impl AppStateCube {
 
 impl AppState for AppStateCube {
     fn update(&mut self, elapsed: f64) {
-        println!("elapsed = {}", elapsed);
         let angle = Radians((self.angular_frequency * elapsed) as f32);
         let rotation_matrix = Matrix4x4::from_affine_axis_angle(&self.axis, angle);
         let old_transform = self.active_scene.get_unchecked(0).get_transform();

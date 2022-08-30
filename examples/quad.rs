@@ -13,12 +13,16 @@ use cglinalg::{
     Matrix4x4,
     Vector2,
     Vector3,
+    Unit,
+    Radians,
 };
 use std::io;
 
 
 struct AppStateQuad {
     active_scene: Scene,
+    axis: Unit<Vector3<f32>>,
+    angular_frequency: f64,
 }
 
 impl AppStateQuad {
@@ -100,13 +104,20 @@ impl AppStateQuad {
         let active_scene = SceneBuilder::new(camera)
             .with_object(scene_object)
             .build();
+        let axis = Unit::from_value(Vector3::unit_z());
+        let angular_frequency = 2_f64;
         
-        Self { active_scene, }
+        Self { active_scene, axis, angular_frequency, }
     }
 }
 
 impl AppState for AppStateQuad {
-    fn update(&mut self, _elapsed: f64) {
+    fn update(&mut self, elapsed: f64) {
+        let angle = Radians((self.angular_frequency * elapsed) as f32);
+        let rotation_matrix = Matrix4x4::from_affine_axis_angle(&self.axis, angle);
+        let old_transform = self.active_scene.get_unchecked(0).get_transform();
+        let new_transform = rotation_matrix * old_transform;
+        self.active_scene.get_mut_unchecked(0).set_transform(&new_transform);
     }
 
     fn active_scene(&self) -> &Scene {
