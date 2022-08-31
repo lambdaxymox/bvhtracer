@@ -1,7 +1,6 @@
 use crate::query::{
     Ray,
 };
-
 use cglinalg::{
     Degrees,
     Radians,
@@ -13,25 +12,8 @@ use cglinalg::{
     SimdScalarFloat,
     Unit,
 };
-
 use std::fmt;
 
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum ActiveProjection {
-    Perspective,
-    Orthographic,
-}
-
-impl ActiveProjection {
-    pub fn is_perspective(self) -> bool {
-        self == ActiveProjection::Perspective
-    }
-
-    pub fn is_orthographic(self) -> bool {
-        self == ActiveProjection::Orthographic
-    }
-}
 
 /// A type with this trait can be used as a camera model. A camera model
 /// is a process of mapping incoming light rays from the camera's view space into
@@ -67,9 +49,6 @@ pub trait CameraModel {
 
     /// Get the location in eye space of the bottom right corner of the viewport.
     fn bottom_right_eye(&self) -> Vector3<Self::Scalar>;
-
-    /// Switch to a different projection in the underlying camera model.
-    fn set_active(&mut self, projection: ActiveProjection);
 }
 
 #[derive(Clone, Debug)]
@@ -107,6 +86,68 @@ where
            "FovSpec [fovy={}, aspect={}, near={}, far={}]",
            self.fovy, self.aspect, self.near, self.far
        )
+    }
+}
+
+/// A projection based on arbitrary `left`, `right`, `bottom`, `top`, `near`, and 
+/// `far` planes.
+///
+/// We assume the following constraints to construct a useful projection
+/// ```text
+/// left   < right
+/// bottom < top
+/// near   < far   (along the negative z-axis)
+/// ```
+/// Each parameter in the specification is a description of the position along
+/// an axis of a plane that the axis is perpendicular to.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct BoxSpec<S> {
+    /// The horizontal position of the left-hand plane in camera space.
+    /// The left-hand plane is a plane parallel to the **yz-plane** at
+    /// the origin.
+    left: S,
+    /// The horizontal position of the right-hand plane in camera space.
+    /// The right-hand plane is a plane parallel to the **yz-plane** at
+    /// the origin.
+    right: S,
+    /// The vertical position of the bottom plane in camera space.
+    /// The bottom plane is a plane parallel to the **xz-plane** at the origin.
+    bottom: S,
+    /// The vertical position of the top plane in camera space.
+    /// the top plane is a plane parallel to the **xz-plane** at the origin.
+    top: S,
+    /// The distance along the **negative z-axis** of the near plane from the eye.
+    /// The near plane is a plane parallel to the **xy-plane** at the origin.
+    near: S,
+    /// the distance along the **negative z-axis** of the far plane from the eye.
+    /// The far plane is a plane parallel to the **xy-plane** at the origin.
+    far: S,
+}
+
+impl<S> BoxSpec<S> {
+    #[inline]
+    pub const fn new(left: S, right: S, bottom: S, top: S, near: S, far: S) -> Self {
+        Self {
+            left: left,
+            right: right,
+            bottom: bottom,
+            top: top,
+            near: near,
+            far: far,
+        }
+    }
+}
+
+impl<S> fmt::Display for BoxSpec<S> 
+where 
+    S: fmt::Display
+{
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            formatter,
+            "NdcSpec [left={}, right={}, bottom={}, top={}, near={}, far={}]",
+            self.left, self.right, self.bottom, self.top, self.near, self.far
+        )
     }
 }
 
@@ -230,73 +271,6 @@ where
     fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
         unimplemented!()
     }
-
-    fn set_active(&mut self, projection: ActiveProjection) {
-
-    }
-}
-
-
-/// A projection based on arbitrary `left`, `right`, `bottom`, `top`, `near`, and 
-/// `far` planes.
-///
-/// We assume the following constraints to construct a useful projection
-/// ```text
-/// left   < right
-/// bottom < top
-/// near   < far   (along the negative z-axis)
-/// ```
-/// Each parameter in the specification is a description of the position along
-/// an axis of a plane that the axis is perpendicular to.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct NdcBoxSpec<S> {
-    /// The horizontal position of the left-hand plane in camera space.
-    /// The left-hand plane is a plane parallel to the **yz-plane** at
-    /// the origin.
-    left: S,
-    /// The horizontal position of the right-hand plane in camera space.
-    /// The right-hand plane is a plane parallel to the **yz-plane** at
-    /// the origin.
-    right: S,
-    /// The vertical position of the bottom plane in camera space.
-    /// The bottom plane is a plane parallel to the **xz-plane** at the origin.
-    bottom: S,
-    /// The vertical position of the top plane in camera space.
-    /// the top plane is a plane parallel to the **xz-plane** at the origin.
-    top: S,
-    /// The distance along the **negative z-axis** of the near plane from the eye.
-    /// The near plane is a plane parallel to the **xy-plane** at the origin.
-    near: S,
-    /// the distance along the **negative z-axis** of the far plane from the eye.
-    /// The far plane is a plane parallel to the **xy-plane** at the origin.
-    far: S,
-}
-
-impl<S> NdcBoxSpec<S> {
-    #[inline]
-    pub const fn new(left: S, right: S, bottom: S, top: S, near: S, far: S) -> Self {
-        Self {
-            left: left,
-            right: right,
-            bottom: bottom,
-            top: top,
-            near: near,
-            far: far,
-        }
-    }
-}
-
-impl<S> fmt::Display for NdcBoxSpec<S> 
-where 
-    S: fmt::Display
-{
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            formatter,
-            "NdcSpec [left={}, right={}, bottom={}, top={}, near={}, far={}]",
-            self.left, self.right, self.bottom, self.top, self.near, self.far
-        )
-    }
 }
 
 
@@ -363,7 +337,7 @@ where
     S: SimdScalarFloat
 {
     type Scalar = S;
-    type Spec = NdcBoxSpec<S>;
+    type Spec = BoxSpec<S>;
     type Projection = Matrix4x4<S>;
 
     #[inline]
@@ -423,10 +397,6 @@ where
 
     fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
         Vector3::new(self.right, self.bottom, -self.near)
-    }
-
-    fn set_active(&mut self, projection: ActiveProjection) {
-
     }
 }
 
@@ -495,7 +465,7 @@ where
     S: SimdScalarFloat
 {
     type Scalar = S;
-    type Spec = NdcBoxSpec<S>;
+    type Spec = BoxSpec<S>;
     type Projection = Matrix4x4<S>;
 
     #[inline]
@@ -555,10 +525,6 @@ where
 
     fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
         Vector3::new(self.right, self.bottom, -self.near)
-    }
-
-    fn set_active(&mut self, projection: ActiveProjection) {
-
     }
 }
 
@@ -682,369 +648,6 @@ where
 
     fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
         unimplemented!()
-    }
-
-    fn set_active(&mut self, projection: ActiveProjection) {
-
-    }
-}
-
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct SwitchableFovSpec<S> {
-    /// The vertical field of view angle of the orthographic camera model 
-    /// viewport.
-    fovy: Degrees<S>,
-    /// The ratio of the horizontal width to the vertical height.
-    aspect: S,
-    /// The position of the near plane along the **negative z-axis**.
-    near: S,
-    /// The position of the far plane along the **negative z-axis**.
-    far: S,
-    /// The default active projection at the time of construction.
-    default_active_projection: ActiveProjection,
-}
-
-impl<S> SwitchableFovSpec<S> {
-    /// Construct a new switchable projection operation specification
-    /// based on the vertical field of view angle `fovy`, the `near` plane, the 
-    /// `far` plane, and aspect ratio `aspect`.
-    #[inline]
-    pub const fn new(
-        fovy: Degrees<S>, 
-        aspect: S, 
-        near: S, 
-        far: S, 
-        default_active_projection: ActiveProjection) -> Self 
-    {
-        Self {
-            fovy: fovy,
-            aspect: aspect,
-            near: near,
-            far: far,
-            default_active_projection: default_active_projection,
-        }
-    }
-}
-
-impl<S> fmt::Display for SwitchableFovSpec<S> 
-where 
-    S: fmt::Display
-{
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            formatter,
-            "SwitchableFovSpec [fovy={}, aspect={}, near={}, far={}]",
-            self.fovy, self.aspect, self.near, self.far
-        )
-    }
-}
-
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub struct SwitchableFovProjection<S> {
-    /// The vertical field of view angle of the camera model viewport.
-    fovy: Degrees<S>,
-    /// The ratio of the horizontal width to the vertical height.
-    aspect: S,
-    /// The position of the near plane along the **negative z-axis**.
-    near: S,
-    /// The position of the far plane along the **negative z-axis**.
-    far: S,
-    /// The underlying matrix that implements the orthographic projection.
-    orthographic_matrix: Matrix4x4<S>,
-    /// The underlying matrix that implements the perspective projection.
-    perspective_matrix: Matrix4x4<S>,
-    /// The current active projection.
-    active_projection: ActiveProjection,
-}
-
-
-impl<S> SwitchableFovProjection<S> 
-where 
-    S: SimdScalarFloat 
-{
-    /// Get the underlying matrix implementing the orthographic camera model.
-    #[inline]
-    pub fn to_matrix(&self) -> &Matrix4x4<S> {
-        if self.active_projection.is_perspective() {
-            &self.perspective_matrix
-        } else {
-            &self.orthographic_matrix
-        }
-    }
-}
-
-impl<S> fmt::Display for SwitchableFovProjection<S> 
-where 
-    S: fmt::Display 
-{
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            formatter,
-            "SwitchableFovProjection [orthographic_matrix={}, perspective_matrix={}]",
-            self.orthographic_matrix, self.perspective_matrix
-        )
-    }
-}
-
-impl<S> CameraModel for SwitchableFovProjection<S> 
-where 
-    S: SimdScalarFloat
-{
-    type Scalar = S;
-    type Spec = SwitchableFovSpec<S>;
-    type Projection = Matrix4x4<S>;
-
-    #[inline]
-    fn from_spec(spec: &Self::Spec) -> Self {
-        let orthographic_matrix = Matrix4x4::from_orthographic_fov(
-            spec.fovy, 
-            spec.aspect, 
-            spec.near,
-            spec.far
-        );
-        let perspective_matrix = Matrix4x4::from_perspective_fov(
-            spec.fovy, 
-            spec.aspect, 
-            spec.near,
-            spec.far
-        );
-
-        Self {
-            fovy: spec.fovy,
-            aspect: spec.aspect,
-            near: spec.near,
-            far: spec.far,
-            orthographic_matrix: orthographic_matrix,
-            perspective_matrix: perspective_matrix,
-            active_projection: spec.default_active_projection,
-        }
-    }
-
-    #[inline]
-    fn projection(&self) -> &Self::Projection {
-        &self.to_matrix()
-    }
-
-    fn update_viewport(&mut self, width: usize, height: usize) {
-        let width_float = num_traits::cast::<usize, S>(width).unwrap();
-        let height_float = num_traits::cast::<usize, S>(height).unwrap();
-        self.aspect = width_float / height_float;
-        self.orthographic_matrix = Matrix4x4::from_orthographic_fov(
-            self.fovy, 
-            self.aspect, 
-            self.near, 
-            self.far
-        );
-        self.perspective_matrix = Matrix4x4::from_perspective_fov(
-            self.fovy, 
-            self.aspect, 
-            self.near, 
-            self.far
-        );
-    }
-
-    fn top_left_eye(&self) -> Vector3<Self::Scalar> {
-        unimplemented!()
-    }
-
-    fn top_right_eye(&self) -> Vector3<Self::Scalar> {
-        unimplemented!()
-    }
-
-    fn bottom_left_eye(&self) -> Vector3<Self::Scalar> {
-        unimplemented!()
-    }
-
-    fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
-        unimplemented!()
-    }
-
-    fn set_active(&mut self, projection: ActiveProjection) {
-        self.active_projection = projection
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct SwitchableSpec<S> {
-    /// The horizontal position of the left-hand plane in camera space.
-    /// The left-hand plane is a plane parallel to the **yz-plane** at
-    /// the origin.
-    left: S,
-    /// The horizontal position of the right-hand plane in camera space.
-    /// The right-hand plane is a plane parallel to the **yz-plane** at
-    /// the origin.
-    right: S,
-    /// The vertical position of the **bottom plane** in camera space.
-    /// The bottom plane is a plane parallel to the **xz-plane** at the origin.
-    bottom: S,
-    /// The vertical position of the **top plane** in camera space.
-    /// the top plane is a plane parallel to the **xz-plane** at the origin.
-    top: S,
-    /// The distance along the **negative z-axis** of the **near plane** from the eye.
-    /// The near plane is a plane parallel to the **xy-plane** at the origin.
-    near: S,
-    /// the distance along the **negative z-axis** of the **far plane** from the eye.
-    /// The far plane is a plane parallel to the **xy-plane** at the origin.
-    far: S,
-    /// The default active projection at the time of construction.
-    default_active_projection: ActiveProjection,
-}
-
-impl<S> SwitchableSpec<S> {
-    #[inline]
-    pub const fn new(
-        left: S,
-        right: S,
-        bottom: S,
-        top: S,
-        near: S, 
-        far: S, 
-        default_active_projection: ActiveProjection) -> Self 
-    {
-        Self {
-            left: left,
-            right: right,
-            bottom: bottom,
-            top: top,
-            near: near,
-            far: far,
-            default_active_projection: default_active_projection,
-        }
-    }
-}
-
-impl<S> fmt::Display for SwitchableSpec<S> 
-where 
-    S: fmt::Display
-{
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            formatter,
-            "SwitchableSpec [left={}, right={}, bottom={}, top={}, near={}, far={}]",
-            self.left, self.right, self.bottom, self.top, self.near, self.far
-        )
-    }
-}
-
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub struct SwitchableProjection<S> {
-    left: S,
-    right: S,
-    bottom: S,
-    top: S,
-    near: S,
-    far: S,
-    orthographic_matrix: Matrix4x4<S>,
-    perspective_matrix: Matrix4x4<S>,
-    /// The current active projection.
-    active_projection: ActiveProjection,
-}
-
-
-impl<S> SwitchableProjection<S> 
-where 
-    S: SimdScalarFloat 
-{
-    /// Get the underlying matrix implementing the orthographic camera model.
-    #[inline]
-    pub fn to_matrix(&self) -> &Matrix4x4<S> {
-        if self.active_projection.is_perspective() {
-            &self.perspective_matrix
-        } else {
-            &self.orthographic_matrix
-        }
-    }
-}
-
-impl<S> fmt::Display for SwitchableProjection<S> 
-where 
-    S: fmt::Display 
-{
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            formatter,
-            "SwitchableProjection [orthographic_matrix={}, perspective_matrix={}]",
-            self.orthographic_matrix, self.perspective_matrix
-        )
-    }
-}
-
-impl<S> CameraModel for SwitchableProjection<S> 
-where 
-    S: SimdScalarFloat
-{
-    type Scalar = S;
-    type Spec = SwitchableSpec<S>;
-    type Projection = Matrix4x4<S>;
-
-    #[inline]
-    fn from_spec(spec: &Self::Spec) -> Self {
-        let orthographic_matrix = Matrix4x4::from_orthographic(
-            spec.left, 
-            spec.right, 
-            spec.bottom,
-            spec.top,
-            spec.near,
-            spec.far
-        );
-        let perspective_matrix = Matrix4x4::from_perspective(
-            spec.left, 
-            spec.right, 
-            spec.bottom,
-            spec.top,
-            spec.near,
-            spec.far
-        );
-
-        Self {
-            left: spec.left,
-            right: spec.right,
-            bottom: spec.bottom,
-            top: spec.top,
-            near: spec.near,
-            far: spec.far,
-            orthographic_matrix: orthographic_matrix,
-            perspective_matrix: perspective_matrix,
-            active_projection: spec.default_active_projection,
-        }
-    }
-
-    #[inline]
-    fn projection(&self) -> &Self::Projection {
-        &self.to_matrix()
-    }
-
-    fn update_viewport(&mut self, width: usize, height: usize) {
-        /*
-        let width_float = num_traits::cast::<usize, S>(width).unwrap();
-        let height_float = num_traits::cast::<usize, S>(height).unwrap();
-        */
-        unimplemented!()
-    }
-
-    fn top_left_eye(&self) -> Vector3<Self::Scalar> {
-        Vector3::new(self.left, self.top, -self.near)
-    }
-
-    fn top_right_eye(&self) -> Vector3<Self::Scalar> {
-        Vector3::new(self.right, self.top, -self.near)
-    }
-
-    fn bottom_left_eye(&self) -> Vector3<Self::Scalar> {
-        Vector3::new(self.left, self.bottom, -self.near)
-    }
-
-    fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
-        Vector3::new(self.right, self.bottom, -self.near)
-    }
-
-    fn set_active(&mut self, projection: ActiveProjection) {
-        self.active_projection = projection
     }
 }
 
@@ -1332,10 +935,6 @@ where
 
     pub fn bottom_right_eye(&self) -> Vector3<S> {
         self.model.bottom_right_eye()
-    }
-
-    pub fn set_active(&mut self, projection: ActiveProjection) {
-        self.model.set_active(projection);
     }
 
     pub fn get_ray_eye(&self, u: S, v: S) -> Ray<S> {

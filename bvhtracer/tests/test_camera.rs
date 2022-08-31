@@ -2,7 +2,7 @@ extern crate bvhtracer;
 
 use bvhtracer::{
     PerspectiveProjection,
-    NdcBoxSpec,
+    BoxSpec,
     CameraAttitudeSpec,
     Camera,
     Ray,
@@ -14,7 +14,7 @@ use cglinalg::{
 
 
 fn camera1() -> Camera<f64, PerspectiveProjection<f64>> {
-    let model_spec = NdcBoxSpec::new(
+    let model_spec = BoxSpec::new(
         -4_f64, 
         4_f64, 
         -3_f64, 
@@ -294,7 +294,7 @@ fn test_camera_origin_world_to_eye11() {
 }
 
 fn camera2() -> Camera<f64, PerspectiveProjection<f64>> {
-    let model_spec = NdcBoxSpec::new(
+    let model_spec = BoxSpec::new(
         -4_f64, 
         4_f64, 
         -3_f64, 

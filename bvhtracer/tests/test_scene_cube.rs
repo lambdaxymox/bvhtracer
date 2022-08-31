@@ -10,7 +10,7 @@ use bvhtracer::{
     ModelDecoder,
     SceneObjectBuilder,
     SceneBuilder,
-    NdcBoxSpec,
+    BoxSpec,
     Triangle,
     Normals,
     Ray,
@@ -30,7 +30,7 @@ use std::fs::{
 
 
 fn scene() -> Scene {
-    let model_spec = NdcBoxSpec::new(
+    let model_spec = BoxSpec::new(
         -1_f32, 
         1_f32, 
         -1_f32, 

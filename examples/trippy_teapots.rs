@@ -36,7 +36,7 @@ impl AppStateTrippyTeapots {
         let p1 = (rot_mat * _p1.extend(1_f32)).contract();
         let p2 = (rot_mat * _p2.extend(1_f32)).contract();
         let focal_offset = 0_f32;
-        let model_spec = NdcBoxSpec::new(
+        let model_spec = BoxSpec::new(
             p0.x, 
             p1.x, 
             p2.y + focal_offset,

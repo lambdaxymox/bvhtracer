@@ -2,7 +2,7 @@ extern crate bvhtracer;
 extern crate cglinalg;
 
 use bvhtracer::{
-    NdcBoxSpec,
+    BoxSpec,
     CameraAttitudeSpec,
     Camera,
     Triangle,
@@ -51,7 +51,7 @@ struct TestCase {
 
 
 fn scene() -> Scene {
-    let model_spec = NdcBoxSpec::new(
+    let model_spec = BoxSpec::new(
         -1_f32, 
          1_f32, 
         -1_f32, 

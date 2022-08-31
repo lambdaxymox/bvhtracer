@@ -35,7 +35,7 @@ impl AppStateQuad {
             100_f32, 
         );
         */
-        let model_spec = NdcBoxSpec::new(
+        let model_spec = BoxSpec::new(
             -1_f32, 
             1_f32, 
             -1_f32, 
