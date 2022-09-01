@@ -418,17 +418,7 @@ where
 #[repr(C)]
 #[derive(Clone, Debug)]
 pub struct PerspectiveFovProjection<S> {
-    /*
-    /// The vertical field of view angle of the perspective transformation
-    /// viewport.
-    fovy: Degrees<S>,
-    /// The ratio of the horizontal width to the vertical height.
-    aspect: S,
-    /// The position of the near plane along the **negative z-axis**.
-    near: S,
-    /// The position of the far plane along the **negative z-axis**.
-    far: S,
-    */
+    /// The underlying view volume geometry for the camera projection.
     frustum: Frustum<S>,
     /// The underlying perspective projection transformation.
     matrix: Matrix4x4<S>,
@@ -474,12 +464,6 @@ where
         let frustum = Frustum::from(spec);
 
         Self {
-            /*
-            fovy: spec.fovy,
-            aspect: spec.aspect,
-            near: spec.near,
-            far: spec.far,
-            */
             frustum: frustum,
             matrix: matrix,
         }
@@ -521,28 +505,7 @@ where
 #[repr(C)]
 #[derive(Clone, Debug)]
 pub struct PerspectiveProjection<S> {
-    /*
-    /// The horizontal position of the left-hand plane in camera space.
-    /// The left-hand plane is a plane parallel to the **yz-plane** at
-    /// the origin.
-    left: S,
-    /// The horizontal position of the right-hand plane in camera space.
-    /// The right-hand plane is a plane parallel to the **yz-plane** at
-    /// the origin.
-    right: S,
-    /// The vertical position of the bottom plane in camera space.
-    /// The bottom plane is a plane parallel to the **xz-plane** at the origin.
-    bottom: S,
-    /// The vertical position of the top plane in camera space.
-    /// the top plane is a plane parallel to the **xz-plane** at the origin.
-    top: S,
-    /// The distance along the **negative z-axis** of the near plane from the eye.
-    /// The near plane is a plane parallel to the **xy-plane** at the origin.
-    near: S,
-    /// the distance along the **negative z-axis** of the far plane from the eye.
-    /// The far plane is a plane parallel to the **xy-plane** at the origin.
-    far: S,
-    */
+    /// The underlying view volume geometry for the camera projection.
     frustum: Frustum<S>,
     /// The underlying perspective projection matrix.
     matrix: Matrix4x4<S>,
@@ -590,14 +553,6 @@ where
         let frustum = Frustum::from(spec);
 
         Self {
-            /*
-            left: spec.left,
-            right: spec.right,
-            bottom: spec.bottom,
-            top: spec.top,
-            near: spec.near,
-            far: spec.far,
-            */
             frustum: frustum,
             matrix: matrix,
         }
@@ -610,30 +565,18 @@ where
 
     fn top_left_eye(&self) -> Vector3<Self::Scalar> {
         self.frustum.top_left_eye()
-        /*
-        Vector3::new(self.left, self.top, -self.near)
-        */
     }
 
     fn top_right_eye(&self) -> Vector3<Self::Scalar> {
         self.frustum.top_right_eye()
-        /*
-        Vector3::new(self.right, self.top, -self.near)
-        */
     }
 
     fn bottom_left_eye(&self) -> Vector3<Self::Scalar> {
         self.frustum.bottom_left_eye()
-        /*
-        Vector3::new(self.left, self.bottom, -self.near)
-        */
     }
 
     fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
         self.frustum.bottom_right_eye()
-        /*
-        Vector3::new(self.right, self.bottom, -self.near)
-        */
     }
 }
 
@@ -649,30 +592,9 @@ where
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq)]
 pub struct OrthographicProjection<S> {
-    /*
-    /// The horizontal position of the left-hand plane in camera space.
-    /// The left-hand plane is a plane parallel to the **yz-plane** at
-    /// the origin.
-    left: S,
-    /// The horizontal position of the right-hand plane in camera space.
-    /// The right-hand plane is a plane parallel to the **yz-plane** at
-    /// the origin.
-    right: S,
-    /// The vertical position of the **bottom plane** in camera space.
-    /// The bottom plane is a plane parallel to the **xz-plane** at the origin.
-    bottom: S,
-    /// The vertical position of the **top plane** in camera space.
-    /// the top plane is a plane parallel to the **xz-plane** at the origin.
-    top: S,
-    /// The distance along the **negative z-axis** of the **near plane** from the eye.
-    /// The near plane is a plane parallel to the **xy-plane** at the origin.
-    near: S,
-    /// the distance along the **negative z-axis** of the **far plane** from the eye.
-    /// The far plane is a plane parallel to the **xy-plane** at the origin.
-    far: S,
-    /// The underlying matrix that implements the orthographic projection.
-    /// */
+    /// The underlying view volume geometry for the camera projection.
     frustum: Frustum<S>,
+    /// The underlying matrix that implements the orthographic projection.
     matrix: Matrix4x4<S>,
 }
 
@@ -721,14 +643,6 @@ where
         let frustum = Frustum::from(spec);
 
         Self {
-            /*
-            left: spec.left,
-            right: spec.right,
-            bottom: spec.bottom,
-            top: spec.top,
-            near: spec.near,
-            far: spec.far,
-            */
             frustum: frustum, 
             matrix: matrix,
         }
@@ -741,30 +655,18 @@ where
 
     fn top_left_eye(&self) -> Vector3<Self::Scalar> {
         self.frustum.top_left_eye()
-        /*
-        Vector3::new(self.left, self.top, -self.near)
-        */
     }
 
     fn top_right_eye(&self) -> Vector3<Self::Scalar> {
         self.frustum.top_right_eye()
-        /*
-        Vector3::new(self.right, self.top, -self.near)
-        */
     }
 
     fn bottom_left_eye(&self) -> Vector3<Self::Scalar> {
         self.bottom_left_eye()
-        /*
-        Vector3::new(self.left, self.bottom, -self.near)
-        */
     }
 
     fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
         self.bottom_right_eye()
-        /*
-        Vector3::new(self.right, self.bottom, -self.near)
-        */
     }
 }
 
@@ -794,17 +696,7 @@ where
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq)]
 pub struct OrthographicFovProjection<S> {
-    /*
-    /// The vertical field of view angle of the orthographic camera model 
-    /// viewport.
-    fovy: Degrees<S>,
-    /// The ratio of the horizontal width to the vertical height.
-    aspect: S,
-    /// The position of the near plane along the **negative z-axis**.
-    near: S,
-    /// The position of the far plane along the **negative z-axis**.
-    far: S,
-    */
+    /// The underlying view volume geometry for the camera projection.
     frustum: Frustum<S>,
     /// The underlying matrix that implements the orthographic projection.
     matrix: Matrix4x4<S>,
@@ -853,12 +745,6 @@ where
         let frustum = Frustum::from(spec);
 
         Self {
-            /*
-            fovy: spec.fovy,
-            aspect: spec.aspect,
-            near: spec.near,
-            far: spec.far,
-            */
             frustum: frustum,
             matrix: matrix,
         }
