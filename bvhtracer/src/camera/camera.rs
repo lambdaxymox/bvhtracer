@@ -662,11 +662,11 @@ where
     }
 
     fn bottom_left_eye(&self) -> Vector3<Self::Scalar> {
-        self.bottom_left_eye()
+        self.frustum.bottom_left_eye()
     }
 
     fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
-        self.bottom_right_eye()
+        self.frustum.bottom_right_eye()
     }
 }
 
