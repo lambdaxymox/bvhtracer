@@ -4,6 +4,7 @@ use crate::query::{
 use cglinalg::{
     Degrees,
     Radians,
+    Vector2,
     Vector3,
     Vector4,
     Magnitude,
@@ -11,6 +12,7 @@ use cglinalg::{
     Quaternion,
     SimdScalarFloat,
     Unit,
+    Angle,
 };
 use std::fmt;
 
@@ -125,6 +127,272 @@ impl<S> BoxSpec<S> {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct AsymmetricFovSpec<S> {
+    fovy_top: Degrees<S>,
+    fovy_bottom: Degrees<S>,
+    fovx_left: Degrees<S>,
+    fovx_right: Degrees<S>,
+    near: S,
+    far: S,
+}
+
+impl<S> AsymmetricFovSpec<S> {
+    #[inline]
+    pub const fn new(
+        fovy_top: Degrees<S>, 
+        fovy_bottom: Degrees<S>, 
+        fovx_left: Degrees<S>, 
+        fovx_right: Degrees<S>, 
+        near: S, 
+        far: S
+    ) -> Self 
+    {
+        Self { fovy_top, fovy_bottom, fovx_left, fovx_right, near, far, }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Frustum<S> {
+    top_left: Vector2<S>,
+    extent: Vector2<S>, 
+    fovy_top: Degrees<S>,
+    fovy_bottom: Degrees<S>,
+    fovx_left: Degrees<S>,
+    fovx_right: Degrees<S>,
+    aspect: S,
+    near: S,
+    far: S,
+}
+
+impl<S> Frustum<S>
+where
+    S: SimdScalarFloat,
+{
+    #[inline]
+    pub const fn near(&self) -> S {
+        self.near
+    }
+
+    #[inline]
+    pub const fn far(&self) -> S {
+        self.far
+    }
+
+    #[inline]
+    pub const fn aspect(&self) -> S {
+        self.aspect
+    }
+
+    #[inline]
+    pub fn fovy(&self) -> Degrees<S> {
+        self.fovy_top + self.fovy_bottom
+    }
+
+    #[inline]
+    pub fn fovx(&self) -> Degrees<S> {
+        self.fovx_left + self.fovx_right
+    }
+
+    #[inline]
+    pub fn top_left_eye(&self) -> Vector3<S> {
+        Vector3::new(self.top_left.x, self.top_left.y, -self.near)
+    }
+
+    #[inline]
+    pub fn top_right_eye(&self) -> Vector3<S> {
+        Vector3::new(self.top_left.x + self.extent.x, self.top_left.y, -self.near)
+    }
+
+    #[inline]
+    pub fn bottom_left_eye(&self) -> Vector3<S> {
+        Vector3::new(self.top_left.x, self.top_left.y - self.extent.y, -self.near)
+    }
+
+    #[inline]
+    pub fn bottom_right_eye(&self) -> Vector3<S> {
+        Vector3::new(self.top_left.x + self.extent.x, self.top_left.y - self.extent.y, -self.near)
+    }
+}
+
+impl<S> From<SymmetricFovSpec<S>> for Frustum<S>
+where
+    S: SimdScalarFloat,
+{
+    fn from(spec: SymmetricFovSpec<S>) -> Frustum<S> {
+        let two = S::one() + S::one();
+        let fovy_over_two = spec.fovy / two;
+        let tan_fovy_over_two = Degrees::tan(fovy_over_two);
+        let top = spec.near * tan_fovy_over_two;
+        let bottom = -top;
+        let left = -spec.aspect * top;
+        let right = spec.aspect * top;
+        let top_left = Vector2::new(left, top);
+        let extent = Vector2::new(right - left, top - bottom);
+        let fovy_top = fovy_over_two;
+        let fovy_bottom = fovy_over_two;
+        let tan_fovx_over_two = right / spec.near;
+        let fovx_over_two = S::atan(tan_fovx_over_two);
+        let fovx_left = Degrees::from(Radians(fovx_over_two));
+        let fovx_right = Degrees::from(Radians(fovx_over_two));
+
+        Frustum {
+            top_left: top_left,
+            extent: extent,
+            fovy_top: fovy_top,
+            fovy_bottom: fovy_bottom,
+            fovx_left: fovx_left,
+            fovx_right: fovx_right,
+            aspect: spec.aspect,
+            near: spec.near,
+            far: spec.far,
+        }
+    }
+}
+
+impl<S> From<&SymmetricFovSpec<S>> for Frustum<S>
+where
+    S: SimdScalarFloat,
+{
+    fn from(spec: &SymmetricFovSpec<S>) -> Frustum<S> {
+        let two = S::one() + S::one();
+        let fovy_over_two = spec.fovy / two;
+        let tan_fovy_over_two = Degrees::tan(fovy_over_two);
+        let top = spec.near * tan_fovy_over_two;
+        let bottom = -top;
+        let left = -spec.aspect * top;
+        let right = spec.aspect * top;
+        let top_left = Vector2::new(left, top);
+        let extent = Vector2::new(right - left, top - bottom);
+        let fovy_top = fovy_over_two;
+        let fovy_bottom = fovy_over_two;
+        let tan_fovx_over_two = right / spec.near;
+        let fovx_over_two = S::atan(tan_fovx_over_two);
+        let fovx_left = Degrees::from(Radians(fovx_over_two));
+        let fovx_right = Degrees::from(Radians(fovx_over_two));
+
+        Frustum {
+            top_left: top_left,
+            extent: extent,
+            fovy_top: fovy_top,
+            fovy_bottom: fovy_bottom,
+            fovx_left: fovx_left,
+            fovx_right: fovx_right,
+            aspect: spec.aspect,
+            near: spec.near,
+            far: spec.far,
+        }
+    }
+}
+
+impl<S> From<AsymmetricFovSpec<S>> for Frustum<S>
+where
+    S: SimdScalarFloat,
+{
+    fn from(spec: AsymmetricFovSpec<S>) -> Frustum<S> {
+        let left = spec.near * Degrees::tan(spec.fovx_left);
+        let right = spec.near * Degrees::tan(spec.fovx_right);
+        let top = spec.near * Degrees::tan(spec.fovy_top);
+        let bottom = spec.near * Degrees::tan(spec.fovy_bottom);
+        let top_left = Vector2::new(left, top);
+        let extent = Vector2::new(right - left, top - bottom);
+        let aspect = (right - left) / (top - bottom);
+
+        Frustum {
+            top_left: top_left,
+            extent: extent,
+            fovy_top: spec.fovy_top,
+            fovy_bottom: spec.fovy_bottom,
+            fovx_left: spec.fovx_left,
+            fovx_right: spec.fovx_right,
+            aspect: aspect,
+            near: spec.near,
+            far: spec.far,
+        }
+    }
+}
+
+impl<S> From<&AsymmetricFovSpec<S>> for Frustum<S>
+where
+    S: SimdScalarFloat,
+{
+    fn from(spec: &AsymmetricFovSpec<S>) -> Frustum<S> {
+        let left = spec.near * Degrees::tan(spec.fovx_left);
+        let right = spec.near * Degrees::tan(spec.fovx_right);
+        let top = spec.near * Degrees::tan(spec.fovy_top);
+        let bottom = spec.near * Degrees::tan(spec.fovy_bottom);
+        let top_left = Vector2::new(left, top);
+        let extent = Vector2::new(right - left, top - bottom);
+        let aspect = (right - left) / (top - bottom);
+
+        Frustum {
+            top_left: top_left,
+            extent: extent,
+            fovy_top: spec.fovy_top,
+            fovy_bottom: spec.fovy_bottom,
+            fovx_left: spec.fovx_left,
+            fovx_right: spec.fovx_right,
+            aspect: aspect,
+            near: spec.near,
+            far: spec.far,
+        }
+    }
+}
+
+impl<S> From<BoxSpec<S>> for Frustum<S>
+where
+    S: SimdScalarFloat,
+{
+    fn from(spec: BoxSpec<S>) -> Frustum<S> {
+        let top_left = Vector2::new(spec.left, spec.top);
+        let extent = Vector2::new(spec.right - spec.left, spec.top - spec.bottom);
+        let aspect = extent.x / extent.y;
+        let fovy_top = Degrees::atan(spec.top / spec.near);
+        let fovy_bottom = Degrees::atan(-spec.bottom / spec.near);
+        let fovx_left = Degrees::atan(-spec.left / spec.near);
+        let fovx_right = Degrees::atan(spec.right / spec.near);
+
+        Frustum {
+            top_left: top_left,
+            extent: extent,
+            fovy_top: fovy_top,
+            fovy_bottom: fovy_bottom,
+            fovx_left: fovx_left,
+            fovx_right: fovx_right,
+            aspect: aspect,
+            near: spec.near,
+            far: spec.far,
+        }
+    }
+}
+
+impl<S> From<&BoxSpec<S>> for Frustum<S>
+where
+    S: SimdScalarFloat,
+{
+    fn from(spec: &BoxSpec<S>) -> Frustum<S> {
+        let top_left = Vector2::new(spec.left, spec.top);
+        let extent = Vector2::new(spec.right - spec.left, spec.top - spec.bottom);
+        let aspect = extent.x / extent.y;
+        let fovy_top = Degrees::atan(spec.top / spec.near);
+        let fovy_bottom = Degrees::atan(-spec.bottom / spec.near);
+        let fovx_left = Degrees::atan(-spec.left / spec.near);
+        let fovx_right = Degrees::atan(spec.right / spec.near);
+
+        Frustum {
+            top_left: top_left,
+            extent: extent,
+            fovy_top: fovy_top,
+            fovy_bottom: fovy_bottom,
+            fovx_left: fovx_left,
+            fovx_right: fovx_right,
+            aspect: aspect,
+            near: spec.near,
+            far: spec.far,
+        }
+    }
+}
+
 /// A perspective projection based on the `near` plane, the `far` plane and 
 /// the vertical field of view angle `fovy` and the horizontal/vertical aspect 
 /// ratio `aspect`.
@@ -153,6 +421,7 @@ impl<S> BoxSpec<S> {
 #[repr(C)]
 #[derive(Clone, Debug)]
 pub struct PerspectiveFovProjection<S> {
+    /*
     /// The vertical field of view angle of the perspective transformation
     /// viewport.
     fovy: Degrees<S>,
@@ -162,6 +431,8 @@ pub struct PerspectiveFovProjection<S> {
     near: S,
     /// The position of the far plane along the **negative z-axis**.
     far: S,
+    */
+    frustum: Frustum<S>,
     /// The underlying perspective projection transformation.
     matrix: Matrix4x4<S>,
 }
@@ -203,12 +474,16 @@ where
             spec.near, 
             spec.far
         );
+        let frustum = Frustum::from(spec);
 
         Self {
+            /*
             fovy: spec.fovy,
             aspect: spec.aspect,
             near: spec.near,
             far: spec.far,
+            */
+            frustum: frustum,
             matrix: matrix,
         }
     }
@@ -219,6 +494,7 @@ where
     }
 
     fn update_viewport(&mut self, width: usize, height: usize) {
+        /*
         let width_float = num_traits::cast::<usize, S>(width).unwrap();
         let height_float = num_traits::cast::<usize, S>(height).unwrap();
         self.aspect = width_float / height_float;
@@ -228,22 +504,23 @@ where
             self.near, 
             self.far
         );
+        */
     }
 
     fn top_left_eye(&self) -> Vector3<Self::Scalar> {
-        unimplemented!()
+        self.frustum.top_left_eye()
     }
 
     fn top_right_eye(&self) -> Vector3<Self::Scalar> {
-        unimplemented!()
+        self.frustum.top_right_eye()
     }
 
     fn bottom_left_eye(&self) -> Vector3<Self::Scalar> {
-        unimplemented!()
+        self.frustum.bottom_left_eye()
     }
 
     fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
-        unimplemented!()
+        self.frustum.bottom_right_eye()
     }
 }
 
@@ -261,6 +538,7 @@ where
 #[repr(C)]
 #[derive(Clone, Debug)]
 pub struct PerspectiveProjection<S> {
+    /*
     /// The horizontal position of the left-hand plane in camera space.
     /// The left-hand plane is a plane parallel to the **yz-plane** at
     /// the origin.
@@ -281,6 +559,8 @@ pub struct PerspectiveProjection<S> {
     /// the distance along the **negative z-axis** of the far plane from the eye.
     /// The far plane is a plane parallel to the **xy-plane** at the origin.
     far: S,
+    */
+    frustum: Frustum<S>,
     /// The underlying perspective projection matrix.
     matrix: Matrix4x4<S>,
 }
@@ -324,14 +604,18 @@ where
             spec.near,
             spec.far
         );
+        let frustum = Frustum::from(spec);
 
         Self {
+            /*
             left: spec.left,
             right: spec.right,
             bottom: spec.bottom,
             top: spec.top,
             near: spec.near,
             far: spec.far,
+            */
+            frustum: frustum,
             matrix: matrix,
         }
     }
@@ -354,23 +638,37 @@ where
             self.far
         );
         */
+        /*
         unimplemented!()
+        */
     }
 
     fn top_left_eye(&self) -> Vector3<Self::Scalar> {
+        self.frustum.top_left_eye()
+        /*
         Vector3::new(self.left, self.top, -self.near)
+        */
     }
 
     fn top_right_eye(&self) -> Vector3<Self::Scalar> {
+        self.frustum.top_right_eye()
+        /*
         Vector3::new(self.right, self.top, -self.near)
+        */
     }
 
     fn bottom_left_eye(&self) -> Vector3<Self::Scalar> {
+        self.frustum.bottom_left_eye()
+        /*
         Vector3::new(self.left, self.bottom, -self.near)
+        */
     }
 
     fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
+        self.frustum.bottom_right_eye()
+        /*
         Vector3::new(self.right, self.bottom, -self.near)
+        */
     }
 }
 
@@ -384,8 +682,9 @@ where
 /// projections preserve the spatial ordering in the distance that points are 
 /// located from the viewing plane.
 #[repr(C)]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct OrthographicProjection<S> {
+    /*
     /// The horizontal position of the left-hand plane in camera space.
     /// The left-hand plane is a plane parallel to the **yz-plane** at
     /// the origin.
@@ -407,6 +706,8 @@ pub struct OrthographicProjection<S> {
     /// The far plane is a plane parallel to the **xy-plane** at the origin.
     far: S,
     /// The underlying matrix that implements the orthographic projection.
+    /// */
+    frustum: Frustum<S>,
     matrix: Matrix4x4<S>,
 }
 
@@ -452,14 +753,18 @@ where
             spec.near,
             spec.far
         );
+        let frustum = Frustum::from(spec);
 
         Self {
+            /*
             left: spec.left,
             right: spec.right,
             bottom: spec.bottom,
             top: spec.top,
             near: spec.near,
             far: spec.far,
+            */
+            frustum: frustum, 
             matrix: matrix,
         }
     }
@@ -486,19 +791,31 @@ where
     }
 
     fn top_left_eye(&self) -> Vector3<Self::Scalar> {
+        self.frustum.top_left_eye()
+        /*
         Vector3::new(self.left, self.top, -self.near)
+        */
     }
 
     fn top_right_eye(&self) -> Vector3<Self::Scalar> {
+        self.frustum.top_right_eye()
+        /*
         Vector3::new(self.right, self.top, -self.near)
+        */
     }
 
     fn bottom_left_eye(&self) -> Vector3<Self::Scalar> {
+        self.bottom_left_eye()
+        /*
         Vector3::new(self.left, self.bottom, -self.near)
+        */
     }
 
     fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
+        self.bottom_right_eye()
+        /*
         Vector3::new(self.right, self.bottom, -self.near)
+        */
     }
 }
 
@@ -526,8 +843,9 @@ where
 /// projections preserve the spatial ordering in the distance that points are 
 /// located from the viewing plane.
 #[repr(C)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct OrthographicFovProjection<S> {
+    /*
     /// The vertical field of view angle of the orthographic camera model 
     /// viewport.
     fovy: Degrees<S>,
@@ -537,6 +855,8 @@ pub struct OrthographicFovProjection<S> {
     near: S,
     /// The position of the far plane along the **negative z-axis**.
     far: S,
+    */
+    frustum: Frustum<S>,
     /// The underlying matrix that implements the orthographic projection.
     matrix: Matrix4x4<S>,
 }
@@ -581,12 +901,16 @@ where
             spec.near,
             spec.far
         );
+        let frustum = Frustum::from(spec);
 
         Self {
+            /*
             fovy: spec.fovy,
             aspect: spec.aspect,
             near: spec.near,
             far: spec.far,
+            */
+            frustum: frustum,
             matrix: matrix,
         }
     }
@@ -597,6 +921,7 @@ where
     }
 
     fn update_viewport(&mut self, width: usize, height: usize) {
+        /*
         let width_float = num_traits::cast::<usize, S>(width).unwrap();
         let height_float = num_traits::cast::<usize, S>(height).unwrap();
         self.aspect = width_float / height_float;
@@ -606,22 +931,23 @@ where
             self.near, 
             self.far
         );
+        */
     }
 
     fn top_left_eye(&self) -> Vector3<Self::Scalar> {
-        unimplemented!()
+        self.frustum.top_left_eye()
     }
 
     fn top_right_eye(&self) -> Vector3<Self::Scalar> {
-        unimplemented!()
+        self.frustum.top_right_eye()
     }
 
     fn bottom_left_eye(&self) -> Vector3<Self::Scalar> {
-        unimplemented!()
+        self.frustum.bottom_left_eye()
     }
 
     fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
-        unimplemented!()
+        self.frustum.bottom_right_eye()
     }
 }
 
