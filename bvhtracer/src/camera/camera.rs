@@ -37,9 +37,6 @@ pub trait CameraModel {
     /// view space into the canonical view volume of the camera.
     fn projection(&self) -> &Self::Projection;
 
-    /// Update the camera model based on changes in the viewport dimensions.
-    fn update_viewport(&mut self, width: usize, height: usize);
-
     /// Get the location in eye space of the top left corner of the viewport.
     fn top_left_eye(&self) -> Vector3<Self::Scalar>;
 
@@ -493,20 +490,6 @@ where
         &self.matrix
     }
 
-    fn update_viewport(&mut self, width: usize, height: usize) {
-        /*
-        let width_float = num_traits::cast::<usize, S>(width).unwrap();
-        let height_float = num_traits::cast::<usize, S>(height).unwrap();
-        self.aspect = width_float / height_float;
-        self.matrix = Matrix4x4::from_perspective_fov(
-            self.fovy, 
-            self.aspect, 
-            self.near, 
-            self.far
-        );
-        */
-    }
-
     fn top_left_eye(&self) -> Vector3<Self::Scalar> {
         self.frustum.top_left_eye()
     }
@@ -623,24 +606,6 @@ where
     #[inline]
     fn projection(&self) -> &Self::Projection {
         &self.matrix
-    }
-
-    fn update_viewport(&mut self, width: usize, height: usize) {
-        /*
-        let width_float = num_traits::cast::<usize, S>(width).unwrap();
-        let height_float = num_traits::cast::<usize, S>(height).unwrap();
-        self.matrix = Matrix4x4::from_perspective(
-            self.left,
-            self.right,
-            self.bottom,
-            self.top,
-            self.near,
-            self.far
-        );
-        */
-        /*
-        unimplemented!()
-        */
     }
 
     fn top_left_eye(&self) -> Vector3<Self::Scalar> {
@@ -774,22 +739,6 @@ where
         &self.matrix
     }
 
-    fn update_viewport(&mut self, _width: usize, _height: usize) {
-        /*
-        let width_float = num_traits::cast::<usize, S>(width).unwrap();
-        let height_float = num_traits::cast::<usize, S>(height).unwrap();
-        self.matrix = Matrix4x4::from_orthographic(
-            self.left,
-            self.right,
-            self.bottom,
-            self.top,
-            self.near,
-            self.far
-        );
-        */
-        unimplemented!()
-    }
-
     fn top_left_eye(&self) -> Vector3<Self::Scalar> {
         self.frustum.top_left_eye()
         /*
@@ -918,20 +867,6 @@ where
     #[inline]
     fn projection(&self) -> &Self::Projection {
         &self.matrix
-    }
-
-    fn update_viewport(&mut self, width: usize, height: usize) {
-        /*
-        let width_float = num_traits::cast::<usize, S>(width).unwrap();
-        let height_float = num_traits::cast::<usize, S>(height).unwrap();
-        self.aspect = width_float / height_float;
-        self.matrix = Matrix4x4::from_orthographic_fov(
-            self.fovy, 
-            self.aspect, 
-            self.near, 
-            self.far
-        );
-        */
     }
 
     fn top_left_eye(&self) -> Vector3<Self::Scalar> {
@@ -1134,11 +1069,6 @@ where
             model: <M as CameraModel>::from_spec(model_spec),
             attitude: CameraAttitude::from_spec(attitude_spec),
         }
-    }
-
-    /// Update the camera model based on changes to the viewport's dimensions.
-    pub fn update_viewport(&mut self, width: usize, height: usize) {
-        self.model.update_viewport(width, height);
     }
 
     /// Get the camera's position in world space.
