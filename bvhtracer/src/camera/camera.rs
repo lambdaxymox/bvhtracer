@@ -52,7 +52,7 @@ pub trait CameraModel {
 }
 
 #[derive(Clone, Debug)]
-pub struct FovSpec<S> {
+pub struct SymmetricFovSpec<S> {
     /// The vertical field of view angle of the viewport.
     fovy: Degrees<S>,
     /// The ratio of the horizontal width to the vertical height.
@@ -63,7 +63,7 @@ pub struct FovSpec<S> {
     far: S,
 }
 
-impl<S> FovSpec<S> {
+impl<S> SymmetricFovSpec<S> {
     #[inline]
     pub const fn new(fovy: Degrees<S>, aspect: S, near: S, far: S) -> Self {
         Self {
@@ -75,19 +75,6 @@ impl<S> FovSpec<S> {
     }
 }
 
-
-impl<S> fmt::Display for FovSpec<S> 
-where 
-    S: fmt::Display 
-{
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-       write!(
-           formatter,
-           "FovSpec [fovy={}, aspect={}, near={}, far={}]",
-           self.fovy, self.aspect, self.near, self.far
-       )
-    }
-}
 
 /// A projection based on arbitrary `left`, `right`, `bottom`, `top`, `near`, and 
 /// `far` planes.
@@ -135,19 +122,6 @@ impl<S> BoxSpec<S> {
             near: near,
             far: far,
         }
-    }
-}
-
-impl<S> fmt::Display for BoxSpec<S> 
-where 
-    S: fmt::Display
-{
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            formatter,
-            "NdcSpec [left={}, right={}, bottom={}, top={}, near={}, far={}]",
-            self.left, self.right, self.bottom, self.top, self.near, self.far
-        )
     }
 }
 
@@ -218,7 +192,7 @@ where
     S: SimdScalarFloat 
 {
     type Scalar = S;
-    type Spec = FovSpec<S>;
+    type Spec = SymmetricFovSpec<S>;
     type Projection = Matrix4x4<S>;
 
     #[inline]
@@ -596,7 +570,7 @@ where
     S: SimdScalarFloat
 {
     type Scalar = S;
-    type Spec = FovSpec<S>;
+    type Spec = SymmetricFovSpec<S>;
     type Projection = Matrix4x4<S>;
 
     #[inline]
@@ -694,20 +668,6 @@ where
         }
     }
 }
-
-impl<S> fmt::Display for CameraAttitudeSpec<S> 
-where 
-    S: fmt::Display
-{
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            formatter,
-            "CameraAttitudeSpec [position={}, forward={}, right={} up={}, axis={}]",
-            self.position, self.forward, self.right, self.up, self.axis
-        )
-    }
-}
-
 
 /// This type contains all the data for tracking the position and orientation
 /// of a camera in world space as well as for transforming vectors from world 
