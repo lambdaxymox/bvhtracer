@@ -27,26 +27,6 @@ struct AppStateTrippyTeapots {
 
 impl AppStateTrippyTeapots {
     fn new() -> Self {
-        /*
-        let rot_mat_x = Matrix4x4::from_affine_angle_x(Radians(0.0));
-        let rot_mat_z = Matrix4x4::from_affine_angle_z(Radians(2.5));
-        let rot_mat = rot_mat_z * rot_mat_x;
-        let _p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
-        let _p1 = Vector3::new(1_f32, 1_f32, 2_f32);
-        let _p2 = Vector3::new(-1_f32, -1_f32, 2_f32);
-        let p0 = (rot_mat * _p0.extend(1_f32)).contract();
-        let p1 = (rot_mat * _p1.extend(1_f32)).contract();
-        let p2 = (rot_mat * _p2.extend(1_f32)).contract();
-        let model_spec = BoxSpec::new(
-            p0.x, 
-            p1.x, 
-            p2.y,
-            p0.y,
-            p0.z, 
-            10000_f32, 
-        );
-        println!("{:?}", model_spec);
-        */
         let model_spec = SymmetricFovSpec::new(
             Degrees(90_f32),
             1_f32,

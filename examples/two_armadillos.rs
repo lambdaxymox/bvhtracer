@@ -25,17 +25,6 @@ struct AppStateTwoArmadillos {
 
 impl AppStateTwoArmadillos {
     fn new() -> Self {
-        /*
-        let focal_offset = 0.25_f32;
-        let model_spec = BoxSpec::new(
-            -1_f32, 
-            1_f32, 
-            -1_f32 + focal_offset, 
-            1_f32 + focal_offset, 
-            2.0_f32,
-            10000_f32,
-        );
-        */
         let model_spec = SymmetricFovSpec::new(
             Degrees(90_f32),
             1_f32,

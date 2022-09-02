@@ -29,10 +29,6 @@ pub trait CameraModel {
     /// normalized device coordinates.
     type Projection;
 
-    /// Construct a camera model from a description of the 
-    /// camera model's parameters.
-    fn from_spec(spec: &Self::Spec) -> Self;
-
     /// Exposed the underlying transformation that maps vector in the camera's
     /// view space into the canonical view volume of the camera.
     fn projection(&self) -> &Self::Projection;
@@ -51,6 +47,16 @@ pub trait CameraModel {
 }
 
 
+/// A specification object describing a projection based on the `near` plane, 
+/// the `far` plane and the vertical field of view angle `fovy` and the 
+/// horizontal/vertical aspect ratio `aspect`.
+///
+/// We assume the following constraints to make a useful transformation.
+/// ```text
+/// 0 radians < fovy < pi radians
+/// aspect > 0
+/// near < far (along the negative z-axis)
+/// ```
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct SymmetricFovSpec<S> {
     /// The vertical field of view angle of the viewport.
@@ -74,7 +80,6 @@ impl<S> SymmetricFovSpec<S> {
         }
     }
 }
-
 
 /// A projection based on arbitrary `left`, `right`, `bottom`, `top`, `near`, and 
 /// `far` planes.
@@ -390,129 +395,6 @@ where
         }
     }
 }
-/*
-/// A perspective projection based on the `near` plane, the `far` plane and 
-/// the vertical field of view angle `fovy` and the horizontal/vertical aspect 
-/// ratio `aspect`.
-///
-/// We assume the following constraints to make a useful perspective projection 
-/// transformation.
-/// ```text
-/// 0 radians < fovy < pi radians
-/// aspect > 0
-/// near < far (along the negative z-axis)
-/// ```
-/// This perspective projection model imposes some constraints on the more 
-/// general perspective specification based on the arbitrary planes. The `fovy` 
-/// parameter combined with the aspect ratio `aspect` ensures that the top and 
-/// bottom planes are the same distance from the eye position along the vertical 
-/// axis on opposite side. They ensure that the `left` and `right` planes are 
-/// equidistant from the eye on opposite sides along the horizontal axis. 
-///
-/// Orthographic projections differ from perspective projections because
-/// orthographic projections keeps parallel lines parallel, whereas perspective 
-/// projections preserve the perception of distance. Perspective 
-/// projections preserve the spatial ordering of points in the distance they 
-/// are located from the viewing plane. This property of perspective projection 
-/// transformations is important for operations such as z-buffering and 
-/// occlusion detection.
-#[repr(C)]
-#[derive(Clone, Debug)]
-pub struct PerspectiveFovProjection<S> {
-    /// The underlying view volume geometry for the camera projection.
-    frustum: Frustum<S>,
-    /// The underlying perspective projection transformation.
-    matrix: Matrix4x4<S>,
-}
-
-impl<S> PerspectiveFovProjection<S> {
-    /// Returns a reference to the underlying perspective projection matrix.
-    #[inline]
-    pub fn to_matrix(&self) -> &Matrix4x4<S> {
-        &self.matrix
-    }
-}
-
-impl<S> fmt::Display for PerspectiveFovProjection<S> 
-where 
-    S: fmt::Display 
-{
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            formatter,
-            "PerspectiveFovProjection [{}]",
-            self.matrix
-        )
-    }
-}
-
-impl<S> From<&SymmetricFovSpec<S>> for PerspectiveFovProjection<S>
-where
-    S: SimdScalarFloat
-{
-    #[inline]
-    fn from(spec: &SymmetricFovSpec<S>) -> Self {
-        let frustum = Frustum::from(spec);
-        let matrix = Matrix4x4::from_perspective_fov(
-            spec.fovy, 
-            spec.aspect, 
-            spec.near, 
-            spec.far
-        );
-
-        Self {
-            frustum: frustum,
-            matrix: matrix,
-        }
-    }
-}
-
-impl<S> CameraModel for PerspectiveFovProjection<S> 
-where 
-    S: SimdScalarFloat 
-{
-    type Scalar = S;
-    type Spec = SymmetricFovSpec<S>;
-    type Projection = Matrix4x4<S>;
-
-    #[inline]
-    fn from_spec(spec: &Self::Spec) -> Self {
-        let frustum = Frustum::from(spec);
-        let matrix = Matrix4x4::from_perspective_fov(
-            spec.fovy, 
-            spec.aspect, 
-            spec.near, 
-            spec.far
-        );
-
-        Self {
-            frustum: frustum,
-            matrix: matrix,
-        }
-    }
-
-    #[inline]
-    fn projection(&self) -> &Self::Projection {
-        &self.matrix
-    }
-
-    fn top_left_eye(&self) -> Vector3<Self::Scalar> {
-        self.frustum.top_left_eye()
-    }
-
-    fn top_right_eye(&self) -> Vector3<Self::Scalar> {
-        self.frustum.top_right_eye()
-    }
-
-    fn bottom_left_eye(&self) -> Vector3<Self::Scalar> {
-        self.frustum.bottom_left_eye()
-    }
-
-    fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
-        self.frustum.bottom_right_eye()
-    }
-}
-*/
 
 /// A perspective projection transformation for converting from camera space to
 /// normalized device coordinates.
@@ -703,24 +585,6 @@ where
     type Scalar = S;
     type Spec = BoxSpec<S>;
     type Projection = Matrix4x4<S>;
-
-    #[inline]
-    fn from_spec(spec: &Self::Spec) -> Self {
-        let frustum = Frustum::from(spec);
-        let matrix = Matrix4x4::from_perspective(
-            spec.left, 
-            spec.right, 
-            spec.bottom, 
-            spec.top,
-            spec.near,
-            spec.far
-        );
-
-        Self {
-            frustum: frustum,
-            matrix: matrix,
-        }
-    }
 
     #[inline]
     fn projection(&self) -> &Self::Projection {
@@ -937,24 +801,6 @@ where
     type Projection = Matrix4x4<S>;
 
     #[inline]
-    fn from_spec(spec: &Self::Spec) -> Self {
-        let frustum = Frustum::from(spec);
-        let matrix = Matrix4x4::from_orthographic(
-            spec.left, 
-            spec.right, 
-            spec.bottom, 
-            spec.top,
-            spec.near,
-            spec.far
-        );
-
-        Self {
-            frustum: frustum, 
-            matrix: matrix,
-        }
-    }
-
-    #[inline]
     fn projection(&self) -> &Self::Projection {
         &self.matrix
     }
@@ -975,131 +821,6 @@ where
         self.frustum.bottom_right_eye()
     }
 }
-
-/*
-/// An orthographic projection based on the `near` plane, the `far` plane and 
-/// the vertical field of view angle `fovy` and the horizontal/vertical aspect 
-/// ratio `aspect`.
-///
-/// We assume the following constraints to make a useful orthographic projection 
-/// camera model.
-/// ```text
-/// 0 radians < fovy < pi radians
-/// aspect > 0
-/// near < far (along the negative z-axis)
-/// ```
-/// This orthographic projection model imposes some constraints on the more 
-/// general orthographic specification based on the arbitrary planes. The `fovy` 
-/// parameter combined with the aspect ratio `aspect` ensures that the top and 
-/// bottom planes are the same distance from the eye position along the vertical 
-/// axis on opposite side. They ensure that the `left` and `right` planes are 
-/// equidistant from the eye on opposite sides along the horizontal axis. 
-///
-/// Orthographic projections differ from perspective projections in that 
-/// orthographic projections keeps parallel lines parallel, whereas perspective 
-/// projections preserve the perception of distance. Perspective 
-/// projections preserve the spatial ordering in the distance that points are 
-/// located from the viewing plane.
-#[repr(C)]
-#[derive(Clone, Debug, PartialEq)]
-pub struct OrthographicFovProjection<S> {
-    /// The underlying view volume geometry for the camera projection.
-    frustum: Frustum<S>,
-    /// The underlying matrix that implements the orthographic projection.
-    matrix: Matrix4x4<S>,
-}
-
-impl<S> OrthographicFovProjection<S> 
-where 
-    S: SimdScalarFloat 
-{
-    /// Get the underlying matrix implementing the orthographic camera model.
-    #[inline]
-    pub fn to_matrix(&self) -> &Matrix4x4<S> {
-        &self.matrix
-    }
-}
-
-impl<S> fmt::Display for OrthographicFovProjection<S> 
-where 
-    S: fmt::Display 
-{
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            formatter,
-            "OrthographicFovProjection [{}]",
-            self.matrix
-        )
-    }
-}
-
-impl<S> From<&SymmetricFovSpec<S>> for OrthographicFovProjection<S>
-where
-    S: SimdScalarFloat
-{
-    #[inline]
-    fn from(spec: &SymmetricFovSpec<S>) -> Self {
-        let frustum = Frustum::from(spec);
-        let matrix = Matrix4x4::from_orthographic_fov(
-            spec.fovy, 
-            spec.aspect, 
-            spec.near,
-            spec.far
-        );
-
-        Self {
-            frustum: frustum,
-            matrix: matrix,
-        }
-    }
-}
-
-impl<S> CameraModel for OrthographicFovProjection<S> 
-where 
-    S: SimdScalarFloat
-{
-    type Scalar = S;
-    type Spec = SymmetricFovSpec<S>;
-    type Projection = Matrix4x4<S>;
-
-    #[inline]
-    fn from_spec(spec: &Self::Spec) -> Self {
-        let frustum = Frustum::from(spec);
-        let matrix = Matrix4x4::from_orthographic_fov(
-            spec.fovy, 
-            spec.aspect, 
-            spec.near,
-            spec.far
-        );
-
-        Self {
-            frustum: frustum,
-            matrix: matrix,
-        }
-    }
-
-    #[inline]
-    fn projection(&self) -> &Self::Projection {
-        &self.matrix
-    }
-
-    fn top_left_eye(&self) -> Vector3<Self::Scalar> {
-        self.frustum.top_left_eye()
-    }
-
-    fn top_right_eye(&self) -> Vector3<Self::Scalar> {
-        self.frustum.top_right_eye()
-    }
-
-    fn bottom_left_eye(&self) -> Vector3<Self::Scalar> {
-        self.frustum.bottom_left_eye()
-    }
-
-    fn bottom_right_eye(&self) -> Vector3<Self::Scalar> {
-        self.frustum.bottom_right_eye()
-    }
-}
-*/
 
 /// A specification describing a rigid body transformation for the attitude 
 /// (position and orientation) of a camera. The spec describes the location, 

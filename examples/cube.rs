@@ -15,6 +15,7 @@ use cglinalg::{
     Radians,
     Unit,
     Degrees,
+    Magnitude,
 };
 use std::io;
 
@@ -27,25 +28,6 @@ struct AppStateCube {
 
 impl AppStateCube {
     fn new() -> Self {
-        use cglinalg::Magnitude;
-        /*
-        let model_spec = PerspectiveFovSpec::new(
-            Degrees(90_f32), 
-            1_f32, 
-            0.001_f32, 
-            100_f32, 
-        );
-        */
-        /*
-        let model_spec = BoxSpec::new(
-            -1_f32, 
-            1_f32, 
-            -1_f32, 
-            1_f32, 
-            1_f32, 
-            100_f32, 
-        );
-        */
         let model_spec = SymmetricFovSpec::new(
             Degrees(90_f32),
             1_f32,
