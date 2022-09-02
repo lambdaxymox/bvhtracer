@@ -23,8 +23,6 @@ use std::fmt;
 pub trait CameraModel {
     /// The scalar number type for the data model.
     type Scalar: SimdScalarFloat;
-    /// The type containing the parameters for constructing the camera model.
-    type Spec;
     /// The type representing the underlying projection from view space into 
     /// normalized device coordinates.
     type Projection;
@@ -583,7 +581,6 @@ where
     S: SimdScalarFloat
 {
     type Scalar = S;
-    type Spec = BoxSpec<S>;
     type Projection = Matrix4x4<S>;
 
     #[inline]
@@ -797,7 +794,6 @@ where
     S: SimdScalarFloat
 {
     type Scalar = S;
-    type Spec = BoxSpec<S>;
     type Projection = Matrix4x4<S>;
 
     #[inline]
