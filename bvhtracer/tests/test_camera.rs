@@ -14,7 +14,7 @@ use cglinalg::{
 
 
 fn camera1() -> Camera<f64, PerspectiveProjection<f64>> {
-    let model_spec = BoxSpec::new(
+    let projection_spec = BoxSpec::new(
         -4_f64, 
         4_f64, 
         -3_f64, 
@@ -30,7 +30,7 @@ fn camera1() -> Camera<f64, PerspectiveProjection<f64>> {
         Vector3::unit_z()
     );
 
-    Camera::new(&model_spec, &attitude_spec)
+    Camera::new(&projection_spec, &attitude_spec)
 }
 
 #[test]
@@ -294,7 +294,7 @@ fn test_camera_origin_world_to_eye11() {
 }
 
 fn camera2() -> Camera<f64, PerspectiveProjection<f64>> {
-    let model_spec = BoxSpec::new(
+    let projection_spec = BoxSpec::new(
         -4_f64, 
         4_f64, 
         -3_f64, 
@@ -310,7 +310,7 @@ fn camera2() -> Camera<f64, PerspectiveProjection<f64>> {
         Vector3::unit_z()
     );
 
-    Camera::new(&model_spec, &attitude_spec)
+    Camera::new(&projection_spec, &attitude_spec)
 }
 
 #[test]

@@ -30,7 +30,7 @@ use std::fs::{
 
 
 fn scene() -> Scene {
-    let model_spec = BoxSpec::new(
+    let projection_spec = BoxSpec::new(
         -1_f32, 
         1_f32, 
         -1_f32, 
@@ -47,7 +47,7 @@ fn scene() -> Scene {
         Vector3::unit_z(),
         -forward
     );
-    let camera = Camera::new(&model_spec, &attitude_spec);
+    let camera = Camera::new(&projection_spec, &attitude_spec);
     let mesh_reader = File::open("assets/cube.obj").unwrap();
     let material_reader = File::open("assets/bricks_rgb.png").unwrap();
     let model = SimpleModelDecoder::new(mesh_reader, material_reader)

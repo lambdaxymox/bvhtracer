@@ -28,7 +28,7 @@ struct AppStateQuad {
 
 impl AppStateQuad {
     fn new() -> Self {
-        let model_spec = SymmetricFovSpec::new(
+        let projection_spec = SymmetricFovSpec::new(
             Degrees(90_f32),
             1_f32,
             1_f32,
@@ -41,7 +41,7 @@ impl AppStateQuad {
             Vector3::unit_y(),
             -Vector3::unit_z()
         );
-        let camera = Camera::new(&model_spec, &attitude_spec);
+        let camera = Camera::new(&projection_spec, &attitude_spec);
         let mesh = MeshBuilder::new()
             .with_primitive(
                 Triangle::new(

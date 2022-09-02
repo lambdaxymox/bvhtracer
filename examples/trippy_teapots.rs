@@ -27,7 +27,7 @@ struct AppStateTrippyTeapots {
 
 impl AppStateTrippyTeapots {
     fn new() -> Self {
-        let model_spec = SymmetricFovSpec::new(
+        let projection_spec = SymmetricFovSpec::new(
             Degrees(90_f32),
             1_f32,
             2_f32,
@@ -40,7 +40,7 @@ impl AppStateTrippyTeapots {
             Vector3::unit_y(),
             Vector3::unit_z()
         );
-        let camera = Camera::new(&model_spec, &attitude_spec);
+        let camera = Camera::new(&projection_spec, &attitude_spec);
         let mesh_file = include_bytes!("assets/teapot.obj");
         let mesh_reader = io::Cursor::new(mesh_file);
         let material_file = include_bytes!("assets/bricks_rgb.png");

@@ -20,7 +20,7 @@ use std::fmt;
 /// A type with this trait can be used as a camera model. A camera model
 /// is a process of mapping incoming light rays from the camera's view space into
 /// the camera model's canonical view volume.
-pub trait CameraModel {
+pub trait CameraProjection {
     /// The scalar number type for the data model.
     type Scalar: SimdScalarFloat;
     /// The type representing the underlying projection from view space into 
@@ -576,7 +576,7 @@ where
     }
 }
 
-impl<S> CameraModel for PerspectiveProjection<S>
+impl<S> CameraProjection for PerspectiveProjection<S>
 where 
     S: SimdScalarFloat
 {
@@ -789,7 +789,7 @@ where
     }
 }
 
-impl<S> CameraModel for OrthographicProjection<S> 
+impl<S> CameraProjection for OrthographicProjection<S> 
 where 
     S: SimdScalarFloat
 {
@@ -981,26 +981,26 @@ where
 ///   world space, modeled as a rotation and a translation.
 #[repr(C)]
 #[derive(Clone, Debug)]
-pub struct Camera<S, M> {
+pub struct Camera<S, P> {
     /// The camera's model for mapping light rays to normalized device
     /// coordinates.
-    model: M,
+    projection: P,
     /// The position and orientation of the camera in world space.
     attitude: CameraAttitude<S>,
 }
 
-impl<S, M> Camera<S, M> 
+impl<S, P> Camera<S, P> 
 where 
     S: SimdScalarFloat,
-    M: CameraModel<Scalar = S>,
+    P: CameraProjection<Scalar = S>,
 {
     /// Construct a new camera.
-    pub fn new<MSpec>(model_spec: MSpec, attitude_spec: &CameraAttitudeSpec<S>) -> Self 
+    pub fn new<PSpec>(projection_spec: PSpec, attitude_spec: &CameraAttitudeSpec<S>) -> Self 
     where
-        MSpec: Into<M>,
+        PSpec: Into<P>,
     {
         Self {
-            model: model_spec.into(),
+            projection: projection_spec.into(),
             attitude: CameraAttitude::from_spec(attitude_spec),
         }
     }
@@ -1067,24 +1067,24 @@ where
     /// Return the underlying projection the camera uses to transform from
     /// view space to the camera's canonical view volume.
     #[inline]
-    pub fn projection(&self) -> &M::Projection {
-        self.model.projection()
+    pub fn projection(&self) -> &P::Projection {
+        self.projection.projection()
     }
 
     pub fn top_left_eye(&self) -> Vector3<S> {
-        self.model.top_left_eye()
+        self.projection.top_left_eye()
     }
 
     pub fn top_right_eye(&self) -> Vector3<S> {
-        self.model.top_right_eye()
+        self.projection.top_right_eye()
     }
 
     pub fn bottom_left_eye(&self) -> Vector3<S> {
-        self.model.bottom_left_eye()
+        self.projection.bottom_left_eye()
     }
 
     pub fn bottom_right_eye(&self) -> Vector3<S> {
-        self.model.bottom_right_eye()
+        self.projection.bottom_right_eye()
     }
 
     pub fn get_ray_eye(&self, u: S, v: S) -> Ray<S> {
