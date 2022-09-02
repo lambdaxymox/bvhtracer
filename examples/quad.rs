@@ -15,6 +15,7 @@ use cglinalg::{
     Vector3,
     Unit,
     Radians,
+    Degrees,
 };
 use std::io;
 
@@ -35,6 +36,13 @@ impl AppStateQuad {
             100_f32, 
         );
         */
+        let model_spec = SymmetricFovSpec::new(
+            Degrees(90_f32),
+            1_f32,
+            1_f32,
+            100_f32,
+        );
+        /*
         let model_spec = BoxSpec::new(
             -1_f32, 
             1_f32, 
@@ -43,6 +51,7 @@ impl AppStateQuad {
             1_f32, 
             100_f32, 
         );
+        */
         let attitude_spec = CameraAttitudeSpec::new(
             Vector3::new(0_f32, 0_f32, 2_f32),
             -Vector3::unit_z(),

@@ -11,6 +11,7 @@ use bvhtracer::*;
 use bvhtracer_demos::*;
 use cglinalg::{
     Vector3,
+    Degrees,
 };
 use std::io;
 
@@ -23,17 +24,25 @@ struct AppStateBigBenClock {
 
 impl AppStateBigBenClock {
     fn new() -> Self {
-        let focal_offset = 1.5;
+        // let focal_offset = 1.5;
+        /*
         let model_spec = BoxSpec::new(
             -1_f32, 
             1_f32, 
-            -1_f32 + focal_offset, 
+            -1_f32 + focal_offset,
             1_f32 + focal_offset, 
             2_f32, 
             10000_f32, 
         );
+        */
+        let model_spec = SymmetricFovSpec::new(
+            Degrees(90_f32),
+            1_f32,
+            2_f32,
+            10000_f32,
+        );
         let attitude_spec = CameraAttitudeSpec::new(
-            Vector3::new(0_f32, 0_f32, -4.5_f32),
+            Vector3::new(0_f32, 2.75_f32, -2.5_f32),
             Vector3::unit_z(),
             Vector3::unit_x(),
             Vector3::unit_y(),

@@ -14,6 +14,7 @@ use cglinalg::{
     Vector3,
     Radians,
     Unit,
+    Degrees,
 };
 use std::io;
 
@@ -35,6 +36,7 @@ impl AppStateCube {
             100_f32, 
         );
         */
+        /*
         let model_spec = BoxSpec::new(
             -1_f32, 
             1_f32, 
@@ -42,6 +44,13 @@ impl AppStateCube {
             1_f32, 
             1_f32, 
             100_f32, 
+        );
+        */
+        let model_spec = SymmetricFovSpec::new(
+            Degrees(90_f32),
+            1_f32,
+            1_f32,
+            100_f32,
         );
         let position = Vector3::new(0_f32, 4_f32, 0_f32);
         let forward = (Vector3::zero() - position).normalize();

@@ -13,6 +13,7 @@ use cglinalg::{
     Matrix4x4,
     Vector3,
     Radians,
+    Degrees,
 };
 use std::io;
 
@@ -26,6 +27,7 @@ struct AppStateTrippyTeapots {
 
 impl AppStateTrippyTeapots {
     fn new() -> Self {
+        /*
         let rot_mat_x = Matrix4x4::from_affine_angle_x(Radians(0.0));
         let rot_mat_z = Matrix4x4::from_affine_angle_z(Radians(2.5));
         let rot_mat = rot_mat_z * rot_mat_x;
@@ -35,20 +37,27 @@ impl AppStateTrippyTeapots {
         let p0 = (rot_mat * _p0.extend(1_f32)).contract();
         let p1 = (rot_mat * _p1.extend(1_f32)).contract();
         let p2 = (rot_mat * _p2.extend(1_f32)).contract();
-        let focal_offset = 0_f32;
         let model_spec = BoxSpec::new(
             p0.x, 
             p1.x, 
-            p2.y + focal_offset,
-            p0.y + focal_offset,
+            p2.y,
+            p0.y,
             p0.z, 
             10000_f32, 
         );
+        println!("{:?}", model_spec);
+        */
+        let model_spec = SymmetricFovSpec::new(
+            Degrees(90_f32),
+            1_f32,
+            2_f32,
+            10000_f32,
+        );
         let attitude_spec = CameraAttitudeSpec::new(
-            Vector3::new(0_f32, -1.5_f32, -6.5_f32),
+            Vector3::new(0_f32, 1.5_f32, -5.5_f32),
             Vector3::unit_z(),
-            Vector3::unit_x(),
-            -Vector3::unit_y(),
+            -Vector3::unit_x(),
+            Vector3::unit_y(),
             Vector3::unit_z()
         );
         let camera = Camera::new(&model_spec, &attitude_spec);

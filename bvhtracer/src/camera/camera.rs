@@ -50,7 +50,8 @@ pub trait CameraModel {
     fn bottom_right_eye(&self) -> Vector3<Self::Scalar>;
 }
 
-#[derive(Clone, Debug)]
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct SymmetricFovSpec<S> {
     /// The vertical field of view angle of the viewport.
     fovy: Degrees<S>,
@@ -389,7 +390,7 @@ where
         }
     }
 }
-
+/*
 /// A perspective projection based on the `near` plane, the `far` plane and 
 /// the vertical field of view angle `fovy` and the horizontal/vertical aspect 
 /// ratio `aspect`.
@@ -445,6 +446,27 @@ where
     }
 }
 
+impl<S> From<&SymmetricFovSpec<S>> for PerspectiveFovProjection<S>
+where
+    S: SimdScalarFloat
+{
+    #[inline]
+    fn from(spec: &SymmetricFovSpec<S>) -> Self {
+        let frustum = Frustum::from(spec);
+        let matrix = Matrix4x4::from_perspective_fov(
+            spec.fovy, 
+            spec.aspect, 
+            spec.near, 
+            spec.far
+        );
+
+        Self {
+            frustum: frustum,
+            matrix: matrix,
+        }
+    }
+}
+
 impl<S> CameraModel for PerspectiveFovProjection<S> 
 where 
     S: SimdScalarFloat 
@@ -455,13 +477,13 @@ where
 
     #[inline]
     fn from_spec(spec: &Self::Spec) -> Self {
+        let frustum = Frustum::from(spec);
         let matrix = Matrix4x4::from_perspective_fov(
             spec.fovy, 
             spec.aspect, 
             spec.near, 
             spec.far
         );
-        let frustum = Frustum::from(spec);
 
         Self {
             frustum: frustum,
@@ -490,7 +512,7 @@ where
         self.frustum.bottom_right_eye()
     }
 }
-
+*/
 
 /// A perspective projection transformation for converting from camera space to
 /// normalized device coordinates.
@@ -532,6 +554,148 @@ where
     }
 }
 
+impl<S> From<BoxSpec<S>> for PerspectiveProjection<S>
+where
+    S: SimdScalarFloat
+{
+    #[inline]
+    fn from(spec: BoxSpec<S>) -> Self {
+        let frustum = Frustum::from(spec);
+        let matrix = Matrix4x4::from_perspective(
+            spec.left, 
+            spec.right, 
+            spec.bottom, 
+            spec.top,
+            spec.near,
+            spec.far
+        );
+
+        Self {
+            frustum: frustum,
+            matrix: matrix,
+        }
+    }
+}
+
+impl<S> From<&BoxSpec<S>> for PerspectiveProjection<S>
+where
+    S: SimdScalarFloat
+{
+    #[inline]
+    fn from(spec: &BoxSpec<S>) -> Self {
+        let frustum = Frustum::from(spec);
+        let matrix = Matrix4x4::from_perspective(
+            spec.left, 
+            spec.right, 
+            spec.bottom, 
+            spec.top,
+            spec.near,
+            spec.far
+        );
+
+        Self {
+            frustum: frustum,
+            matrix: matrix,
+        }
+    }
+}
+
+impl<S> From<SymmetricFovSpec<S>> for PerspectiveProjection<S>
+where
+    S: SimdScalarFloat
+{
+    #[inline]
+    fn from(spec: SymmetricFovSpec<S>) -> Self {
+        let frustum = Frustum::from(spec);
+        let matrix = Matrix4x4::from_perspective_fov(
+            spec.fovy, 
+            spec.aspect, 
+            spec.near, 
+            spec.far
+        );
+
+        Self {
+            frustum: frustum,
+            matrix: matrix,
+        }
+    }
+}
+
+impl<S> From<&SymmetricFovSpec<S>> for PerspectiveProjection<S>
+where
+    S: SimdScalarFloat
+{
+    #[inline]
+    fn from(spec: &SymmetricFovSpec<S>) -> Self {
+        let frustum = Frustum::from(spec);
+        let matrix = Matrix4x4::from_perspective_fov(
+            spec.fovy, 
+            spec.aspect, 
+            spec.near, 
+            spec.far
+        );
+
+        Self {
+            frustum: frustum,
+            matrix: matrix,
+        }
+    }
+}
+
+impl<S> From<AsymmetricFovSpec<S>> for PerspectiveProjection<S>
+where
+    S: SimdScalarFloat
+{
+    #[inline]
+    fn from(spec: AsymmetricFovSpec<S>) -> Self {
+        let frustum = Frustum::from(spec);
+        let top_left = frustum.top_left_eye();
+        let bottom_right = frustum.bottom_right_eye();
+        let near = frustum.near();
+        let far = frustum.far();
+        let matrix = Matrix4x4::from_perspective(
+            top_left.x, 
+            bottom_right.x, 
+            bottom_right.y, 
+            top_left.y,
+            near,
+            far
+        );
+
+        Self {
+            frustum: frustum,
+            matrix: matrix,
+        }
+    }
+}
+
+impl<S> From<&AsymmetricFovSpec<S>> for PerspectiveProjection<S>
+where
+    S: SimdScalarFloat
+{
+    #[inline]
+    fn from(spec: &AsymmetricFovSpec<S>) -> Self {
+        let frustum = Frustum::from(spec);
+        let top_left = frustum.top_left_eye();
+        let bottom_right = frustum.bottom_right_eye();
+        let near = frustum.near();
+        let far = frustum.far();
+        let matrix = Matrix4x4::from_perspective(
+            top_left.x, 
+            bottom_right.x, 
+            bottom_right.y, 
+            top_left.y,
+            near,
+            far
+        );
+
+        Self {
+            frustum: frustum,
+            matrix: matrix,
+        }
+    }
+}
+
 impl<S> CameraModel for PerspectiveProjection<S>
 where 
     S: SimdScalarFloat
@@ -542,6 +706,7 @@ where
 
     #[inline]
     fn from_spec(spec: &Self::Spec) -> Self {
+        let frustum = Frustum::from(spec);
         let matrix = Matrix4x4::from_perspective(
             spec.left, 
             spec.right, 
@@ -550,7 +715,6 @@ where
             spec.near,
             spec.far
         );
-        let frustum = Frustum::from(spec);
 
         Self {
             frustum: frustum,
@@ -622,6 +786,148 @@ where
     }
 }
 
+impl<S> From<BoxSpec<S>> for OrthographicProjection<S>
+where
+    S: SimdScalarFloat
+{
+    #[inline]
+    fn from(spec: BoxSpec<S>) -> Self {
+        let frustum = Frustum::from(spec);
+        let matrix = Matrix4x4::from_orthographic(
+            spec.left, 
+            spec.right, 
+            spec.bottom, 
+            spec.top,
+            spec.near,
+            spec.far
+        );
+
+        Self {
+            frustum: frustum, 
+            matrix: matrix,
+        }
+    }
+}
+
+impl<S> From<&BoxSpec<S>> for OrthographicProjection<S>
+where
+    S: SimdScalarFloat
+{
+    #[inline]
+    fn from(spec: &BoxSpec<S>) -> Self {
+        let frustum = Frustum::from(spec);
+        let matrix = Matrix4x4::from_orthographic(
+            spec.left, 
+            spec.right, 
+            spec.bottom, 
+            spec.top,
+            spec.near,
+            spec.far
+        );
+
+        Self {
+            frustum: frustum, 
+            matrix: matrix,
+        }
+    }
+}
+
+impl<S> From<SymmetricFovSpec<S>> for OrthographicProjection<S>
+where
+    S: SimdScalarFloat
+{
+    #[inline]
+    fn from(spec: SymmetricFovSpec<S>) -> Self {
+        let frustum = Frustum::from(spec);
+        let matrix = Matrix4x4::from_orthographic_fov(
+            spec.fovy, 
+            spec.aspect, 
+            spec.near,
+            spec.far
+        );
+
+        Self {
+            frustum: frustum,
+            matrix: matrix,
+        }
+    }
+}
+
+impl<S> From<&SymmetricFovSpec<S>> for OrthographicProjection<S>
+where
+    S: SimdScalarFloat
+{
+    #[inline]
+    fn from(spec: &SymmetricFovSpec<S>) -> Self {
+        let frustum = Frustum::from(spec);
+        let matrix = Matrix4x4::from_orthographic_fov(
+            spec.fovy, 
+            spec.aspect, 
+            spec.near,
+            spec.far
+        );
+
+        Self {
+            frustum: frustum,
+            matrix: matrix,
+        }
+    }
+}
+
+impl<S> From<AsymmetricFovSpec<S>> for OrthographicProjection<S>
+where
+    S: SimdScalarFloat
+{
+    #[inline]
+    fn from(spec: AsymmetricFovSpec<S>) -> Self {
+        let frustum = Frustum::from(spec);
+        let top_left = frustum.top_left_eye();
+        let bottom_right = frustum.bottom_right_eye();
+        let near = frustum.near();
+        let far = frustum.far();
+        let matrix = Matrix4x4::from_orthographic(
+            top_left.x, 
+            bottom_right.x, 
+            bottom_right.y, 
+            top_left.y,
+            near,
+            far
+        );
+
+        Self {
+            frustum: frustum,
+            matrix: matrix,
+        }
+    }
+}
+
+impl<S> From<&AsymmetricFovSpec<S>> for OrthographicProjection<S>
+where
+    S: SimdScalarFloat
+{
+    #[inline]
+    fn from(spec: &AsymmetricFovSpec<S>) -> Self {
+        let frustum = Frustum::from(spec);
+        let top_left = frustum.top_left_eye();
+        let bottom_right = frustum.bottom_right_eye();
+        let near = frustum.near();
+        let far = frustum.far();
+        let matrix = Matrix4x4::from_orthographic(
+            top_left.x, 
+            bottom_right.x, 
+            bottom_right.y, 
+            top_left.y,
+            near,
+            far
+        );
+
+        Self {
+            frustum: frustum,
+            matrix: matrix,
+        }
+    }
+}
+
 impl<S> CameraModel for OrthographicProjection<S> 
 where 
     S: SimdScalarFloat
@@ -632,6 +938,7 @@ where
 
     #[inline]
     fn from_spec(spec: &Self::Spec) -> Self {
+        let frustum = Frustum::from(spec);
         let matrix = Matrix4x4::from_orthographic(
             spec.left, 
             spec.right, 
@@ -640,7 +947,6 @@ where
             spec.near,
             spec.far
         );
-        let frustum = Frustum::from(spec);
 
         Self {
             frustum: frustum, 
@@ -670,6 +976,7 @@ where
     }
 }
 
+/*
 /// An orthographic projection based on the `near` plane, the `far` plane and 
 /// the vertical field of view angle `fovy` and the horizontal/vertical aspect 
 /// ratio `aspect`.
@@ -726,6 +1033,27 @@ where
     }
 }
 
+impl<S> From<&SymmetricFovSpec<S>> for OrthographicFovProjection<S>
+where
+    S: SimdScalarFloat
+{
+    #[inline]
+    fn from(spec: &SymmetricFovSpec<S>) -> Self {
+        let frustum = Frustum::from(spec);
+        let matrix = Matrix4x4::from_orthographic_fov(
+            spec.fovy, 
+            spec.aspect, 
+            spec.near,
+            spec.far
+        );
+
+        Self {
+            frustum: frustum,
+            matrix: matrix,
+        }
+    }
+}
+
 impl<S> CameraModel for OrthographicFovProjection<S> 
 where 
     S: SimdScalarFloat
@@ -736,13 +1064,13 @@ where
 
     #[inline]
     fn from_spec(spec: &Self::Spec) -> Self {
+        let frustum = Frustum::from(spec);
         let matrix = Matrix4x4::from_orthographic_fov(
             spec.fovy, 
             spec.aspect, 
             spec.near,
             spec.far
         );
-        let frustum = Frustum::from(spec);
 
         Self {
             frustum: frustum,
@@ -771,7 +1099,7 @@ where
         self.frustum.bottom_right_eye()
     }
 }
-
+*/
 
 /// A specification describing a rigid body transformation for the attitude 
 /// (position and orientation) of a camera. The spec describes the location, 
@@ -950,9 +1278,12 @@ where
     M: CameraModel<Scalar = S>,
 {
     /// Construct a new camera.
-    pub fn new(model_spec: &M::Spec, attitude_spec: &CameraAttitudeSpec<S>) -> Self {
+    pub fn new<MSpec>(model_spec: MSpec, attitude_spec: &CameraAttitudeSpec<S>) -> Self 
+    where
+        MSpec: Into<M>,
+    {
         Self {
-            model: <M as CameraModel>::from_spec(model_spec),
+            model: model_spec.into(),
             attitude: CameraAttitude::from_spec(attitude_spec),
         }
     }

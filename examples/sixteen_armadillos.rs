@@ -13,6 +13,7 @@ use cglinalg::{
     Matrix4x4,
     Vector3,
     Radians,
+    Degrees,
 };
 use std::io;
 
@@ -26,6 +27,7 @@ struct AppStateSixteenArmadillos {
 
 impl AppStateSixteenArmadillos {
     fn new() -> Self {
+        /*
         let rot_mat = Matrix4x4::from_affine_angle_x(Radians(0.5));
         let _p0 = Vector3::new(-1_f32, 1_f32, 2_f32);
         let _p1 = Vector3::new(1_f32, 1_f32, 2_f32);
@@ -42,8 +44,15 @@ impl AppStateSixteenArmadillos {
             p0.z, 
             10000_f32, 
         );
+        */
+        let model_spec = SymmetricFovSpec::new(
+            Degrees(90_f32),
+            1_f32,
+            2_f32,
+            10000_f32,
+        );
         let attitude_spec = CameraAttitudeSpec::new(
-            Vector3::new(0_f32, 0_f32, -8.5_f32),
+            Vector3::new(0_f32, 1_f32, -5.5_f32),
             Vector3::unit_z(),
             Vector3::unit_x(),
             Vector3::unit_y(),

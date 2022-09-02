@@ -13,6 +13,7 @@ use cglinalg::{
     Matrix4x4,
     Vector3,
     Radians,
+    Degrees,
 };
 use std::io;
 
@@ -24,6 +25,7 @@ struct AppStateTwoArmadillos {
 
 impl AppStateTwoArmadillos {
     fn new() -> Self {
+        /*
         let focal_offset = 0.25_f32;
         let model_spec = BoxSpec::new(
             -1_f32, 
@@ -33,8 +35,15 @@ impl AppStateTwoArmadillos {
             2.0_f32,
             10000_f32,
         );
+        */
+        let model_spec = SymmetricFovSpec::new(
+            Degrees(90_f32),
+            1_f32,
+            2_f32,
+            10000_f32,
+        );
         let attitude_spec = CameraAttitudeSpec::new(
-            Vector3::new(0_f32, 0_f32, -4.5_f32),
+            Vector3::new(0_f32, 1_f32, -2.5_f32),
             Vector3::unit_z(),
             Vector3::unit_x(),
             Vector3::unit_y(),
