@@ -7,6 +7,7 @@ mod scene;
 mod materials;
 mod camera;
 mod renderer;
+mod physics;
 
 
 pub use geometry::*;
