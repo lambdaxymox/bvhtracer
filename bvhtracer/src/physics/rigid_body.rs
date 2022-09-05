@@ -94,29 +94,6 @@ fn _transform_inertia_tensor<S: SimdScalarFloat>(
     // iit_world[1][3] = m03 * rot_mat[0][1] + m13 * rot_mat[1][1] + m23 * rot_mat[2][1] + m33 * rot_mat[3][1];
     // iit_world[2][3] = m03 * rot_mat[0][2] + m13 * rot_mat[1][2] + m23 * rot_mat[2][2] + m33 * rot_mat[3][2];
     // iit_world[3][3] = m03 * rot_mat[0][3] + m13 * rot_mat[1][3] + m23 * rot_mat[2][3] + m33 * rot_mat[3][3];
-    /*
-    // N = rot_mat * iit_body;
-    let t4  = rot_mat.data[0] * iit_body.data[0] + rot_mat.data[1] * iit_body.data[3] + rot_mat.data[2]  * iit_body.data[6];
-    let t9  = rot_mat.data[0] * iit_body.data[1] + rot_mat.data[1] * iit_body.data[4] + rot_mat.data[2]  * iit_body.data[7];
-    let t14 = rot_mat.data[0] * iit_body.data[2] + rot_mat.data[1] * iit_body.data[5] + rot_mat.data[2]  * iit_body.data[8];
-    let t28 = rot_mat.data[4] * iit_body.data[0] + rot_mat.data[5] * iit_body.data[3] + rot_mat.data[6]  * iit_body.data[6];
-    let t33 = rot_mat.data[4] * iit_body.data[1] + rot_mat.data[5] * iit_body.data[4] + rot_mat.data[6]  * iit_body.data[7];
-    let t38 = rot_mat.data[4] * iit_body.data[2] + rot_mat.data[5] * iit_body.data[5] + rot_mat.data[6]  * iit_body.data[8];
-    let t52 = rot_mat.data[8] * iit_body.data[0] + rot_mat.data[9] * iit_body.data[3] + rot_mat.data[10] * iit_body.data[6];
-    let t57 = rot_mat.data[8] * iit_body.data[1] + rot_mat.data[9] * iit_body.data[4] + rot_mat.data[10] * iit_body.data[7];
-    let t62 = rot_mat.data[8] * iit_body.data[2] + rot_mat.data[9] * iit_body.data[5] + rot_mat.data[10] * iit_body.data[8];
-
-    // iit_world = N * rot_mat.T = rot_mat * iit_body * rot_mat.T;
-    iit_world.data[0] = t4  * rot_mat.data[0] + t9  * rot_mat.data[1] + t14 * rot_mat.data[2];
-    iit_world.data[1] = t4  * rot_mat.data[4] + t9  * rot_mat.data[5] + t14 * rot_mat.data[6];
-    iit_world.data[2] = t4  * rot_mat.data[8] + t9  * rot_mat.data[9] + t14 * rot_mat.data[10];
-    iit_world.data[3] = t28 * rot_mat.data[0] + t33 * rot_mat.data[1] + t38 * rot_mat.data[2];
-    iit_world.data[4] = t28 * rot_mat.data[4] + t33 * rot_mat.data[5] + t38 * rot_mat.data[6];
-    iit_world.data[5] = t28 * rot_mat.data[8] + t33 * rot_mat.data[9] + t38 * rot_mat.data[10];
-    iit_world.data[6] = t52 * rot_mat.data[0] + t57 * rot_mat.data[1] + t62 * rot_mat.data[2];
-    iit_world.data[7] = t52 * rot_mat.data[4] + t57 * rot_mat.data[5] + t62 * rot_mat.data[6];
-    iit_world.data[8] = t52 * rot_mat.data[8] + t57 * rot_mat.data[9] + t62 * rot_mat.data[10];
-    */
 }
 
 pub struct RigidBody<S> {
@@ -149,7 +126,7 @@ where
         num_traits::cast(0.3).unwrap()
     }
 
-    fn calculate_derived_data(&mut self) {
+    pub (crate) fn calculate_derived_data(&mut self) {
         self.orientation.normalize();
 
         // Calculate the transform matrix for the body.
@@ -165,7 +142,7 @@ where
     }
 
     /// Newton-Euler method.
-    fn integrate(&mut self, duration: S) {
+    pub fn integrate(&mut self, duration: S) {
         if !self.is_awake {
             return;
         }
@@ -234,7 +211,7 @@ where
         self.inverse_mass = S::one() / mass;
     }
 
-    fn get_mass(&self) -> S {
+    pub fn get_mass(&self) -> S {
         if self.inverse_mass.is_zero() {
             S::max_value()
         } else {
@@ -250,7 +227,7 @@ where
         self.inverse_mass
     }
 
-    fn has_finite_mass(&self) -> bool {
+    pub fn has_finite_mass(&self) -> bool {
         self.inverse_mass >= S::zero()
     }
 
@@ -311,7 +288,7 @@ where
         self.angular_damping = angular_damping;
     }
 
-    fn get_angular_damping(&self) -> S {
+    pub fn get_angular_damping(&self) -> S {
         self.angular_damping
     }
 
@@ -319,7 +296,7 @@ where
         self.position = *position;
     }
 
-    fn get_position(&self) -> &Vector3<S> {
+    pub fn get_position(&self) -> &Vector3<S> {
         &self.position
     }
 
@@ -346,29 +323,29 @@ where
         &self.orientation
     }
 
-    fn get_transform(&self) -> &Matrix4x4<S> {
+    pub fn get_transform(&self) -> &Matrix4x4<S> {
         &self.transform
     }
 
     // world space to body space
-    fn get_point_in_local_space(&self, point_world: &Vector3<S>) -> Vector3<S> {
+    pub fn get_point_in_local_space(&self, point_world: &Vector3<S>) -> Vector3<S> {
         let transform_inverse = self.transform.inverse().unwrap();
         (transform_inverse * point_world.extend(S::one())).contract()
     }
 
     // body space to world space.
-    fn get_point_in_world_space(&self, point_body: &Vector3<S>) -> Vector3<S> {
+    pub fn get_point_in_world_space(&self, point_body: &Vector3<S>) -> Vector3<S> {
         (self.transform * point_body.extend(S::one())).contract()
     }
     
     // world space to body space.
-    fn get_direction_in_local_space(&self, direction_world: &Vector3<S>) -> Vector3<S> {
+    pub fn get_direction_in_local_space(&self, direction_world: &Vector3<S>) -> Vector3<S> {
         let transform_inverse = self.transform.inverse().unwrap();
         (transform_inverse * direction_world.extend(S::zero())).contract()
     }
 
     // body space to world space.
-    fn get_direction_in_world_space(&self, direction_body: &Vector3<S>) -> Vector3<S> {
+    pub fn get_direction_in_world_space(&self, direction_body: &Vector3<S>) -> Vector3<S> {
         (self.transform * direction_body.extend(S::zero())).contract()
     }
 
@@ -376,11 +353,11 @@ where
         self.velocity = *velocity;
     }
 
-    fn get_velocity(&self) -> &Vector3<S> {
+    pub fn get_velocity(&self) -> &Vector3<S> {
         &self.velocity
     }
 
-    fn add_velocity(&mut self, delta_velocity: &Vector3<S>) {
+    pub fn add_velocity(&mut self, delta_velocity: &Vector3<S>) {
         self.velocity += delta_velocity;
     }
 
@@ -388,15 +365,15 @@ where
         self.rotation = *rotation;
     }
 
-    fn get_rotation(&self) -> &Vector3<S> {
+    pub fn get_rotation(&self) -> &Vector3<S> {
         &self.rotation
     }
 
-    fn add_rotation(&mut self, delta_rotation: &Vector3<S>) {
+    pub fn add_rotation(&mut self, delta_rotation: &Vector3<S>) {
         self.rotation += delta_rotation;
     }
 
-    fn get_awake(&self) -> bool {
+    pub fn get_awake(&self) -> bool {
         self.is_awake
     }
 
@@ -413,7 +390,7 @@ where
         }
     }
 
-    fn get_can_sleep(&self) -> bool {
+    pub fn get_can_sleep(&self) -> bool {
         self.can_sleep
     }
 
@@ -428,19 +405,19 @@ where
         &self.last_frame_acceleration
     }
 
-    fn clear_accumulators(&mut self) {
+    pub fn clear_accumulators(&mut self) {
         self.force_accumulator = Vector3::zero();
         self.torque_accumulator = Vector3::zero();
     }
 
     // Apply force to center of mass.
-    fn add_force(&mut self, force: &Vector3<S>) {
+    pub fn apply_force(&mut self, force: &Vector3<S>) {
         self.force_accumulator += force;
         self.is_awake = true;
     }
 
     // The force is not applied to the center of mass, so it may split into a force and a torque.
-    fn add_force_at_point(&mut self, force_world: &Vector3<S>, point_world: &Vector3<S>) {
+    pub fn apply_force_at_point(&mut self, force_world: &Vector3<S>, point_world: &Vector3<S>) {
         let point_cm = point_world - self.position;
         self.force_accumulator += force_world;
         self.torque_accumulator += point_cm.cross(&force_world);
@@ -448,13 +425,13 @@ where
     }
 
     // The force is not applied to the center of mass, so it may split into a force and a torque.
-    fn add_force_at_body_point(&mut self, force_world: &Vector3<S>, point_body: &Vector3<S>) {
+    pub fn apply_force_at_body_point(&mut self, force_world: &Vector3<S>, point_body: &Vector3<S>) {
         // Convert to coordinates relative to center of mass.
         let point_cm = self.get_point_in_world_space(point_body);
-        self.add_force_at_point(force_world, &point_cm);
+        self.apply_force_at_point(force_world, &point_cm);
     }
 
-    fn add_torque(&mut self, torque: &Vector3<S>) {
+    pub fn apply_torque(&mut self, torque: &Vector3<S>) {
         self.torque_accumulator += torque;
         self.is_awake = true;
     }
@@ -463,7 +440,7 @@ where
         self.acceleration = *new_acceleration;
     }
 
-    fn get_acceleration_world(&self) -> Vector3<S> {
+    pub fn get_acceleration_world(&self) -> Vector3<S> {
         self.acceleration
     }
 }
