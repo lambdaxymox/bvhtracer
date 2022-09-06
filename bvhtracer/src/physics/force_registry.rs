@@ -11,31 +11,39 @@ use std::rc::{
 };
 
 
+#[repr(transparent)]
 #[derive(Clone, Debug, PartialEq)]
-pub struct Instance<S> {
+pub struct RigidBodyInstance<S> {
     inner: Rc<RefCell<RigidBody<S>>>,
 }
 
-impl<S> Instance<S> {
+impl<S> RigidBodyInstance<S> {
+    pub fn new(body: Rc<RefCell<RigidBody<S>>>) -> Self {
+        Self {
+            inner: body,
+        }
+    }
+
     pub (crate) fn rc(&self) -> Rc<RefCell<RigidBody<S>>> {
         self.inner.clone()
     }
 }
 
+#[repr(transparent)]
+#[derive(Clone, Debug)]
+pub struct ForceGeneratorInstance<S> {
+    inner: Rc<dyn ForceGenerator<S>>,
+}
+
 
 struct ForceRegistryEntry<S> {
-    body: Instance<S>,
-    generator: Box<dyn ForceGenerator<S>>,
+    body: RigidBodyInstance<S>,
+    generator: Rc<dyn ForceGenerator<S>>,
 }
 
 impl<S> ForceRegistryEntry<S> {
-    fn new(body: Rc<RefCell<RigidBody<S>>>, generator: Box<dyn ForceGenerator<S>>) -> Self {
-        let instance = Instance { inner: body, };
-
-        Self { 
-            body: instance, 
-            generator, 
-        }
+    fn new(body: RigidBodyInstance<S>, generator: Rc<dyn ForceGenerator<S>>) -> Self {
+        Self { body, generator, }
     }
 }
 
@@ -50,7 +58,7 @@ impl<S> ForceRegistry<S> {
         }
     }
 
-    fn register(&mut self, body: Rc<RefCell<RigidBody<S>>>, generator: Box<dyn ForceGenerator<S>>) {
+    pub fn register(&mut self, body: RigidBodyInstance<S>, generator: Rc<dyn ForceGenerator<S>>) {
         self.entries.push(ForceRegistryEntry::new(body, generator));
     }
 
@@ -60,7 +68,7 @@ impl<S> ForceRegistry<S> {
     }
     */
 
-    fn unregister_all(&mut self) {
+    pub fn unregister_all(&mut self) {
         self.entries.clear();
     }
 }

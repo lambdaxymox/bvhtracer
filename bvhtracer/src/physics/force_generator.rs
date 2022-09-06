@@ -7,14 +7,15 @@ use cglinalg::{
 use std::rc::{
     Rc,
 };
+use std::fmt;
 
 
-pub trait ForceGenerator<S> {
+pub trait ForceGenerator<S>: fmt::Debug {
     fn apply_force(&self, body: &mut RigidBody<S>, duration: S);
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Gravity<S> {
     gravity: Vector3<S>,
 }
@@ -40,7 +41,7 @@ where
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Spring<S> {
     // Spring's body coordinates.
     spring_connection_point: Vector3<S>,
