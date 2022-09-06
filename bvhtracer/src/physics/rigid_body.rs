@@ -96,6 +96,7 @@ fn _transform_inertia_tensor<S: SimdScalarFloat>(
     // iit_world[3][3] = m03 * rot_mat[0][3] + m13 * rot_mat[1][3] + m23 * rot_mat[2][3] + m33 * rot_mat[3][3];
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct RigidBody<S> {
     inverse_mass: S,
     inverse_inertia_tensor: Matrix3x3<S>,

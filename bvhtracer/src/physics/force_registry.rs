@@ -11,14 +11,31 @@ use std::rc::{
 };
 
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct Instance<S> {
+    inner: Rc<RefCell<RigidBody<S>>>,
+}
+
+impl<S> Instance<S> {
+    pub (crate) fn rc(&self) -> Rc<RefCell<RigidBody<S>>> {
+        self.inner.clone()
+    }
+}
+
+
 struct ForceRegistryEntry<S> {
-    body: Rc<RefCell<RigidBody<S>>>,
+    body: Instance<S>,
     generator: Box<dyn ForceGenerator<S>>,
 }
 
 impl<S> ForceRegistryEntry<S> {
     fn new(body: Rc<RefCell<RigidBody<S>>>, generator: Box<dyn ForceGenerator<S>>) -> Self {
-        Self { body, generator, }
+        let instance = Instance { inner: body, };
+
+        Self { 
+            body: instance, 
+            generator, 
+        }
     }
 }
 
@@ -37,9 +54,11 @@ impl<S> ForceRegistry<S> {
         self.entries.push(ForceRegistryEntry::new(body, generator));
     }
 
+    /*
     fn unregister(&mut self, body: Rc<RigidBody<S>>, generator: Box<dyn ForceGenerator<S>>) {
         unimplemented!()
     }
+    */
 
     fn unregister_all(&mut self) {
         self.entries.clear();
@@ -52,7 +71,7 @@ where
 {
     pub fn apply_forces(&mut self, duration: S) {
         for entry in self.entries.iter_mut() {
-            entry.generator.apply_force(&mut entry.body.borrow_mut(), duration);
+            entry.generator.apply_force(&mut entry.body.inner.borrow_mut(), duration);
         }
     }
 }

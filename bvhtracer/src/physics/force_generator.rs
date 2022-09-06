@@ -14,6 +14,7 @@ pub trait ForceGenerator<S> {
 }
 
 
+#[derive(Clone)]
 pub struct Gravity<S> {
     gravity: Vector3<S>,
 }
@@ -39,6 +40,7 @@ where
     }
 }
 
+#[derive(Clone)]
 pub struct Spring<S> {
     // Spring's body coordinates.
     spring_connection_point: Vector3<S>,
