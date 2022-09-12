@@ -10,6 +10,7 @@ mod camera;
 mod renderer;
 mod physics;
 mod transform;
+mod transform_component;
 
 
 pub use geometry::*;
@@ -23,4 +24,5 @@ pub use camera::*;
 pub use renderer::*;
 pub use physics::*;
 pub use transform::*;
+pub use transform_component::*;
 

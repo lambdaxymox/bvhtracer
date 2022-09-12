@@ -1,4 +1,5 @@
 use crate::transform::*;
+use crate::transform_component::*;
 use crate::geometry::*;
 use crate::query::*;
 use crate::model::{
