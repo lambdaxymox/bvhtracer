@@ -53,7 +53,7 @@ fn _calculate_transform_matrix<S: SimdScalarFloat>(
     transform[3][3] = one;
     */
     transform.rotation = Rotation3::from(*orientation);
-    transform.translation = Translation3::from_vector(position);
+    transform.translation = *position;
 }
 
 // Internal function to do an inertia tensor transform by a quaternion.

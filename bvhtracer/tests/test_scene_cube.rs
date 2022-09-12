@@ -68,9 +68,9 @@ fn scene() -> Scene {
         translation * scale
         */
         let scale = Scale3::from_scale(2_f32);
-        let translation = Translation3::from_vector(&Vector3::new(-1_f32, -1_f32, -1_f32));
+        let translation = Vector3::new(-1_f32, -1_f32, -1_f32);
         let rotation = Rotation3::identity();
-        Transform3::new(scale, translation, rotation)
+        Transform3::new(scale, &translation, rotation)
     };
     let mut physics = World::new();
     let rigid_body = {

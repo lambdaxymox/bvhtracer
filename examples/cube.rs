@@ -54,15 +54,14 @@ impl AppStateCube {
         let model = SimpleModelDecoder::new(mesh_reader, material_reader)
             .read_model()
             .unwrap();
-        let translation_model_to_world = Vector3::new(-1_f32, -1_f32, -1_f32);
+        let translation = Vector3::new(-1_f32, -1_f32, -1_f32);
         /*
-        let transform = Matrix4x4::from_affine_translation(&position) * 
+        let transform = Matrix4x4::from_affine_translation(&translation) * 
             Matrix4x4::from_affine_scale(2_f32);
         */
         let transform = {
             let scale = Scale3::from_scale(2_f32);
-            let translation = Translation3::from_vector(&translation_model_to_world);
-            Transform3::from_scale_translation(scale, translation)
+            Transform3::from_scale_translation(scale, &translation)
         };
         let mut physics = World::new();
         /*
@@ -114,7 +113,7 @@ impl AppState for AppStateCube {
         let old_transform = self.active_scene.get_unchecked(0).get_transform();
         let new_transform = Transform3::new(
             old_transform.scale,
-            old_transform.translation,
+            &old_transform.translation,
             rotation * old_transform.rotation
         );
         {
