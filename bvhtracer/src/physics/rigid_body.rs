@@ -166,7 +166,7 @@ where
         num_traits::cast(0.3).unwrap()
     }
 
-    pub fn set_scale(&mut self, scale: cglinalg::Scale3<S>) {
+    pub fn set_scale(&mut self, scale: Vector3<S>) {
         self.transform.scale = scale;
     }
 

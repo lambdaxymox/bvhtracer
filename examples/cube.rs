@@ -60,8 +60,8 @@ impl AppStateCube {
             Matrix4x4::from_affine_scale(2_f32);
         */
         let transform = {
-            let scale = Scale3::from_scale(2_f32);
-            Transform3::from_scale_translation(scale, &translation)
+            let scale = Vector3::from_fill(2_f32);
+            Transform3::from_scale_translation(&scale, &translation)
         };
         let mut physics = World::new();
         /*
@@ -112,7 +112,7 @@ impl AppState for AppStateCube {
         let rotation = Rotation3::from_axis_angle(&self.axis, angle);
         let old_transform = self.active_scene.get_unchecked(0).get_transform();
         let new_transform = Transform3::new(
-            old_transform.scale,
+            &old_transform.scale,
             &old_transform.translation,
             rotation * old_transform.rotation
         );

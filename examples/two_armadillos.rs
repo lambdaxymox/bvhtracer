@@ -102,7 +102,7 @@ impl AppState for AppStateTwoArmadillos {
         );
         self.active_scene.get_mut_unchecked(1).set_transform(
             &Transform3::new(
-                Scale3::identity(),
+                &Vector3::zero(),
                 &Vector3::new(1.3_f32, 0_f32, 0_f32),
                 Rotation3::from_angle_y(Radians(self.angle))
             )

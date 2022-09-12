@@ -67,10 +67,10 @@ fn scene() -> Scene {
         let scale = Matrix4x4::from_affine_scale(2_f32);
         translation * scale
         */
-        let scale = Scale3::from_scale(2_f32);
+        let scale = Vector3::from_fill(2_f32);
         let translation = Vector3::new(-1_f32, -1_f32, -1_f32);
         let rotation = Rotation3::identity();
-        Transform3::new(scale, &translation, rotation)
+        Transform3::new(&scale, &translation, rotation)
     };
     let mut physics = World::new();
     let rigid_body = {

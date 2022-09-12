@@ -59,7 +59,7 @@ impl AppStateSixteenArmadillos {
         */
         let mut physics = World::new();
         let objects = (0..16).map(|_| {
-            let transform = Transform3::from_scale(Scale3::from_scale(0.75));
+            let transform = Transform3::from_scale(Vector3::from_fill(0.75));
             let rigid_body = RigidBody::default();
             let rigid_body_instance = physics.register_body(rigid_body);
             SceneObjectBuilder::new(model.clone(), rigid_body_instance)
@@ -97,7 +97,7 @@ impl AppState for AppStateSixteenArmadillos {
                     Matrix4x4::from_affine_translation(&Vector3::new(0_f32, self.h[i / 2], 0_f32))
                 };
                 */
-                let scale_mat = Scale3::from_scale(0.75);
+                let scale_mat = Vector3::from_fill(0.75);
                 let trans_mat = Vector3::new((x as f32 - 1.5) * 2.5, 0_f32, (y as f32 - 1.5) * 2.5);
                 let rot_mat = if ((x + y) & 1) == 0 {
                     Rotation3::from_angle_x(Radians(self.a[i])) * Rotation3::from_angle_z(Radians(self.a[i]))
@@ -120,7 +120,7 @@ impl AppState for AppStateSixteenArmadillos {
                 }
 
                 let new_transform = Transform3::new(
-                    scale_mat,
+                    &scale_mat,
                     &(trans_mat + bounce_trans_mat),
                     rot_mat
                 );

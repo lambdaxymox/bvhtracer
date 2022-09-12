@@ -64,7 +64,7 @@ impl SceneObject {
         self.transform_component.set_transform(&new_transform);
         */
         let new_transform = Transform3::new(
-            rigid_body_transform.scale * self.transform_init.scale,
+            &(rigid_body_transform.scale.component_mul(&self.transform_init.scale)),
             &(rigid_body_transform.translation + self.transform_init.translation),
             rigid_body_transform.rotation * self.transform_init.rotation,
         );
