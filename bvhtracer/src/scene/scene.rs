@@ -1,5 +1,6 @@
 use crate::camera::*;
 use crate::query::*;
+use crate::physics::*;
 use super::scene_object::*;
 use super::tlas::*;
 
@@ -8,6 +9,7 @@ pub struct Scene {
     tlas: Tlas,
     objects: Vec<SceneObject>,
     active_camera: Camera<f32, PerspectiveProjection<f32>>,
+    physics: World<f32>,
 }
 
 impl Scene {
@@ -34,10 +36,18 @@ impl Scene {
     pub fn rebuild(&mut self) {
         self.tlas.rebuild(&self.objects);
     }
+
+    pub fn run(&mut self, elapsed: f64) {
+        self.physics.run_physics(elapsed as f32);
+        for object in self.objects.iter_mut() {
+            object.update_transform();
+        }
+    }
 }
 
 pub struct SceneBuilder {
     objects: Vec<SceneObject>,
+    physics: World<f32>,
     active_camera: Camera<f32, PerspectiveProjection<f32>>,
 }
 
@@ -45,6 +55,7 @@ impl SceneBuilder {
     pub fn new(camera: Camera<f32, PerspectiveProjection<f32>>) -> Self {
         Self {
             objects: vec![],
+            physics: World::new(),
             active_camera: camera,
         }
     }
@@ -61,6 +72,12 @@ impl SceneBuilder {
         self
     }
 
+    pub fn with_physics(mut self, physics: World<f32>) -> Self {
+        self.physics = physics;
+
+        self
+    }
+
     pub fn build(self) -> Scene {
         let tlas = TlasBuilder::new()
             .build_for(&self.objects);
@@ -68,6 +85,7 @@ impl SceneBuilder {
         Scene {
             tlas,
             objects: self.objects,
+            physics: self.physics,
             active_camera: self.active_camera,
         }
     }

@@ -8,10 +8,35 @@ use std::rc::{
     Rc,
 };
 use std::fmt;
+use std::marker;
 
 
 pub trait ForceGenerator<S>: fmt::Debug {
     fn apply_force(&self, body: &mut RigidBody<S>, duration: S);
+}
+
+#[derive(Clone, Debug)]
+pub struct NullForce<S> {
+    _marker: marker::PhantomData<S>,
+}
+
+impl<S> NullForce<S>
+where
+    S: SimdScalarFloat,
+{
+    pub fn new() -> Self { 
+        Self {
+            _marker: marker::PhantomData,
+        }
+    }
+}
+
+impl<S> ForceGenerator<S> for NullForce<S>
+where
+    S: SimdScalarFloat,
+{
+    fn apply_force(&self, _body: &mut RigidBody<S>, _duration: S) { 
+    }
 }
 
 

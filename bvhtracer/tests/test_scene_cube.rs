@@ -14,6 +14,9 @@ use bvhtracer::{
     Triangle,
     Normals,
     Ray,
+    World,
+    RigidBody,
+    Transform3,
 };
 use approx::{
     assert_relative_eq,
@@ -23,6 +26,9 @@ use cglinalg::{
     Vector3,
     Matrix4x4,
     Magnitude,
+    Scale3,
+    Translation3,
+    Rotation3,
 };
 use std::fs::{
     File,
@@ -54,16 +60,30 @@ fn scene() -> Scene {
         .read_model()
         .unwrap();
     let transform = {
+        /*
         let translation = Matrix4x4::from_affine_translation(
             &Vector3::new(-1_f32, -1_f32, -1_f32)
         );
         let scale = Matrix4x4::from_affine_scale(2_f32);
         translation * scale
+        */
+        let scale = Scale3::from_scale(2_f32);
+        let translation = Translation3::from_vector(&Vector3::new(-1_f32, -1_f32, -1_f32));
+        let rotation = Rotation3::identity();
+        Transform3::new(scale, translation, rotation)
     };
-    let scene_object = SceneObjectBuilder::new(model.clone())
+    let mut physics = World::new();
+    let rigid_body = {
+        let mut _rigid_body = RigidBody::default();
+        _rigid_body.set_rotation(&Vector3::new(0_f32, 0_f32, 2_f32));
+        _rigid_body
+    };
+    let rigid_body_instance = physics.register_body(rigid_body);
+    let scene_object = SceneObjectBuilder::new(model.clone(), rigid_body_instance)
         .with_transform(&transform)
         .build();
     let active_scene = SceneBuilder::new(camera)
+        .with_physics(physics)
         .with_object(scene_object)
         .build();
 
@@ -146,9 +166,14 @@ fn test_scene_intersection1_normal_world_space() {
         normals[intersection.instance_primitive.primitive_index() as usize]
     };
     let normals_world_space = {
+        /*
         let normal0 = (transform * normals_model_space[0].extend(0_f32)).contract().normalize();
         let normal1 = (transform * normals_model_space[1].extend(0_f32)).contract().normalize();
         let normal2 = (transform * normals_model_space[2].extend(0_f32)).contract().normalize();
+        */
+        let normal0 = transform.transform_vector(&normals_model_space[0]).normalize();
+        let normal1 = transform.transform_vector(&normals_model_space[1]).normalize();
+        let normal2 = transform.transform_vector(&normals_model_space[2]).normalize();
         Normals::from([normal0, normal1, normal2])
     };
     let result = normals_world_space;
@@ -232,9 +257,14 @@ fn test_scene_intersection2_normal_world_space() {
         normals[intersection.instance_primitive.primitive_index() as usize]
     };
     let normals_world_space = {
+        /*
         let normal0 = (transform * normals_model_space[0].extend(0_f32)).contract().normalize();
         let normal1 = (transform * normals_model_space[1].extend(0_f32)).contract().normalize();
         let normal2 = (transform * normals_model_space[2].extend(0_f32)).contract().normalize();
+        */
+        let normal0 = transform.transform_vector(&normals_model_space[0]).normalize();
+        let normal1 = transform.transform_vector(&normals_model_space[1]).normalize();
+        let normal2 = transform.transform_vector(&normals_model_space[2]).normalize();
         Normals::from([normal0, normal1, normal2])
     };
     let result = normals_world_space;

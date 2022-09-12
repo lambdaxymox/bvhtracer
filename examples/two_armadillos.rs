@@ -14,6 +14,9 @@ use cglinalg::{
     Vector3,
     Radians,
     Degrees,
+    Scale3,
+    Translation3,
+    Rotation3,
 };
 use std::io;
 
@@ -45,18 +48,35 @@ impl AppStateTwoArmadillos {
         let model_builder = ModelBuilder::new();
         let model = model_builder.with_mesh(mesh).build();
         let mut objects = vec![];
+        /*
         let model1_transform = Matrix4x4::from_affine_translation(
             &Vector3::new(-1.3_f32, 0_f32, 0_f32)
         );
         let model2_transform = Matrix4x4::from_affine_translation(
             &Vector3::new(1.3_f32, 0_f32, 0_f32)
         );
+        */
+        let model1_transform = Transform3::new(
+            Scale3::identity(),
+            Translation3::from_vector(&Vector3::new(-1.3_f32, 0_f32, 0_f32)),
+            Rotation3::identity()
+        );
+        let model2_transform = Transform3::new(
+            Scale3::identity(),
+            Translation3::from_vector(&Vector3::new(1.3_f32, 0_f32, 0_f32)),
+            Rotation3::identity()
+        );
         let model1 = model.clone();
         let model2 = model.clone();
-        let object1 = SceneObjectBuilder::new(model1)
+        let mut physics = World::new();
+        let rigid_body1 = RigidBody::default();
+        let rigid_body1_instance = physics.register_body(rigid_body1);
+        let rigid_body2 = RigidBody::default();
+        let rigid_body2_instance = physics.register_body(rigid_body2);
+        let object1 = SceneObjectBuilder::new(model1, rigid_body1_instance)
             .with_transform(&model1_transform)
             .build();
-        let object2 = SceneObjectBuilder::new(model2)
+        let object2 = SceneObjectBuilder::new(model2, rigid_body2_instance)
             .with_transform(&model2_transform)
             .build();
         objects.push(object1);
@@ -76,6 +96,7 @@ impl AppState for AppStateTwoArmadillos {
         if self.angle > std::f32::consts::FRAC_2_PI {
             self.angle -= std::f32::consts::FRAC_2_PI;
         }
+        /*
         self.active_scene.get_mut_unchecked(0).set_transform(
             &Matrix4x4::from_affine_translation(&Vector3::new(-1.3_f32, 0_f32, 0_f32))
         );
@@ -83,6 +104,21 @@ impl AppState for AppStateTwoArmadillos {
             Matrix4x4::from_affine_translation(&Vector3::new(1.3_f32, 0_f32, 0_f32)) *
             Matrix4x4::from_affine_angle_y(Radians(self.angle))
         ));
+        */
+        self.active_scene.get_mut_unchecked(0).set_transform(
+            &Transform3::new(
+                Scale3::identity(),
+                Translation3::from_vector(&Vector3::new(-1.3_f32, 0_f32, 0_f32)),
+                Rotation3::identity()
+            )
+        );
+        self.active_scene.get_mut_unchecked(1).set_transform(
+            &Transform3::new(
+                Scale3::identity(),
+                Translation3::from_vector(&Vector3::new(1.3_f32, 0_f32, 0_f32)),
+                Rotation3::from_angle_y(Radians(self.angle))
+            )
+        );
 
         self.active_scene.rebuild();
     }

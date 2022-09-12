@@ -19,6 +19,9 @@ use bvhtracer::{
     Rgb,
     TextureBufferDecoder,
     Ray,
+    World,
+    RigidBody,
+    Transform3,
 };
 use cglinalg::{
     Vector2,
@@ -113,10 +116,19 @@ fn scene() -> Scene {
         .with_mesh(mesh)
         .with_texture(material)
         .build();
-    let scene_object = SceneObjectBuilder::new(model)
-        .with_transform(&Matrix4x4::identity())
+    let mut physics = World::new();
+    let rigid_body = {
+        let mut _rigid_body = RigidBody::default();
+        _rigid_body.set_rotation(&Vector3::new(0_f32, 0_f32, 2_f32));
+        _rigid_body
+    };
+    let rigid_body_instance = physics.register_body(rigid_body);
+    let scene_object = SceneObjectBuilder::new(model, rigid_body_instance)
+        // .with_transform(&Matrix4x4::identity())
+        .with_transform(&Transform3::identity())
         .build();
     let active_scene = SceneBuilder::new(camera)
+        .with_physics(physics)
         .with_object(scene_object)
         .build();
 

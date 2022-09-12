@@ -12,7 +12,7 @@ path = "../bvhtracer_demos"
 
 [dependencies.cglinalg]
 git = "https://github.com/lambdaxymox/cglinalg/"
-version = "0.16.1"
+version = "0.16.2"
 
 
 [[example]]

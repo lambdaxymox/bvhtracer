@@ -16,6 +16,9 @@ use cglinalg::{
     Unit,
     Degrees,
     Magnitude,
+    Scale3,
+    Translation3,
+    Rotation3,
 };
 use std::io;
 
@@ -51,17 +54,42 @@ impl AppStateCube {
         let model = SimpleModelDecoder::new(mesh_reader, material_reader)
             .read_model()
             .unwrap();
-        let scene_object = SceneObjectBuilder::new(model.clone())
-            .with_transform(&(
-                Matrix4x4::from_affine_translation(&Vector3::new(-1_f32, -1_f32, -1_f32)) * 
-                Matrix4x4::from_affine_scale(2_f32))
-            )
+        let translation_model_to_world = Vector3::new(-1_f32, -1_f32, -1_f32);
+        /*
+        let transform = Matrix4x4::from_affine_translation(&position) * 
+            Matrix4x4::from_affine_scale(2_f32);
+        */
+        let transform = {
+            let scale = Scale3::from_scale(2_f32);
+            let translation = Translation3::from_vector(&translation_model_to_world);
+            let rotation = Rotation3::identity();
+            Transform3::new(scale, translation, rotation)
+        };
+        let mut physics = World::new();
+        /*
+        let rigid_body = {
+            let mut _rigid_body = RigidBody::default();
+            let angular_frequency = 2_f32;
+            let position_world = Vector3::new(0_f32, 0_f32, 0_f32);
+            _rigid_body.set_rotation(&Vector3::new(0_f32, 0_f32, angular_frequency));
+            _rigid_body.set_awake(false);
+            _rigid_body.set_angular_damping(1_f32);
+            _rigid_body.set_position(&position_world);
+            // _rigid_body.set_scale(Scale3::from_scale(2_f32));
+            _rigid_body
+        };
+        */
+        let rigid_body = RigidBody::default();
+        let rigid_body_instance = physics.register_body(rigid_body);
+        let scene_object = SceneObjectBuilder::new(model.clone(), rigid_body_instance)
+            .with_transform(&transform)
             .build();
         let active_scene = SceneBuilder::new(camera)
+            .with_physics(physics)
             .with_object(scene_object)
             .build();
         let axis = Unit::from_value(Vector3::unit_z());
-        let angular_frequency = 1_f64;
+        let angular_frequency = 2_f64;
 
         Self { active_scene, axis, angular_frequency, }
     }
@@ -69,11 +97,38 @@ impl AppStateCube {
 
 impl AppState for AppStateCube {
     fn update(&mut self, elapsed: f64) {
+        /*
         let angle = Radians((self.angular_frequency * elapsed) as f32);
         let rotation_matrix = Matrix4x4::from_affine_axis_angle(&self.axis, angle);
         let old_transform = self.active_scene.get_unchecked(0).get_transform();
         let new_transform = rotation_matrix * old_transform;
-        self.active_scene.get_mut_unchecked(0).set_transform(&new_transform);
+        */
+        /*
+        let old_transform = self.active_scene.get_unchecked(0).get_transform();
+        eprintln!("old_tranform = {:?}", old_transform);
+        self.active_scene.run(elapsed);
+        let new_transform = self.active_scene.get_unchecked(0).get_transform();
+        eprintln!("new_transform = {:?}", new_transform);
+        */
+        let angle = Radians((self.angular_frequency * elapsed) as f32);
+        let rotation = Rotation3::from_axis_angle(&self.axis, angle);
+        let old_transform = self.active_scene.get_unchecked(0).get_transform();
+        let new_transform = Transform3::new(
+            old_transform.scale,
+            old_transform.translation,
+            rotation * old_transform.rotation
+        );
+        {
+            let angle = Radians((self.angular_frequency * elapsed) as f32);
+            let rotation_matrix = Matrix4x4::from_affine_axis_angle(&self.axis, angle);
+            let old_transform = self.active_scene.get_unchecked(0).get_transform();
+            let _new_transform = rotation_matrix * old_transform.to_matrix4x4();
+            eprintln!("old_transform = {:?}", old_transform);
+            eprintln!("_new_transform = {:?}", _new_transform);
+            eprintln!("new_transform = {:?}", new_transform.to_matrix4x4());
+        }
+        // self.active_scene.get_mut_unchecked(0).set_transform(&new_transform);
+        
     }
 
     fn active_scene(&self) -> &Scene {

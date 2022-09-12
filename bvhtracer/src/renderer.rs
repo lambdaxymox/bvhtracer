@@ -272,7 +272,10 @@ impl Accumulator for NormalMappingAccumulator {
                     normals[0] * (1_f32 - u - v) + normals[1] * u + normals[2] * v
                 };
                 let object = scene.get_unchecked(instance_index as usize);
-                let _normal_world_space = (object.get_transform() * _normal_model_space.extend(0_f32)).contract();
+                // let _normal_world_space = (object.get_transform() * _normal_model_space.extend(0_f32)).contract();
+                let _normal_world_space = object
+                    .get_transform()
+                    .transform_vector(&_normal_model_space);
                 let normalized = (_normal_world_space).normalize();
                 (normalized + Vector3::from_fill(1_f32)) * 0.5
             };

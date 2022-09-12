@@ -14,6 +14,9 @@ use cglinalg::{
     Vector3,
     Radians,
     Degrees,
+    Scale3,
+    Translation3,
+    Rotation3,
 };
 use std::io;
 
@@ -48,9 +51,13 @@ impl AppStateTrippyTeapots {
         let model = SimpleModelDecoder::new(mesh_reader, material_reader)
             .read_model()
             .unwrap();
+        let mut physics = World::new();
         let objects = (0..16).map(|_| {
-                SceneObjectBuilder::new(model.clone())
-                    .with_transform(&Matrix4x4::from_affine_scale(1_f32))
+                let rigid_body = RigidBody::default();
+                let rigid_body_instance = physics.register_body(rigid_body);
+                let transform = Transform3::identity();
+                SceneObjectBuilder::new(model.clone(), rigid_body_instance)
+                    .with_transform(&transform)
                     .build()
             })
             .collect::<Vec<_>>();
@@ -74,6 +81,7 @@ impl AppState for AppStateTrippyTeapots {
         let mut i = 0;
         for x in 0..4 {
             for y in 0..4 {
+                /*
                 let scale_mat = Matrix4x4::from_affine_scale(0.75_f32);
                 let trans_mat = Matrix4x4::from_affine_translation(
                     &Vector3::new((x as f32 - 1.5) * 2.5, 0_f32, (y as f32 - 1.5) * 2.5)
@@ -82,6 +90,21 @@ impl AppState for AppStateTrippyTeapots {
                     Matrix4x4::from_affine_angle_x(Radians(self.a[i])) * Matrix4x4::from_affine_angle_z(Radians(self.a[i]))
                 } else {
                     Matrix4x4::from_affine_translation(&Vector3::new(0_f32, self.h[i / 2], 0_f32))
+                };
+                */
+                let scale_mat = Scale3::from_scale(0.75_f32);
+                let trans_mat = Translation3::from_vector(
+                    &Vector3::new((x as f32 - 1.5) * 2.5, 0_f32, (y as f32 - 1.5) * 2.5)
+                );
+                let rot_mat = if ((x + y) & 1) == 0 {
+                    Rotation3::from_angle_x(Radians(self.a[i])) * Rotation3::from_angle_z(Radians(self.a[i]))
+                } else {
+                    Rotation3::identity()
+                };
+                let bounce_trans_mat = if ((x + y) & 1) == 0 {
+                    Translation3::identity()
+                } else {
+                    Translation3::from_vector(&Vector3::new(0_f32, self.h[i / 2], 0_f32))
                 };
                 self.a[i] += (((i * 13) & 7 + 2) as f32) * 0.005;
                 if self.a[i] > std::f32::consts::FRAC_2_PI {
@@ -93,7 +116,14 @@ impl AppState for AppStateTrippyTeapots {
                     self.s[i] = 0.2;
                 }
 
+                /*
                 let new_transform = trans_mat * rot_mat * scale_mat;
+                */
+                let new_transform = Transform3::new(
+                    scale_mat, 
+                    trans_mat * bounce_trans_mat, 
+                    rot_mat
+                );
                 self.active_scene.get_mut_unchecked(i).set_transform(&new_transform);
 
                 i += 1;

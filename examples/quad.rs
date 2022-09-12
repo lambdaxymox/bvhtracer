@@ -16,6 +16,7 @@ use cglinalg::{
     Unit,
     Radians,
     Degrees,
+    Rotation3,
 };
 use std::io;
 
@@ -89,8 +90,11 @@ impl AppStateQuad {
             .with_mesh(mesh)
             .with_texture(material)
             .build();
-        let scene_object = SceneObjectBuilder::new(model)
-            .with_transform(&Matrix4x4::identity())
+        let mut physics = World::new();
+        let rigid_body = RigidBody::default();
+        let rigid_body_instance = physics.register_body(rigid_body);
+        let scene_object = SceneObjectBuilder::new(model, rigid_body_instance)
+            .with_transform(&Transform3::identity())
             .build();
         let active_scene = SceneBuilder::new(camera)
             .with_object(scene_object)
@@ -105,9 +109,14 @@ impl AppStateQuad {
 impl AppState for AppStateQuad {
     fn update(&mut self, elapsed: f64) {
         let angle = Radians((self.angular_frequency * elapsed) as f32);
-        let rotation_matrix = Matrix4x4::from_affine_axis_angle(&self.axis, angle);
+        // let rotation_matrix = Matrix4x4::from_affine_axis_angle(&self.axis, angle);
+        let rotation = Rotation3::from_axis_angle(&self.axis, angle);
         let old_transform = self.active_scene.get_unchecked(0).get_transform();
-        let new_transform = rotation_matrix * old_transform;
+        let new_transform = { 
+            let mut _new_transform = old_transform.clone();
+            _new_transform.rotation = rotation * old_transform.rotation;
+            _new_transform
+        };
         self.active_scene.get_mut_unchecked(0).set_transform(&new_transform);
     }
 

@@ -29,13 +29,6 @@ impl<S> RigidBodyInstance<S> {
     }
 }
 
-#[repr(transparent)]
-#[derive(Clone, Debug)]
-pub struct ForceGeneratorInstance<S> {
-    inner: Rc<dyn ForceGenerator<S>>,
-}
-
-
 struct ForceRegistryEntry<S> {
     body: RigidBodyInstance<S>,
     generator: Rc<dyn ForceGenerator<S>>,

@@ -1,3 +1,6 @@
+use crate::transform::{
+    Transform3,
+};
 use cglinalg::{
     SimdScalarFloat,
     Matrix3x3,
@@ -5,6 +8,8 @@ use cglinalg::{
     Vector3,
     Quaternion,
     Magnitude,
+    Rotation3,
+    Translation3,
 };
 
 
@@ -18,18 +23,15 @@ fn _check_inverse_inertia_tensor<S: SimdScalarFloat>(iit_world: &Matrix3x3<S>) {
 // position and orientation.
 #[inline]
 fn _calculate_transform_matrix<S: SimdScalarFloat>(
-    transform: &mut Matrix4x4<S>, 
+    transform: &mut Transform3<S>, 
     position: &Vector3<S>, 
     orientation: &Quaternion<S>,
 ) {
     let zero = S::zero();
     let one = S::one();
     let two = one + one;
-    let qs = orientation.s;
-    let qx = orientation.v.x;
-    let qy = orientation.v.y;
-    let qz = orientation.v.z;
 
+    /*
     transform[0][0] = one - two * orientation.v.y * orientation.v.y - two * orientation.v.z * orientation.v.z;
     transform[0][1] = two * orientation.v.x * orientation.v.y + two * orientation.s * orientation.v.z;
     transform[0][2] = two * orientation.v.x * orientation.v.z - two * orientation.s * orientation.v.y;
@@ -49,17 +51,26 @@ fn _calculate_transform_matrix<S: SimdScalarFloat>(
     transform[3][1] = position.y;
     transform[3][2] = position.z;
     transform[3][3] = one;
+    */
+    transform.rotation = Rotation3::from(*orientation);
+    transform.translation = Translation3::from_vector(position);
 }
 
 // Internal function to do an inertia tensor transform by a quaternion.
-// Note that the implementation of this function was created by an
-// automated code-generator and optimizer.
+// This function implements a 
+// similarity transformation, i.e. Let A be a matrix, and let R be an invertible (non-singular)
+// matrix. Then the similarity transform of A by R is given by
+// Similarity(R)(A) := R * A * R^(-1).
+// In the case where R is an orthogonal matrix (i.e. a rotation), we have
+// Similarity(R)(A) == R * A * R^(T)
+// where [.]^T denotes the transpose of a matrix.
+// This function implements a similarity transformation by a rotation (orthogonal) matrix.
 #[inline]
 fn _transform_inertia_tensor<S: SimdScalarFloat>(
     iit_world: &mut Matrix3x3<S>, 
     q: &Quaternion<S>, 
     iit_body: &Matrix3x3<S>, 
-    rot_mat: &Matrix4x4<S>
+    rot_mat: &Matrix3x3<S>
 ) {
     let m00 = rot_mat[0][0] * iit_body[0][0] + rot_mat[1][0] * iit_body[0][1] + rot_mat[2][0] * iit_body[0][2]; // + rot_mat[3][0] * iit_body[0][3];
     let m10 = rot_mat[0][0] * iit_body[1][0] + rot_mat[1][0] * iit_body[1][1] + rot_mat[2][0] * iit_body[1][2]; // + rot_mat[3][0] * iit_body[1][3];
@@ -111,11 +122,39 @@ pub struct RigidBody<S> {
     is_awake: bool,
     can_sleep: bool,
     /// Body space to world space.
-    transform: Matrix4x4<S>,
+    transform: Transform3<S>,
     force_accumulator: Vector3<S>,
     torque_accumulator: Vector3<S>,
     acceleration: Vector3<S>,
     last_frame_acceleration: Vector3<S>,
+}
+
+impl<S> Default for RigidBody<S>
+where
+    S: SimdScalarFloat,
+{
+    fn default() -> Self {
+        Self {
+            inverse_mass: S::max_value(),
+            inverse_inertia_tensor: Matrix3x3::identity(),
+            linear_damping: S::zero(),
+            angular_damping: S::zero(),
+            position: Vector3::zero(),
+            orientation: Quaternion::unit_z(),
+            velocity: Vector3::zero(),
+            rotation: Vector3::zero(),
+            inverse_inertia_tensor_world: Matrix3x3::identity(),
+            motion: S::zero(),
+            is_awake: false,
+            can_sleep: true,
+            /// Body space to world space.
+            transform: Transform3::identity(),
+            force_accumulator: Vector3::zero(),
+            torque_accumulator: Vector3::zero(),
+            acceleration: Vector3::zero(),
+            last_frame_acceleration: Vector3::zero(),
+        }
+    }
 }
 
 impl<S> RigidBody<S>
@@ -125,6 +164,10 @@ where
     #[inline(always)]
     fn sleep_epsilon(&self) -> S {
         num_traits::cast(0.3).unwrap()
+    }
+
+    pub fn set_scale(&mut self, scale: cglinalg::Scale3<S>) {
+        self.transform.scale = scale;
     }
 
     pub (crate) fn calculate_derived_data(&mut self) {
@@ -138,12 +181,14 @@ where
             &mut self.inverse_inertia_tensor_world,
             &self.orientation, 
             &self.inverse_inertia_tensor,
-            &self.transform
+            self.transform.rotation.matrix()
         );
     }
 
     /// Newton-Euler method.
     pub fn integrate(&mut self, duration: S) {
+        eprintln!("self.transform before = {:?}", self.transform);
+        eprintln!("self.position before = {:?}", self.position);
         if !self.is_awake {
             return;
         }
@@ -191,8 +236,7 @@ where
         // Clear accumulators.
         self.clear_accumulators();
 
-        // Update the kinetic energy store, and possibly put the body to
-        // sleep.
+        // Update the kinetic energy store, and possibly put the body to sleep.
         if self.can_sleep {
             let current_motion = self.velocity.dot(&self.velocity) + self.rotation.dot(&self.rotation);
             let one_half = num_traits::cast(0.5_f64).unwrap();
@@ -205,9 +249,12 @@ where
                 self.motion = ten * self.sleep_epsilon();
             }
         }
+
+        eprintln!("self.transform after = {:?}", self.transform);
+        eprintln!("self.position after = {:?}", self.position);
     }
 
-    fn set_mass(&mut self, mass: S) {
+    pub fn set_mass(&mut self, mass: S) {
         assert!(mass != S::zero());
         self.inverse_mass = S::one() / mass;
     }
@@ -220,11 +267,11 @@ where
         }
     }
 
-    fn set_inverse_mass(&mut self, inverse_mass: S) {
+    pub fn set_inverse_mass(&mut self, inverse_mass: S) {
         self.inverse_mass = inverse_mass;
     }
 
-    fn get_inverse_mass(&self) -> S {
+    pub fn get_inverse_mass(&self) -> S {
         self.inverse_mass
     }
 
@@ -241,18 +288,18 @@ where
         *output = self.inverse_inertia_tensor.inverse().unwrap();
     }
 
-    fn get_inertia_tensor(&self) -> Matrix3x3<S> {
+    pub fn get_inertia_tensor(&self) -> Matrix3x3<S> {
         let mut output = Matrix3x3::zero();
         self.get_inertia_tensor_mut(&mut output);
         
         output
     }
        
-    fn get_inertia_tensor_world_mut(&self, output: &mut Matrix3x3<S>) {
+    pub fn get_inertia_tensor_world_mut(&self, output: &mut Matrix3x3<S>) {
         *output = self.inverse_inertia_tensor_world.inverse().unwrap();
     }
 
-    fn get_inertia_tensor_world(&self) -> Matrix3x3<S> {
+    pub fn get_inertia_tensor_world(&self) -> Matrix3x3<S> {
         let mut output = Matrix3x3::zero();
         self.get_inertia_tensor_world_mut(&mut output);
 
@@ -264,28 +311,28 @@ where
         self.inverse_inertia_tensor = inverse_inertia_tensor.clone();
     }
 
-    fn get_inverse_inertia_tensor(&self) -> &Matrix3x3<S> {
+    pub fn get_inverse_inertia_tensor(&self) -> &Matrix3x3<S> {
         &self.inverse_inertia_tensor
     }
 
-    fn get_inverse_inertia_tensor_world(&self) -> &Matrix3x3<S> {
+    pub fn get_inverse_inertia_tensor_world(&self) -> &Matrix3x3<S> {
         &self.inverse_inertia_tensor_world
     }
 
-    fn set_damping(&mut self, linear_damping: S, angular_damping: S) {
+    pub fn set_damping(&mut self, linear_damping: S, angular_damping: S) {
         self.linear_damping = linear_damping;
         self.angular_damping = angular_damping;
     }
 
-    fn set_linear_damping(&mut self, linear_damping: S) {
+    pub fn set_linear_damping(&mut self, linear_damping: S) {
         self.linear_damping = linear_damping;
     }
 
-    fn get_linear_damping(&self) -> S {
+    pub fn get_linear_damping(&self) -> S {
         self.linear_damping
     }
 
-    fn set_angular_damping(&mut self, angular_damping: S) {
+    pub fn set_angular_damping(&mut self, angular_damping: S) {
         self.angular_damping = angular_damping;
     }
 
@@ -293,7 +340,7 @@ where
         self.angular_damping
     }
 
-    fn set_position(&mut self, position: &Vector3<S>) {
+    pub fn set_position(&mut self, position: &Vector3<S>) {
         self.position = *position;
     }
 
@@ -301,12 +348,25 @@ where
         &self.position
     }
 
-    fn set_orientation(&mut self, orientation: &Quaternion<S>) {
+    pub fn set_orientation(&mut self, orientation: &Quaternion<S>) {
         self.orientation = *orientation;
         self.orientation.normalize();
     }
 
-    fn get_orientation_mut(&self, orientation: &mut Matrix3x3<S>) {
+    pub fn get_orientation_mut(&self, orientation: &mut Matrix3x3<S>) {
+        let rotation_matrix = self.transform.rotation.matrix();
+        orientation[0][0] = rotation_matrix[0][0];
+        orientation[0][1] = rotation_matrix[0][1];
+        orientation[0][2] = rotation_matrix[0][2];
+        
+        orientation[1][0] = rotation_matrix[1][0];
+        orientation[1][1] = rotation_matrix[1][1];
+        orientation[1][2] = rotation_matrix[1][2];
+
+        orientation[2][0] = rotation_matrix[2][0];
+        orientation[2][1] = rotation_matrix[2][1];
+        orientation[2][2] = rotation_matrix[2][2];
+        /*
         orientation[0][0] = self.transform[0][0];
         orientation[0][1] = self.transform[0][1];
         orientation[0][2] = self.transform[0][2];
@@ -318,39 +378,52 @@ where
         orientation[2][0] = self.transform[2][0];
         orientation[2][1] = self.transform[2][1];
         orientation[2][2] = self.transform[2][2];
+        */
     }
 
-    fn get_orientation(&self) -> &Quaternion<S> {
+    pub fn get_orientation(&self) -> &Quaternion<S> {
         &self.orientation
     }
 
-    pub fn get_transform(&self) -> &Matrix4x4<S> {
+    pub fn get_transform(&self) -> &Transform3<S> {
         &self.transform
     }
 
     // world space to body space
     pub fn get_point_in_local_space(&self, point_world: &Vector3<S>) -> Vector3<S> {
         let transform_inverse = self.transform.inverse().unwrap();
+        /*
         (transform_inverse * point_world.extend(S::one())).contract()
+        */
+        transform_inverse.transform_point(point_world)
     }
 
     // body space to world space.
     pub fn get_point_in_world_space(&self, point_body: &Vector3<S>) -> Vector3<S> {
+        /*
         (self.transform * point_body.extend(S::one())).contract()
+        */
+        self.transform.transform_point(point_body)
     }
     
     // world space to body space.
     pub fn get_direction_in_local_space(&self, direction_world: &Vector3<S>) -> Vector3<S> {
         let transform_inverse = self.transform.inverse().unwrap();
+        /*
         (transform_inverse * direction_world.extend(S::zero())).contract()
+        */
+        transform_inverse.transform_vector(direction_world)
     }
 
     // body space to world space.
     pub fn get_direction_in_world_space(&self, direction_body: &Vector3<S>) -> Vector3<S> {
+        /*
         (self.transform * direction_body.extend(S::zero())).contract()
+        */
+        self.transform.transform_vector(direction_body)
     }
 
-    fn set_velocity(&mut self, velocity: &Vector3<S>) {
+    pub fn set_velocity(&mut self, velocity: &Vector3<S>) {
         self.velocity = *velocity;
     }
 
@@ -362,7 +435,7 @@ where
         self.velocity += delta_velocity;
     }
 
-    fn set_rotation(&mut self, rotation: &Vector3<S>) {
+    pub fn set_rotation(&mut self, rotation: &Vector3<S>) {
         self.rotation = *rotation;
     }
 
@@ -378,7 +451,7 @@ where
         self.is_awake
     }
 
-    fn set_awake(&mut self, awake: bool) {
+    pub fn set_awake(&mut self, awake: bool) {
         if awake {
             self.is_awake = true;
             // Add a bit of motion to avoid it falling asleep immediately.
@@ -395,7 +468,7 @@ where
         self.can_sleep
     }
 
-    fn set_can_sleep(&mut self, can_sleep: bool) {
+    pub fn set_can_sleep(&mut self, can_sleep: bool) {
         self.can_sleep = can_sleep;
         if !self.can_sleep && !self.is_awake {
             self.set_awake(true);
@@ -437,7 +510,7 @@ where
         self.is_awake = true;
     }
 
-    fn set_acceleration(&mut self, new_acceleration: &Vector3<S>) {
+    pub fn set_acceleration(&mut self, new_acceleration: &Vector3<S>) {
         self.acceleration = *new_acceleration;
     }
 

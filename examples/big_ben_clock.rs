@@ -43,7 +43,10 @@ impl AppStateBigBenClock {
         let mesh = mesh_decoder.read_mesh().unwrap();
         let model_builder = ModelBuilder::new();
         let model = model_builder.with_mesh(mesh).build();
-        let object = SceneObjectBuilder::new(model)
+        let mut physics = World::new();
+        let rigid_body = RigidBody::default();
+        let rigid_body_instance = physics.register_body(rigid_body);
+        let object = SceneObjectBuilder::new(model, rigid_body_instance)
             .build();
         let active_scene = SceneBuilder::new(camera)
             .with_object(object)

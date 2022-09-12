@@ -9,6 +9,7 @@ mod materials;
 mod camera;
 mod renderer;
 mod physics;
+mod transform;
 
 
 pub use geometry::*;
@@ -20,4 +21,6 @@ pub use scene::*;
 pub use materials::*;
 pub use camera::*;
 pub use renderer::*;
+pub use physics::*;
+pub use transform::*;
 
