@@ -56,15 +56,11 @@ impl AppStateTwoArmadillos {
             &Vector3::new(1.3_f32, 0_f32, 0_f32)
         );
         */
-        let model1_transform = Transform3::new(
-            Scale3::identity(),
-            Translation3::from_vector(&Vector3::new(-1.3_f32, 0_f32, 0_f32)),
-            Rotation3::identity()
+        let model1_transform = Transform3::from_translation(
+            Translation3::from_vector(&Vector3::new(-1.3_f32, 0_f32, 0_f32))
         );
-        let model2_transform = Transform3::new(
-            Scale3::identity(),
-            Translation3::from_vector(&Vector3::new(1.3_f32, 0_f32, 0_f32)),
-            Rotation3::identity()
+        let model2_transform = Transform3::from_translation(
+            Translation3::from_vector(&Vector3::new(1.3_f32, 0_f32, 0_f32))
         );
         let model1 = model.clone();
         let model2 = model.clone();
@@ -106,10 +102,8 @@ impl AppState for AppStateTwoArmadillos {
         ));
         */
         self.active_scene.get_mut_unchecked(0).set_transform(
-            &Transform3::new(
-                Scale3::identity(),
+            &Transform3::from_translation(
                 Translation3::from_vector(&Vector3::new(-1.3_f32, 0_f32, 0_f32)),
-                Rotation3::identity()
             )
         );
         self.active_scene.get_mut_unchecked(1).set_transform(

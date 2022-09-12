@@ -62,8 +62,7 @@ impl AppStateCube {
         let transform = {
             let scale = Scale3::from_scale(2_f32);
             let translation = Translation3::from_vector(&translation_model_to_world);
-            let rotation = Rotation3::identity();
-            Transform3::new(scale, translation, rotation)
+            Transform3::from_scale_translation(scale, translation)
         };
         let mut physics = World::new();
         /*

@@ -6,6 +6,8 @@ use cglinalg::{
     Vector3,
     Point3,
     Matrix4x4,
+    Unit,
+    Radians,
 };
 
 
@@ -23,6 +25,81 @@ where
     #[inline]
     pub const fn new(scale: Scale3<S>, translation: Translation3<S>, rotation: Rotation3<S>) -> Self {
         Self { scale, translation, rotation, }
+    }
+
+    #[inline]
+    pub fn from_scale(scale: Scale3<S>) -> Self {
+        Self {
+            scale,
+            translation: Translation3::identity(),
+            rotation: Rotation3::identity(),
+        }
+    }
+
+    #[inline]
+    pub fn from_translation(translation: Translation3<S>) -> Self {
+        Self {
+            scale: Scale3::identity(),
+            translation,
+            rotation: Rotation3::identity(),
+        }
+    }
+
+    #[inline]
+    pub fn from_axis_angle<A>(axis: &Unit<Vector3<S>>, angle: A) -> Self 
+    where
+        A: Into<Radians<S>>,
+    {
+        Self {
+            scale: Scale3::identity(),
+            translation: Translation3::identity(),
+            rotation: Rotation3::from_axis_angle(axis, angle),
+        }
+    }
+
+    #[inline]
+    pub fn from_scale_translation(scale: Scale3<S>, translation: Translation3<S>) -> Self {
+        Self {
+            scale,
+            translation,
+            rotation: Rotation3::identity(),
+        }
+    }
+
+    #[inline]
+    pub fn from_scale_axis_angle<A: Into<Radians<S>>>(scale: Scale3<S>, axis: &Unit<Vector3<S>>, angle: A) -> Self 
+    where
+        A: Into<Radians<S>>,
+    {
+        Self {
+            scale,
+            translation: Translation3::identity(),
+            rotation: Rotation3::from_axis_angle(axis, angle),
+        }
+    }
+
+    #[inline]
+    pub fn from_translation_axis_angle<A>(translation: Translation3<S>, axis: &Unit<Vector3<S>>, angle: A) -> Self 
+    where
+        A: Into<Radians<S>>,
+    {
+        Self {
+            scale: Scale3::identity(),
+            translation,
+            rotation: Rotation3::from_axis_angle(axis, angle),
+        }
+    }
+
+    #[inline]
+    pub fn from_scale_translation_axis_angle<A>(scale: Scale3<S>, translation: Translation3<S>, axis: &Unit<Vector3<S>>, angle: A) -> Self 
+    where
+        A: Into<Radians<S>>,
+    {
+        Self {
+            scale,
+            translation,
+            rotation: Rotation3::from_axis_angle(axis, angle),
+        }
     }
 
     pub fn identity() -> Self {

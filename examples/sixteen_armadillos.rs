@@ -59,11 +59,7 @@ impl AppStateSixteenArmadillos {
         */
         let mut physics = World::new();
         let objects = (0..16).map(|_| {
-            let transform = Transform3::new(
-                Scale3::from_scale(0.75),
-                Translation3::identity(),
-                Rotation3::identity()
-            );
+            let transform = Transform3::from_scale(Scale3::from_scale(0.75));
             let rigid_body = RigidBody::default();
             let rigid_body_instance = physics.register_body(rigid_body);
             SceneObjectBuilder::new(model.clone(), rigid_body_instance)
