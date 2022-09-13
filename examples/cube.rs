@@ -128,7 +128,7 @@ impl AppState for AppStateCube {
             eprintln!("_new_transform = {:?}", _new_transform);
             eprintln!("new_transform = {:?}", new_transform.to_matrix4x4());
         }
-        // self.active_scene.get_mut_unchecked(0).set_transform(&new_transform);
+        self.active_scene.get_mut_unchecked(0).set_transform(&new_transform);
         
     }
 
