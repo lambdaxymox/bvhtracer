@@ -46,30 +46,10 @@ impl AppStateTwoArmadillos {
         let model_builder = ModelBuilder::new();
         let model = model_builder.with_mesh(mesh).build();
         let mut objects = vec![];
-        /*
-        let model1_transform = Matrix4x4::from_affine_translation(
-            &Vector3::new(-1.3_f32, 0_f32, 0_f32)
-        );
-        let model2_transform = Matrix4x4::from_affine_translation(
-            &Vector3::new(1.3_f32, 0_f32, 0_f32)
-        );
-        */
         let model1 = model.clone();
         let model2 = model.clone();
         let translation1 = Vector3::new(-1.3_f32, 0_f32, 0_f32);
         let translation2 = Vector3::new(1.3_f32, 0_f32, 0_f32);
-        /*
-        let model1_transform = Transform3::from_translation_axis_angle(
-            &translation1, 
-            &Unit::from_value(Vector3::unit_y()), 
-            Radians(std::f32::consts::PI)
-        );
-        let model2_transform = Transform3::from_translation_axis_angle(
-            &translation2,
-            &Unit::from_value(Vector3::unit_y()),
-            Radians(std::f32::consts::PI)
-        );
-        */
         let model1_transform = Transform3::from_translation(&translation1);
         let model2_transform = Transform3::from_translation(&translation2);
         let mut physics = World::new();
