@@ -46,11 +46,10 @@ impl AppStateCube {
         let model = SimpleModelDecoder::new(mesh_reader, material_reader)
             .read_model()
             .unwrap();
-        let translation = Vector3::new(-1_f32, -1_f32, -1_f32);
-        let transform = {
-            let scale = Vector3::from_fill(2_f32);
-            Transform3::from_scale_translation(&scale, &translation)
-        };
+        let transform = Transform3::from_scale_translation(
+            &Vector3::from_fill(2_f32), 
+            &Vector3::new(-1_f32, -1_f32, -1_f32)
+        );
         let mut physics = World::new();
         let rigid_body = {
             let mut _rigid_body = RigidBody::default();

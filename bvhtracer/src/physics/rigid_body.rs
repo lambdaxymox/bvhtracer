@@ -64,7 +64,6 @@ fn _calculate_transform_matrix<S: SimdScalarFloat>(
 #[inline]
 fn _transform_inertia_tensor<S: SimdScalarFloat>(
     iit_world: &mut Matrix3x3<S>, 
-    q: &Quaternion<S>, 
     iit_body: &Matrix3x3<S>, 
     rot_mat: &Matrix4x4<S>
 ) {
@@ -171,10 +170,10 @@ where
         // Calculate the inertia tensor in world space.
         _transform_inertia_tensor(
             &mut self.inverse_inertia_tensor_world,
-            &self.orientation, 
             &self.inverse_inertia_tensor,
             &self.transform
         );
+        eprintln!("self.transform = {:?}", self.transform);
     }
 
     /// Newton-Euler method.
@@ -341,21 +340,6 @@ where
     }
 
     pub fn get_orientation_mut(&self, orientation: &mut Matrix3x3<S>) {
-        /*
-        let rotation_matrix = self.transform.to_matrix4x4();
-        orientation[0][0] = rotation_matrix[0][0];
-        orientation[0][1] = rotation_matrix[0][1];
-        orientation[0][2] = rotation_matrix[0][2];
-        
-        orientation[1][0] = rotation_matrix[1][0];
-        orientation[1][1] = rotation_matrix[1][1];
-        orientation[1][2] = rotation_matrix[1][2];
-
-        orientation[2][0] = rotation_matrix[2][0];
-        orientation[2][1] = rotation_matrix[2][1];
-        orientation[2][2] = rotation_matrix[2][2];
-        */
-        /*
         orientation[0][0] = self.transform[0][0];
         orientation[0][1] = self.transform[0][1];
         orientation[0][2] = self.transform[0][2];
@@ -367,7 +351,6 @@ where
         orientation[2][0] = self.transform[2][0];
         orientation[2][1] = self.transform[2][1];
         orientation[2][2] = self.transform[2][2];
-        */
     }
 
     pub fn get_orientation(&self) -> &Quaternion<S> {
