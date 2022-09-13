@@ -37,11 +37,16 @@ impl Scene {
         self.tlas.rebuild(&self.objects);
     }
 
-    pub fn run(&mut self, elapsed: f64) {
+    fn run_physics(&mut self, elapsed: f64) {
         self.physics.run_physics(elapsed as f32);
         for object in self.objects.iter_mut() {
             object.update_transform();
         }
+    }
+
+    pub fn run(&mut self, elapsed: f64) {
+        self.run_physics(elapsed);
+        self.rebuild();
     }
 }
 

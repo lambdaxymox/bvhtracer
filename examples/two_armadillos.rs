@@ -103,7 +103,6 @@ impl AppStateTwoArmadillos {
 impl AppState for AppStateTwoArmadillos {
     fn update(&mut self, elapsed: f64) {
         self.active_scene.run(elapsed);
-        self.active_scene.rebuild();
     }
 
     fn active_scene(&self) -> &Scene {
