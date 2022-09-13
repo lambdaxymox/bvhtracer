@@ -10,15 +10,11 @@ const SCREEN_HEIGHT: usize = 640;
 use bvhtracer::*;
 use bvhtracer_demos::*;
 use cglinalg::{
-    Matrix4x4,
     Vector3,
     Radians,
     Unit,
     Degrees,
     Magnitude,
-    Scale3,
-    Translation3,
-    Rotation3,
 };
 use std::io;
 
@@ -96,12 +92,6 @@ impl AppStateCube {
 impl AppState for AppStateCube {
     fn update(&mut self, elapsed: f64) {
         /*
-        let angle = Radians((self.angular_frequency * elapsed) as f32);
-        let rotation_matrix = Matrix4x4::from_affine_axis_angle(&self.axis, angle);
-        let old_transform = self.active_scene.get_unchecked(0).get_transform();
-        let new_transform = rotation_matrix * old_transform;
-        */
-        /*
         let old_transform = self.active_scene.get_unchecked(0).get_transform();
         eprintln!("old_tranform = {:?}", old_transform);
         self.active_scene.run(elapsed);
@@ -111,25 +101,8 @@ impl AppState for AppStateCube {
         let angle = Radians((self.angular_frequency * elapsed) as f32);
         let rotation = Transform3::from_axis_angle(&self.axis, angle);
         let old_transform = self.active_scene.get_unchecked(0).get_transform();
-        /*
-        let new_transform = Transform3::new(
-            &old_transform.scale,
-            &old_transform.translation,
-            rotation * old_transform.rotation
-        );
-        */
         let new_transform = rotation * old_transform;
-        {
-            let angle = Radians((self.angular_frequency * elapsed) as f32);
-            let rotation_matrix = Matrix4x4::from_affine_axis_angle(&self.axis, angle);
-            let old_transform = self.active_scene.get_unchecked(0).get_transform();
-            let _new_transform = rotation_matrix * old_transform.to_matrix4x4();
-            eprintln!("old_transform = {:?}", old_transform);
-            eprintln!("_new_transform = {:?}", _new_transform);
-            eprintln!("new_transform = {:?}", new_transform.to_matrix4x4());
-        }
         self.active_scene.get_mut_unchecked(0).set_transform(&new_transform);
-        
     }
 
     fn active_scene(&self) -> &Scene {
