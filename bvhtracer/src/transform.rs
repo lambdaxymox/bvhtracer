@@ -2,7 +2,6 @@ use cglinalg::{
     Rotation3,
     SimdScalarFloat,
     Vector3,
-    Point3,
     Matrix4x4,
     Unit,
     Radians,
@@ -13,11 +12,6 @@ use std::ops;
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Transform3<S> {
-    /*
-    pub scale: Vector3<S>,
-    pub translation: Vector3<S>,
-    pub rotation: Rotation3<S>,
-    */
     matrix: Matrix4x4<S>,
 }
 
