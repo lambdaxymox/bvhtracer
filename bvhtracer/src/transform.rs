@@ -1,6 +1,5 @@
 use cglinalg::{
     Rotation3,
-    Scale3,
     SimdScalarFloat,
     Vector3,
     Point3,
@@ -11,11 +10,15 @@ use cglinalg::{
 use std::ops;
 
 
+#[repr(transparent)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Transform3<S> {
+    /*
     pub scale: Vector3<S>,
     pub translation: Vector3<S>,
     pub rotation: Rotation3<S>,
+    */
+    matrix: Matrix4x4<S>,
 }
 
 impl<S> Transform3<S>
@@ -23,30 +26,30 @@ where
     S: SimdScalarFloat,
 {
     #[inline]
-    pub const fn new(scale: &Vector3<S>, translation: &Vector3<S>, rotation: Rotation3<S>) -> Self {
-        Self { 
-            scale: *scale, 
-            translation: *translation, 
-            rotation, 
-        }
+    pub fn new(scale: &Vector3<S>, translation: &Vector3<S>, rotation: Rotation3<S>) -> Self {
+        let mut matrix = rotation.to_affine_matrix();
+        matrix[3][0] = translation[0];
+        matrix[3][1] = translation[1];
+        matrix[3][2] = translation[2];
+        matrix[0][0] *= scale[0];
+        matrix[1][1] *= scale[1];
+        matrix[2][2] *= scale[2];
+        
+        Self { matrix, }
     }
 
     #[inline]
-    pub fn from_scale(scale: Vector3<S>) -> Self {
-        Self {
-            scale,
-            translation: Vector3::zero(),
-            rotation: Rotation3::identity(),
-        }
+    pub fn from_scale(scale: &Vector3<S>) -> Self {
+        let matrix = Matrix4x4::from_affine_nonuniform_scale(scale.x, scale.y, scale.z);
+
+        Self { matrix, }
     }
 
     #[inline]
     pub fn from_translation(translation: &Vector3<S>) -> Self {
-        Self {
-            scale: Vector3::zero(),
-            translation: *translation,
-            rotation: Rotation3::identity(),
-        }
+        let matrix = Matrix4x4::from_affine_translation(translation);
+
+        Self { matrix, }
     }
 
     #[inline]
@@ -54,20 +57,22 @@ where
     where
         A: Into<Radians<S>>,
     {
-        Self {
-            scale: Vector3::zero(),
-            translation: Vector3::zero(),
-            rotation: Rotation3::from_axis_angle(axis, angle),
-        }
+        let matrix = Matrix4x4::from_affine_axis_angle(axis, angle);
+
+        Self { matrix, }
     }
 
     #[inline]
     pub fn from_scale_translation(scale: &Vector3<S>, translation: &Vector3<S>) -> Self {
-        Self {
-            scale: *scale,
-            translation: *translation,
-            rotation: Rotation3::identity(),
-        }
+        let mut matrix = Matrix4x4::identity();
+        matrix[0][0] = scale[0];
+        matrix[1][1] = scale[1];
+        matrix[2][2] = scale[2];
+        matrix[3][0] = translation[0];
+        matrix[3][1] = translation[1];
+        matrix[3][2] = translation[2];
+
+        Self { matrix, }
     }
 
     #[inline]
@@ -75,11 +80,12 @@ where
     where
         A: Into<Radians<S>>,
     {
-        Self {
-            scale: *scale,
-            translation: Vector3::zero(),
-            rotation: Rotation3::from_axis_angle(axis, angle),
-        }
+        let mut matrix = Matrix4x4::from_affine_axis_angle(axis, angle);
+        matrix[0][0] *= scale[0];
+        matrix[1][1] *= scale[1];
+        matrix[2][2] *= scale[2];
+
+        Self { matrix, }
     }
 
     #[inline]
@@ -87,11 +93,12 @@ where
     where
         A: Into<Radians<S>>,
     {
-        Self {
-            scale: Vector3::zero(),
-            translation: *translation,
-            rotation: Rotation3::from_axis_angle(axis, angle),
-        }
+        let mut matrix = Matrix4x4::from_affine_axis_angle(axis, angle);
+        matrix[3][0] = translation[0];
+        matrix[3][1] = translation[1];
+        matrix[3][2] = translation[2];
+
+        Self { matrix, }
     }
 
     #[inline]
@@ -99,43 +106,37 @@ where
     where
         A: Into<Radians<S>>,
     {
-        Self {
-            scale: *scale,
-            translation: *translation,
-            rotation: Rotation3::from_axis_angle(axis, angle),
-        }
+        let mut matrix = Matrix4x4::from_affine_axis_angle(axis, angle);
+        matrix[0][0] *= scale[0];
+        matrix[1][1] *= scale[1];
+        matrix[2][2] *= scale[2];
+        matrix[3][0] = translation[0];
+        matrix[3][1] = translation[1];
+        matrix[3][2] = translation[2];
+
+        Self { matrix, }
     }
 
     pub fn identity() -> Self {
         Self {
-            scale: Vector3::from_fill(S::one()),
-            translation: Vector3::zero(),
-            rotation: Rotation3::identity(),
+            matrix: Matrix4x4::identity(),
         }
     }
 
     pub fn transform_point(&self, point: &Vector3<S>) -> Vector3<S> {
-        let scaled = self.scale.component_mul(point);
-        let rotated = self.rotation.rotate_vector(&scaled);
-        let translated = rotated + self.translation;
-        translated
+        let _point = point.extend(S::one());
+        let result = self.matrix * _point;
+        result.contract()
     }
 
     pub fn transform_vector(&self, vector: &Vector3<S>) -> Vector3<S> {
-        let scaled = self.scale.component_mul(vector);
-        let rotated = self.rotation.rotate_vector(&scaled);
-        rotated
+        let _vector = vector.extend(S::zero());
+        let result = self.matrix * _vector;
+        result.contract()
     }
 
     pub fn to_matrix4x4_mut(&self, out: &mut Matrix4x4<S>) {
-        let mut new_matrix = self.rotation.to_affine_matrix();
-        new_matrix[3][0] = self.translation[0];
-        new_matrix[3][1] = self.translation[1];
-        new_matrix[3][2] = self.translation[2];
-        new_matrix[0][0] *= self.scale[0];
-        new_matrix[1][1] *= self.scale[1];
-        new_matrix[2][2] *= self.scale[2];
-        *out = new_matrix;
+        *out = self.matrix;
     }
 
     pub fn to_matrix4x4(&self) -> Matrix4x4<S> {
@@ -146,17 +147,59 @@ where
     }
 
     pub fn inverse(&self) -> Option<Self> {
-        let scale_inv = Vector3::new(
-            S::one() / self.scale.x,
-            S::one() / self.scale.y,
-            S::one() / self.scale.z,
-        );
-        let transform_inv = Self::new(
-            &scale_inv,
-            &(-self.translation),
-            self.rotation.inverse(),
-        );
-        Some(transform_inv)
+        self.matrix.inverse().map(|matrix| Self { matrix, })
+    }
+}
+
+impl<S> ops::Mul<Transform3<S>> for Transform3<S> 
+where
+    S: SimdScalarFloat,
+{
+    type Output = Transform3<S>;
+
+    fn mul(self, other: Transform3<S>) -> Self::Output {
+        let matrix = self.matrix * other.matrix;
+
+        Self::Output { matrix, }
+    }
+}
+
+impl<S> ops::Mul<&Transform3<S>> for Transform3<S> 
+where
+    S: SimdScalarFloat,
+{
+    type Output = Transform3<S>;
+
+    fn mul(self, other: &Transform3<S>) -> Self::Output {
+        let matrix = self.matrix * other.matrix;
+
+        Self::Output { matrix, }
+    }
+}
+
+impl<S> ops::Mul<Transform3<S>> for &Transform3<S> 
+where
+    S: SimdScalarFloat,
+{
+    type Output = Transform3<S>;
+
+    fn mul(self, other: Transform3<S>) -> Self::Output {
+        let matrix = self.matrix * other.matrix;
+
+        Self::Output { matrix, }
+    }
+}
+
+impl<'a, 'b, S> ops::Mul<&'a Transform3<S>> for &'b Transform3<S> 
+where
+    S: SimdScalarFloat,
+{
+    type Output = Transform3<S>;
+
+    fn mul(self, other: &'a Transform3<S>) -> Self::Output {
+        let matrix = self.matrix * other.matrix;
+
+        Self::Output { matrix, }
     }
 }
 

@@ -23,15 +23,14 @@ fn _check_inverse_inertia_tensor<S: SimdScalarFloat>(iit_world: &Matrix3x3<S>) {
 // position and orientation.
 #[inline]
 fn _calculate_transform_matrix<S: SimdScalarFloat>(
-    transform: &mut Transform3<S>, 
-    position: &Vector3<S>, 
+    transform: &mut Matrix4x4<S>,
+    position: &Vector3<S>,
     orientation: &Quaternion<S>,
 ) {
     let zero = S::zero();
     let one = S::one();
     let two = one + one;
 
-    /*
     transform[0][0] = one - two * orientation.v.y * orientation.v.y - two * orientation.v.z * orientation.v.z;
     transform[0][1] = two * orientation.v.x * orientation.v.y + two * orientation.s * orientation.v.z;
     transform[0][2] = two * orientation.v.x * orientation.v.z - two * orientation.s * orientation.v.y;
@@ -51,9 +50,6 @@ fn _calculate_transform_matrix<S: SimdScalarFloat>(
     transform[3][1] = position.y;
     transform[3][2] = position.z;
     transform[3][3] = one;
-    */
-    transform.rotation = Rotation3::from(*orientation);
-    transform.translation = *position;
 }
 
 // Internal function to do an inertia tensor transform by a quaternion.
@@ -70,7 +66,7 @@ fn _transform_inertia_tensor<S: SimdScalarFloat>(
     iit_world: &mut Matrix3x3<S>, 
     q: &Quaternion<S>, 
     iit_body: &Matrix3x3<S>, 
-    rot_mat: &Matrix3x3<S>
+    rot_mat: &Matrix4x4<S>
 ) {
     let m00 = rot_mat[0][0] * iit_body[0][0] + rot_mat[1][0] * iit_body[0][1] + rot_mat[2][0] * iit_body[0][2]; // + rot_mat[3][0] * iit_body[0][3];
     let m10 = rot_mat[0][0] * iit_body[1][0] + rot_mat[1][0] * iit_body[1][1] + rot_mat[2][0] * iit_body[1][2]; // + rot_mat[3][0] * iit_body[1][3];
@@ -122,7 +118,7 @@ pub struct RigidBody<S> {
     is_awake: bool,
     can_sleep: bool,
     /// Body space to world space.
-    transform: Transform3<S>,
+    transform: Matrix4x4<S>,
     force_accumulator: Vector3<S>,
     torque_accumulator: Vector3<S>,
     acceleration: Vector3<S>,
@@ -148,7 +144,7 @@ where
             is_awake: false,
             can_sleep: true,
             /// Body space to world space.
-            transform: Transform3::identity(),
+            transform: Matrix4x4::identity(),
             force_accumulator: Vector3::zero(),
             torque_accumulator: Vector3::zero(),
             acceleration: Vector3::zero(),
@@ -167,7 +163,9 @@ where
     }
 
     pub fn set_scale(&mut self, scale: Vector3<S>) {
+        /*
         self.transform.scale = scale;
+        */
     }
 
     pub (crate) fn calculate_derived_data(&mut self) {
@@ -181,14 +179,12 @@ where
             &mut self.inverse_inertia_tensor_world,
             &self.orientation, 
             &self.inverse_inertia_tensor,
-            self.transform.rotation.matrix()
+            &self.transform
         );
     }
 
     /// Newton-Euler method.
     pub fn integrate(&mut self, duration: S) {
-        eprintln!("self.transform before = {:?}", self.transform);
-        eprintln!("self.position before = {:?}", self.position);
         if !self.is_awake {
             return;
         }
@@ -249,9 +245,6 @@ where
                 self.motion = ten * self.sleep_epsilon();
             }
         }
-
-        eprintln!("self.transform after = {:?}", self.transform);
-        eprintln!("self.position after = {:?}", self.position);
     }
 
     pub fn set_mass(&mut self, mass: S) {
@@ -354,7 +347,8 @@ where
     }
 
     pub fn get_orientation_mut(&self, orientation: &mut Matrix3x3<S>) {
-        let rotation_matrix = self.transform.rotation.matrix();
+        /*
+        let rotation_matrix = self.transform.to_matrix4x4();
         orientation[0][0] = rotation_matrix[0][0];
         orientation[0][1] = rotation_matrix[0][1];
         orientation[0][2] = rotation_matrix[0][2];
@@ -366,6 +360,7 @@ where
         orientation[2][0] = rotation_matrix[2][0];
         orientation[2][1] = rotation_matrix[2][1];
         orientation[2][2] = rotation_matrix[2][2];
+        */
         /*
         orientation[0][0] = self.transform[0][0];
         orientation[0][1] = self.transform[0][1];
@@ -386,12 +381,14 @@ where
     }
 
     pub fn get_transform(&self) -> &Transform3<S> {
-        &self.transform
+        unsafe {
+            &*(self.transform.as_ptr() as *const Transform3<S>)
+        }
     }
 
     // world space to body space
     pub fn get_point_in_local_space(&self, point_world: &Vector3<S>) -> Vector3<S> {
-        let transform_inverse = self.transform.inverse().unwrap();
+        let transform_inverse = self.get_transform().inverse().unwrap();
         /*
         (transform_inverse * point_world.extend(S::one())).contract()
         */
@@ -400,15 +397,16 @@ where
 
     // body space to world space.
     pub fn get_point_in_world_space(&self, point_body: &Vector3<S>) -> Vector3<S> {
+        let transform = self.get_transform();
         /*
         (self.transform * point_body.extend(S::one())).contract()
         */
-        self.transform.transform_point(point_body)
+        transform.transform_point(point_body)
     }
     
     // world space to body space.
     pub fn get_direction_in_local_space(&self, direction_world: &Vector3<S>) -> Vector3<S> {
-        let transform_inverse = self.transform.inverse().unwrap();
+        let transform_inverse = self.get_transform().inverse().unwrap();
         /*
         (transform_inverse * direction_world.extend(S::zero())).contract()
         */
@@ -417,10 +415,11 @@ where
 
     // body space to world space.
     pub fn get_direction_in_world_space(&self, direction_body: &Vector3<S>) -> Vector3<S> {
+        let transform = self.get_transform();
         /*
         (self.transform * direction_body.extend(S::zero())).contract()
         */
-        self.transform.transform_vector(direction_body)
+        transform.transform_vector(direction_body)
     }
 
     pub fn set_velocity(&mut self, velocity: &Vector3<S>) {

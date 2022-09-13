@@ -110,13 +110,16 @@ impl AppState for AppStateQuad {
     fn update(&mut self, elapsed: f64) {
         let angle = Radians((self.angular_frequency * elapsed) as f32);
         // let rotation_matrix = Matrix4x4::from_affine_axis_angle(&self.axis, angle);
-        let rotation = Rotation3::from_axis_angle(&self.axis, angle);
+        let rotation = Transform3::from_axis_angle(&self.axis, angle);
         let old_transform = self.active_scene.get_unchecked(0).get_transform();
+        /*
         let new_transform = { 
             let mut _new_transform = old_transform.clone();
             _new_transform.rotation = rotation * old_transform.rotation;
             _new_transform
         };
+        */
+        let new_transform = rotation * old_transform;
         self.active_scene.get_mut_unchecked(0).set_transform(&new_transform);
     }
 

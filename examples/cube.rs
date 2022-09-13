@@ -109,13 +109,16 @@ impl AppState for AppStateCube {
         eprintln!("new_transform = {:?}", new_transform);
         */
         let angle = Radians((self.angular_frequency * elapsed) as f32);
-        let rotation = Rotation3::from_axis_angle(&self.axis, angle);
+        let rotation = Transform3::from_axis_angle(&self.axis, angle);
         let old_transform = self.active_scene.get_unchecked(0).get_transform();
+        /*
         let new_transform = Transform3::new(
             &old_transform.scale,
             &old_transform.translation,
             rotation * old_transform.rotation
         );
+        */
+        let new_transform = rotation * old_transform;
         {
             let angle = Radians((self.angular_frequency * elapsed) as f32);
             let rotation_matrix = Matrix4x4::from_affine_axis_angle(&self.axis, angle);
