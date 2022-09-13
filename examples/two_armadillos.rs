@@ -10,13 +10,11 @@ const SCREEN_HEIGHT: usize = 640;
 use bvhtracer::*;
 use bvhtracer_demos::*;
 use cglinalg::{
-    Matrix4x4,
     Vector3,
     Radians,
     Degrees,
-    Scale3,
-    Translation3,
-    Rotation3,
+    Quaternion,
+    Unit,
 };
 use std::io;
 
@@ -56,14 +54,52 @@ impl AppStateTwoArmadillos {
             &Vector3::new(1.3_f32, 0_f32, 0_f32)
         );
         */
-        let model1_transform = Transform3::from_translation(&Vector3::new(-1.3_f32, 0_f32, 0_f32));
-        let model2_transform = Transform3::from_translation(&Vector3::new(1.3_f32, 0_f32, 0_f32));
         let model1 = model.clone();
         let model2 = model.clone();
+        let translation1 = Vector3::new(-1.3_f32, 0_f32, 0_f32);
+        let translation2 = Vector3::new(1.3_f32, 0_f32, 0_f32);
+        /*
+        let model1_transform = Transform3::from_translation_axis_angle(
+            &translation1, 
+            &Unit::from_value(Vector3::unit_y()), 
+            Radians(std::f32::consts::PI)
+        );
+        let model2_transform = Transform3::from_translation_axis_angle(
+            &translation2,
+            &Unit::from_value(Vector3::unit_y()),
+            Radians(std::f32::consts::PI)
+        );
+        */
+        let model1_transform = Transform3::from_translation(&translation1);
+        let model2_transform = Transform3::from_translation(&translation2);
         let mut physics = World::new();
-        let rigid_body1 = RigidBody::default();
+        let rigid_body1 = {
+            let mut _rigid_body = RigidBody::default();
+            let orientation =  Quaternion::from_axis_angle(
+                &Unit::from_value(Vector3::unit_y()),
+                Radians(0_f32)
+            );
+            _rigid_body.set_position(&Vector3::zero());
+            _rigid_body.set_orientation(&orientation);
+            _rigid_body.set_can_sleep(false);
+            _rigid_body.set_awake(true);
+            _rigid_body
+        };
         let rigid_body1_instance = physics.register_body(rigid_body1);
-        let rigid_body2 = RigidBody::default();
+        let rigid_body2 = {
+            let mut _rigid_body = RigidBody::default();
+            let orientation =  Quaternion::from_axis_angle(
+                &Unit::from_value(Vector3::unit_y()),
+                Radians(0_f32)
+            );
+            _rigid_body.set_position(&Vector3::zero());
+            _rigid_body.set_orientation(&orientation);
+            _rigid_body.set_rotation(&Vector3::new(0_f32, 0.1_f32, 0_f32));
+            _rigid_body.set_angular_damping(1_f32);
+            _rigid_body.set_can_sleep(false);
+            _rigid_body.set_awake(true);
+            _rigid_body
+        };
         let rigid_body2_instance = physics.register_body(rigid_body2);
         let object1 = SceneObjectBuilder::new(model1, rigid_body1_instance)
             .with_transform(&model1_transform)
@@ -74,6 +110,7 @@ impl AppStateTwoArmadillos {
         objects.push(object1);
         objects.push(object2);
         let active_scene = SceneBuilder::new(camera)
+            .with_physics(physics)
             .with_objects(objects)
             .build();
         let angle = 0_f32;
@@ -83,11 +120,13 @@ impl AppStateTwoArmadillos {
 }
 
 impl AppState for AppStateTwoArmadillos {
-    fn update(&mut self, _elapsed: f64) {
+    fn update(&mut self, elapsed: f64) {
+        /*
         self.angle += 0.01;
         if self.angle > std::f32::consts::FRAC_2_PI {
             self.angle -= std::f32::consts::FRAC_2_PI;
         }
+        */
         /*
         self.active_scene.get_mut_unchecked(0).set_transform(
             &Matrix4x4::from_affine_translation(&Vector3::new(-1.3_f32, 0_f32, 0_f32))
@@ -97,6 +136,7 @@ impl AppState for AppStateTwoArmadillos {
             Matrix4x4::from_affine_angle_y(Radians(self.angle))
         ));
         */
+        /*
         self.active_scene.get_mut_unchecked(0).set_transform(
             &Transform3::from_translation(&Vector3::new(-1.3_f32, 0_f32, 0_f32))
         );
@@ -107,7 +147,8 @@ impl AppState for AppStateTwoArmadillos {
                 Rotation3::from_angle_y(Radians(self.angle))
             )
         );
-
+        */
+        self.active_scene.run(elapsed);
         self.active_scene.rebuild();
     }
 

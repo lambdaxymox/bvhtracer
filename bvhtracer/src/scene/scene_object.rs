@@ -70,7 +70,10 @@ impl SceneObject {
             rigid_body_transform.rotation * self.transform_init.rotation,
         );
         */
+        eprintln!("transform_init = {:?}", self.transform_init);
+        eprintln!("rigid_body_transform = {:?}", rigid_body_transform);
         let new_transform = rigid_body_transform * self.transform_init;
+        eprintln!("new_transform = {:?}", new_transform);
         self.transform_component.set_transform(&new_transform);
     }
 
