@@ -8,8 +8,6 @@ use cglinalg::{
     Vector3,
     Quaternion,
     Magnitude,
-    Rotation3,
-    Translation3,
 };
 
 
@@ -471,8 +469,8 @@ where
         self.is_awake = true;
     }
 
-    pub fn set_acceleration(&mut self, new_acceleration: &Vector3<S>) {
-        self.acceleration = *new_acceleration;
+    pub fn set_acceleration(&mut self, acceleration: &Vector3<S>) {
+        self.acceleration = *acceleration;
     }
 
     pub fn get_acceleration_world(&self) -> Vector3<S> {

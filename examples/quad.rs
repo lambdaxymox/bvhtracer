@@ -23,8 +23,10 @@ use std::io;
 
 struct AppStateQuad {
     active_scene: Scene,
+    /*
     axis: Unit<Vector3<f32>>,
     angular_frequency: f64,
+    */
 }
 
 impl AppStateQuad {
@@ -91,23 +93,37 @@ impl AppStateQuad {
             .with_texture(material)
             .build();
         let mut physics = World::new();
-        let rigid_body = RigidBody::default();
+        let rigid_body = {
+            let mut _rigid_body = RigidBody::default();
+            let angular_frequency = 2_f32;
+            let position_world = Vector3::new(0_f32, 0_f32, 0_f32);
+            _rigid_body.set_rotation(&Vector3::new(0_f32, 0_f32, angular_frequency));
+            _rigid_body.set_awake(true);
+            _rigid_body.set_angular_damping(1_f32);
+            _rigid_body.set_position(&position_world);
+            _rigid_body
+        };
         let rigid_body_instance = physics.register_body(rigid_body);
         let scene_object = SceneObjectBuilder::new(model, rigid_body_instance)
             .with_transform(&Transform3::identity())
             .build();
         let active_scene = SceneBuilder::new(camera)
+            .with_physics(physics)
             .with_object(scene_object)
             .build();
+        /*
         let axis = Unit::from_value(Vector3::unit_z());
         let angular_frequency = 2_f64;
+        */
         
-        Self { active_scene, axis, angular_frequency, }
+        // Self { active_scene, axis, angular_frequency, }
+        Self { active_scene, }
     }
 }
 
 impl AppState for AppStateQuad {
     fn update(&mut self, elapsed: f64) {
+        /*
         let angle = Radians((self.angular_frequency * elapsed) as f32);
         // let rotation_matrix = Matrix4x4::from_affine_axis_angle(&self.axis, angle);
         let rotation = Transform3::from_axis_angle(&self.axis, angle);
@@ -121,6 +137,8 @@ impl AppState for AppStateQuad {
         */
         let new_transform = rotation * old_transform;
         self.active_scene.get_mut_unchecked(0).set_transform(&new_transform);
+        */
+        self.active_scene.run(elapsed);
     }
 
     fn active_scene(&self) -> &Scene {
