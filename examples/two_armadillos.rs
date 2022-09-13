@@ -61,6 +61,7 @@ impl AppStateTwoArmadillos {
             );
             _rigid_body.set_position(&Vector3::zero());
             _rigid_body.set_orientation(&orientation);
+            _rigid_body.set_angular_damping(1_f32);
             _rigid_body.set_can_sleep(false);
             _rigid_body.set_awake(true);
             _rigid_body
@@ -101,33 +102,6 @@ impl AppStateTwoArmadillos {
 
 impl AppState for AppStateTwoArmadillos {
     fn update(&mut self, elapsed: f64) {
-        /*
-        self.angle += 0.01;
-        if self.angle > std::f32::consts::FRAC_2_PI {
-            self.angle -= std::f32::consts::FRAC_2_PI;
-        }
-        */
-        /*
-        self.active_scene.get_mut_unchecked(0).set_transform(
-            &Matrix4x4::from_affine_translation(&Vector3::new(-1.3_f32, 0_f32, 0_f32))
-        );
-        self.active_scene.get_mut_unchecked(1).set_transform(&(
-            Matrix4x4::from_affine_translation(&Vector3::new(1.3_f32, 0_f32, 0_f32)) *
-            Matrix4x4::from_affine_angle_y(Radians(self.angle))
-        ));
-        */
-        /*
-        self.active_scene.get_mut_unchecked(0).set_transform(
-            &Transform3::from_translation(&Vector3::new(-1.3_f32, 0_f32, 0_f32))
-        );
-        self.active_scene.get_mut_unchecked(1).set_transform(
-            &Transform3::new(
-                &Vector3::zero(),
-                &Vector3::new(1.3_f32, 0_f32, 0_f32),
-                Rotation3::from_angle_y(Radians(self.angle))
-            )
-        );
-        */
         self.active_scene.run(elapsed);
         self.active_scene.rebuild();
     }
