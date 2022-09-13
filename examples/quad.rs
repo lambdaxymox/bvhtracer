@@ -23,10 +23,6 @@ use std::io;
 
 struct AppStateQuad {
     active_scene: Scene,
-    /*
-    axis: Unit<Vector3<f32>>,
-    angular_frequency: f64,
-    */
 }
 
 impl AppStateQuad {
@@ -111,33 +107,13 @@ impl AppStateQuad {
             .with_physics(physics)
             .with_object(scene_object)
             .build();
-        /*
-        let axis = Unit::from_value(Vector3::unit_z());
-        let angular_frequency = 2_f64;
-        */
-        
-        // Self { active_scene, axis, angular_frequency, }
+
         Self { active_scene, }
     }
 }
 
 impl AppState for AppStateQuad {
     fn update(&mut self, elapsed: f64) {
-        /*
-        let angle = Radians((self.angular_frequency * elapsed) as f32);
-        // let rotation_matrix = Matrix4x4::from_affine_axis_angle(&self.axis, angle);
-        let rotation = Transform3::from_axis_angle(&self.axis, angle);
-        let old_transform = self.active_scene.get_unchecked(0).get_transform();
-        /*
-        let new_transform = { 
-            let mut _new_transform = old_transform.clone();
-            _new_transform.rotation = rotation * old_transform.rotation;
-            _new_transform
-        };
-        */
-        let new_transform = rotation * old_transform;
-        self.active_scene.get_mut_unchecked(0).set_transform(&new_transform);
-        */
         self.active_scene.run(elapsed);
     }
 
