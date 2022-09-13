@@ -51,29 +51,21 @@ impl AppStateCube {
             .read_model()
             .unwrap();
         let translation = Vector3::new(-1_f32, -1_f32, -1_f32);
-        /*
-        let transform = Matrix4x4::from_affine_translation(&translation) * 
-            Matrix4x4::from_affine_scale(2_f32);
-        */
         let transform = {
             let scale = Vector3::from_fill(2_f32);
             Transform3::from_scale_translation(&scale, &translation)
         };
         let mut physics = World::new();
-        /*
         let rigid_body = {
             let mut _rigid_body = RigidBody::default();
             let angular_frequency = 2_f32;
             let position_world = Vector3::new(0_f32, 0_f32, 0_f32);
             _rigid_body.set_rotation(&Vector3::new(0_f32, 0_f32, angular_frequency));
-            _rigid_body.set_awake(false);
+            _rigid_body.set_awake(true);
             _rigid_body.set_angular_damping(1_f32);
             _rigid_body.set_position(&position_world);
-            // _rigid_body.set_scale(Scale3::from_scale(2_f32));
             _rigid_body
         };
-        */
-        let rigid_body = RigidBody::default();
         let rigid_body_instance = physics.register_body(rigid_body);
         let scene_object = SceneObjectBuilder::new(model.clone(), rigid_body_instance)
             .with_transform(&transform)
@@ -91,18 +83,7 @@ impl AppStateCube {
 
 impl AppState for AppStateCube {
     fn update(&mut self, elapsed: f64) {
-        /*
-        let old_transform = self.active_scene.get_unchecked(0).get_transform();
-        eprintln!("old_tranform = {:?}", old_transform);
         self.active_scene.run(elapsed);
-        let new_transform = self.active_scene.get_unchecked(0).get_transform();
-        eprintln!("new_transform = {:?}", new_transform);
-        */
-        let angle = Radians((self.angular_frequency * elapsed) as f32);
-        let rotation = Transform3::from_axis_angle(&self.axis, angle);
-        let old_transform = self.active_scene.get_unchecked(0).get_transform();
-        let new_transform = rotation * old_transform;
-        self.active_scene.get_mut_unchecked(0).set_transform(&new_transform);
     }
 
     fn active_scene(&self) -> &Scene {
