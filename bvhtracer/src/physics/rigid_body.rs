@@ -19,8 +19,7 @@ fn _check_inverse_inertia_tensor<S: SimdScalarFloat>(iit_world: &Matrix3x3<S>) {
     assert!(iit_world.is_finite());
 }
 
-// Inline function that creates a transform matrix from a
-// position and orientation.
+// Implementation of Euler-Rodruiguez Formula.
 #[inline]
 fn _calculate_transform_matrix<S: SimdScalarFloat>(
     transform: &mut Matrix4x4<S>,
@@ -162,7 +161,7 @@ where
     }
 
     pub (crate) fn calculate_derived_data(&mut self) {
-        self.orientation.normalize();
+        self.orientation = self.orientation.normalize();
 
         // Calculate the transform matrix for the body.
         _calculate_transform_matrix(&mut self.transform, &self.position, &self.orientation);
@@ -173,7 +172,6 @@ where
             &self.inverse_inertia_tensor,
             &self.transform
         );
-        eprintln!("self.transform = {:?}", self.transform);
     }
 
     /// Newton-Euler method.
@@ -335,8 +333,7 @@ where
     }
 
     pub fn set_orientation(&mut self, orientation: &Quaternion<S>) {
-        self.orientation = *orientation;
-        self.orientation.normalize();
+        self.orientation = orientation.normalize();
     }
 
     pub fn get_orientation_mut(&self, orientation: &mut Matrix3x3<S>) {
