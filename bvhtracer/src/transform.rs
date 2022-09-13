@@ -4,7 +4,8 @@ use cglinalg::{
     Vector3,
     Matrix4x4,
     Unit,
-    Radians,
+    Radians, 
+    Matrix,
 };
 use std::ops;
 
@@ -33,7 +34,14 @@ where
     }
 
     #[inline]
-    pub fn from_scale(scale: &Vector3<S>) -> Self {
+    pub fn from_scale(scale: S) -> Self {
+        let matrix = Matrix4x4::from_affine_scale(scale);
+
+        Self { matrix, }
+    }
+
+    #[inline]
+    pub fn from_nonuniform_scale(scale: &Vector3<S>) -> Self {
         let matrix = Matrix4x4::from_affine_nonuniform_scale(scale.x, scale.y, scale.z);
 
         Self { matrix, }
