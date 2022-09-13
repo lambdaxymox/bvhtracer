@@ -162,12 +162,6 @@ where
         num_traits::cast(0.3).unwrap()
     }
 
-    pub fn set_scale(&mut self, scale: Vector3<S>) {
-        /*
-        self.transform.scale = scale;
-        */
-    }
-
     pub (crate) fn calculate_derived_data(&mut self) {
         self.orientation.normalize();
 
@@ -389,36 +383,24 @@ where
     // world space to body space
     pub fn get_point_in_local_space(&self, point_world: &Vector3<S>) -> Vector3<S> {
         let transform_inverse = self.get_transform().inverse().unwrap();
-        /*
-        (transform_inverse * point_world.extend(S::one())).contract()
-        */
         transform_inverse.transform_point(point_world)
     }
 
     // body space to world space.
     pub fn get_point_in_world_space(&self, point_body: &Vector3<S>) -> Vector3<S> {
         let transform = self.get_transform();
-        /*
-        (self.transform * point_body.extend(S::one())).contract()
-        */
         transform.transform_point(point_body)
     }
     
     // world space to body space.
     pub fn get_direction_in_local_space(&self, direction_world: &Vector3<S>) -> Vector3<S> {
         let transform_inverse = self.get_transform().inverse().unwrap();
-        /*
-        (transform_inverse * direction_world.extend(S::zero())).contract()
-        */
         transform_inverse.transform_vector(direction_world)
     }
 
     // body space to world space.
     pub fn get_direction_in_world_space(&self, direction_body: &Vector3<S>) -> Vector3<S> {
         let transform = self.get_transform();
-        /*
-        (self.transform * direction_body.extend(S::zero())).contract()
-        */
         transform.transform_vector(direction_body)
     }
 

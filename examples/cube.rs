@@ -11,8 +11,6 @@ use bvhtracer::*;
 use bvhtracer_demos::*;
 use cglinalg::{
     Vector3,
-    Radians,
-    Unit,
     Degrees,
     Magnitude,
 };
@@ -21,8 +19,6 @@ use std::io;
 
 struct AppStateCube {
     active_scene: Scene,
-    axis: Unit<Vector3<f32>>,
-    angular_frequency: f64,
 }
 
 impl AppStateCube {
@@ -74,10 +70,8 @@ impl AppStateCube {
             .with_physics(physics)
             .with_object(scene_object)
             .build();
-        let axis = Unit::from_value(Vector3::unit_z());
-        let angular_frequency = 2_f64;
 
-        Self { active_scene, axis, angular_frequency, }
+        Self { active_scene, }
     }
 }
 
