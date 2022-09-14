@@ -153,8 +153,9 @@ impl<S> RigidBody<S>
 where
     S: SimdScalarFloat,
 {
+    /// The energy threshold below which the object goes to sleep.
     #[inline(always)]
-    fn sleep_epsilon(&self) -> S {
+    fn sleep_threshold(&self) -> S {
         num_traits::cast(0.3).unwrap()
     }
 
@@ -228,10 +229,10 @@ where
             let bias = S::powf(one_half, duration);
             self.motion = bias * self.motion + (S::one() - bias) * current_motion;
             let ten: S = num_traits::cast(10_f64).unwrap();
-            if self.motion < self.sleep_epsilon() {
+            if self.motion < self.sleep_threshold() {
                 self.set_awake(false);
-            } else if self.motion > ten * self.sleep_epsilon() {  
-                self.motion = ten * self.sleep_epsilon();
+            } else if self.motion > ten * self.sleep_threshold() {  
+                self.motion = ten * self.sleep_threshold();
             }
         }
     }
@@ -415,7 +416,7 @@ where
             self.is_awake = true;
             // Add a bit of motion to avoid it falling asleep immediately.
             let two = num_traits::cast(2_f64).unwrap();
-            self.motion = self.sleep_epsilon() * two;
+            self.motion = self.sleep_threshold() * two;
         } else {
             self.is_awake = false;
             self.velocity = Vector3::zero();

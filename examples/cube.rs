@@ -13,6 +13,7 @@ use cglinalg::{
     Vector3,
     Degrees,
     Magnitude,
+    Quaternion,
 };
 use std::io;
 
@@ -55,10 +56,11 @@ impl AppStateCube {
             let mut _rigid_body = RigidBody::default();
             let angular_frequency = 2_f32;
             let position_world = Vector3::new(0_f32, 0_f32, 0_f32);
+            _rigid_body.set_position(&position_world);
+            _rigid_body.set_orientation(&Quaternion::unit_z());
             _rigid_body.set_rotation(&Vector3::new(0_f32, 0_f32, angular_frequency));
             _rigid_body.set_awake(true);
             _rigid_body.set_angular_damping(1_f32);
-            _rigid_body.set_position(&position_world);
             _rigid_body
         };
         let rigid_body_instance = physics.register_body(rigid_body);

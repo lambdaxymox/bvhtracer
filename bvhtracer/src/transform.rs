@@ -151,6 +151,10 @@ where
     pub fn inverse(&self) -> Option<Self> {
         self.matrix.inverse().map(|matrix| Self { matrix, })
     }
+
+    pub fn get_translation(&self) -> Vector3<S> {
+        Vector3::new(self.matrix[3][0], self.matrix[3][1], self.matrix[3][2])
+    }
 }
 
 impl<S> ops::Mul<Transform3<S>> for Transform3<S> 

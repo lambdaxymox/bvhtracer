@@ -20,7 +20,6 @@ use std::io;
 
 
 struct AppStateTwoArmadillos {
-    angle: f32,
     active_scene: Scene,
 }
 
@@ -48,18 +47,17 @@ impl AppStateTwoArmadillos {
         let mut objects = vec![];
         let model1 = model.clone();
         let model2 = model.clone();
-        let translation1 = Vector3::new(-1.3_f32, 0_f32, 0_f32);
-        let translation2 = Vector3::new(1.3_f32, 0_f32, 0_f32);
-        let model1_transform = Transform3::from_translation(&translation1);
-        let model2_transform = Transform3::from_translation(&translation2);
+        let model1_transform = Transform3::identity();
+        let model2_transform = Transform3::identity();
         let mut physics = World::new();
         let rigid_body1 = {
             let mut _rigid_body = RigidBody::default();
+            let position = Vector3::new(-1.3_f32, 0_f32, 0_f32);
             let orientation =  Quaternion::from_axis_angle(
                 &Unit::from_value(Vector3::unit_y()),
                 Radians(0_f32)
             );
-            _rigid_body.set_position(&Vector3::zero());
+            _rigid_body.set_position(&position);
             _rigid_body.set_orientation(&orientation);
             _rigid_body.set_angular_damping(1_f32);
             _rigid_body.set_can_sleep(false);
@@ -69,13 +67,14 @@ impl AppStateTwoArmadillos {
         let rigid_body1_instance = physics.register_body(rigid_body1);
         let rigid_body2 = {
             let mut _rigid_body = RigidBody::default();
+            let position = Vector3::new(1.3_f32, 0_f32, 0_f32);
             let orientation =  Quaternion::from_axis_angle(
                 &Unit::from_value(Vector3::unit_y()),
                 Radians(0_f32)
             );
-            _rigid_body.set_position(&Vector3::zero());
+            _rigid_body.set_position(&position);
             _rigid_body.set_orientation(&orientation);
-            _rigid_body.set_rotation(&Vector3::new(0_f32, 0.1_f32, 0_f32));
+            _rigid_body.set_rotation(&Vector3::new(0_f32, 0.02_f32, 0_f32));
             _rigid_body.set_angular_damping(1_f32);
             _rigid_body.set_can_sleep(false);
             _rigid_body.set_awake(true);
@@ -94,9 +93,8 @@ impl AppStateTwoArmadillos {
             .with_physics(physics)
             .with_objects(objects)
             .build();
-        let angle = 0_f32;
 
-        Self { angle, active_scene, }
+        Self { active_scene, }
     }
 }
 

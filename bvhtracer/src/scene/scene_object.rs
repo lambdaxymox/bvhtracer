@@ -54,11 +54,8 @@ impl SceneObject {
         let rigid_body = self.rigid_body.rc();
         let borrow = rigid_body.borrow();
         let rigid_body_transform = borrow.get_transform();
-        eprintln!("transform_init = {:?}", self.transform_init);
-        eprintln!("rigid_body_transform = {:?}", rigid_body_transform);
         let new_transform = rigid_body_transform * self.transform_init;
-        eprintln!("new_transform = {:?}", new_transform);
-        self.transform_component.set_transform(&new_transform);
+        self.set_transform(&new_transform);
     }
 
     pub fn set_transform(&mut self, transform: &Transform3<f32>) {
