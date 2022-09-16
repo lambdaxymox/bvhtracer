@@ -10,7 +10,6 @@ const SCREEN_HEIGHT: usize = 640;
 use bvhtracer::*;
 use bvhtracer_demos::*;
 use cglinalg::{
-    Vector2,
     Vector3,
     Radians,
     Degrees,
