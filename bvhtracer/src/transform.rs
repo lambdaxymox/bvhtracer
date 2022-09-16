@@ -119,6 +119,36 @@ where
         Self { matrix, }
     }
 
+    #[inline]
+    pub fn from_angle_x<A>(angle: A) -> Self 
+    where
+        A: Into<Radians<S>>
+    {
+        let matrix = Matrix4x4::from_affine_angle_x(angle);
+
+        Self { matrix, }
+    }
+
+    #[inline]
+    pub fn from_angle_y<A>(angle: A) -> Self 
+    where
+        A: Into<Radians<S>>
+    {
+        let matrix = Matrix4x4::from_affine_angle_y(angle);
+
+        Self { matrix, }
+    }
+
+    #[inline]
+    pub fn from_angle_z<A>(angle: A) -> Self 
+    where
+        A: Into<Radians<S>>
+    {
+        let matrix = Matrix4x4::from_affine_angle_z(angle);
+
+        Self { matrix, }
+    }
+
     pub fn identity() -> Self {
         Self {
             matrix: Matrix4x4::identity(),

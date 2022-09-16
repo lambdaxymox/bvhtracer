@@ -129,8 +129,8 @@ where
         Self {
             inverse_mass: S::max_value(),
             inverse_inertia_tensor: Matrix3x3::identity(),
-            linear_damping: S::zero(),
-            angular_damping: S::zero(),
+            linear_damping: S::one(),
+            angular_damping: S::one(),
             position: Vector3::zero(),
             orientation: Quaternion::unit_z(),
             velocity: Vector3::zero(),
@@ -367,8 +367,12 @@ where
 
     // body space to world space.
     pub fn get_point_in_world_space(&self, point_body: &Vector3<S>) -> Vector3<S> {
+        eprintln!("point_body = {:?}", point_body);
         let transform = self.get_transform();
-        transform.transform_point(point_body)
+        eprintln!("transform = {:?}", transform);
+        let point_world = transform.transform_point(point_body);
+        eprintln!("point_world = {:?}", point_world);
+        point_world
     }
     
     // world space to body space.

@@ -21,6 +21,16 @@ use cglinalg::{
 use std::io;
 
 
+struct BoundedRelativeConstantVelocityMotion {
+    acceleration: f32,
+    speed: f32,
+    max_distance: f32,
+    direction: Vector3<f32>,
+    position_init: Vector3<f32>,
+}
+
+
+
 struct AppStateSixteenArmadillos {
     active_scene: Scene,
     a: Vec<f32>,
@@ -49,14 +59,6 @@ impl AppStateSixteenArmadillos {
         let mesh = mesh_decoder.read_mesh().unwrap();
         let model_builder = ModelBuilder::new();
         let model = model_builder.with_mesh(mesh).build();
-        /*
-        let objects = (0..16).map(|_| {
-                SceneObjectBuilder::new(model.clone())
-                    .with_transform(&Matrix4x4::from_affine_scale(0.75))
-                    .build()
-            })
-            .collect::<Vec<_>>();
-        */
         let mut physics = World::new();
         let objects = (0..16).map(|_| {
             let transform = Transform3::from_scale(0.75);
@@ -97,22 +99,35 @@ impl AppState for AppStateSixteenArmadillos {
                     Matrix4x4::from_affine_translation(&Vector3::new(0_f32, self.h[i / 2], 0_f32))
                 };
                 */
+                // The model space to body space transformation is initialized during the construction of the scene object.
                 let scale_mat = Vector3::from_fill(0.75);
+                // Calculate the body space to world space transformation.
+                // Horizontal translation from body space to world space.
                 let trans_mat = Vector3::new((x as f32 - 1.5) * 2.5, 0_f32, (y as f32 - 1.5) * 2.5);
+                // Vertical translation from body space to world space
+                // Updates every time step.
+                let bounce_trans_mat = if ((x + y) & 1) == 0 {
+                    Vector3::zero()
+                } else {
+                    // self.h[...] === some kind of height update rule.
+                    Vector3::new(0_f32, self.h[i / 2], 0_f32)
+                };
+                // World space rotation in world space.
+                // self.a[...] == Some kind of rotation update rule.
                 let rot_mat = if ((x + y) & 1) == 0 {
                     Rotation3::from_angle_x(Radians(self.a[i])) * Rotation3::from_angle_z(Radians(self.a[i]))
                 } else {
                     Rotation3::identity()
                 };
-                let bounce_trans_mat = if ((x + y) & 1) == 0 {
-                    Vector3::zero()
-                } else {
-                    Vector3::new(0_f32, self.h[i / 2], 0_f32)
-                };
+                // self.a[...] == Some kind of angular acceleration rule, i.e. updating the angular position. Angle.
+                // Replace with a constant rotation velocity specification for each object's rigid body.
+                // body.set_velocity((((i * 13) & 7 + 2) as f32) * 0.005);
                 self.a[i] += (((i * 13) & 7 + 2) as f32) * 0.005;
                 if self.a[i] > std::f32::consts::FRAC_2_PI {
                     self.a[i] -= std::f32::consts::FRAC_2_PI;
                 }
+                // self.s[...] == Some kind of vertical position update rule. Speed.
+                // self.h[...] == Some kind of vertical position update rule. Height.
                 self.s[i] -= 0.01;
                 self.h[i] += self.s[i];
                 if (self.s[i] < 0_f32) && (self.h[i] < 0_f32) {

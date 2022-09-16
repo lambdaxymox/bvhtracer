@@ -10,22 +10,43 @@ const SCREEN_HEIGHT: usize = 640;
 use bvhtracer::*;
 use bvhtracer_demos::*;
 use cglinalg::{
-    Matrix4x4,
+    Vector2,
     Vector3,
     Radians,
     Degrees,
-    Scale3,
-    Translation3,
     Rotation3,
 };
 use std::io;
 
 
+struct Physics {
+    angle: f32,
+    position_init: Vector3<f32>,
+    height: f32,
+    speed: f32,
+    angular_velocity: f32,
+    acceleration: f32,
+    direction: f32,
+}
+
+impl Physics {
+    fn new(angle: f32, position_init: Vector3<f32>, height: f32, speed: f32, angular_velocity: f32, acceleration: f32) -> Self {
+        Self { 
+            angle, 
+            height, 
+            position_init, 
+            speed, 
+            angular_velocity, 
+            acceleration, 
+            direction: -1_f32,
+        }
+    }
+}
+
+
 struct AppStateTrippyTeapots {
     active_scene: Scene,
-    a: Vec<f32>,
-    h: Vec<f32>,
-    s: Vec<f32>,
+    physics: Vec<Physics>,
 }
 
 impl AppStateTrippyTeapots {
@@ -51,82 +72,95 @@ impl AppStateTrippyTeapots {
         let model = SimpleModelDecoder::new(mesh_reader, material_reader)
             .read_model()
             .unwrap();
-        let mut physics = World::new();
-        let objects = (0..16).map(|_| {
-                let rigid_body = RigidBody::default();
-                let rigid_body_instance = physics.register_body(rigid_body);
-                let transform = Transform3::identity();
-                SceneObjectBuilder::new(model.clone(), rigid_body_instance)
-                    .with_transform(&transform)
-                    .build()
-            })
-            .collect::<Vec<_>>();
-        let active_scene = SceneBuilder::new(camera)
-            .with_objects(objects)
-            .build();
-        let a = vec![0_f32; 16];
-        let h = vec![
+        let mut world = World::new();
+        let mut objects = vec![]; 
+        let mut physics = vec![];
+        let height_init = vec![
             5_f32, 4_f32, 3_f32, 2_f32, 1_f32, 5_f32, 4_f32, 3_f32, 
             5_f32, 4_f32, 3_f32, 2_f32, 1_f32, 5_f32, 4_f32, 3_f32,
         ];
-        let s = vec![0_f32; 16];
+        let mut i = 0;
+        for x in 0..4 { for y in 0..4 {
+            let rigid_body = {
+                let mut _rigid_body = RigidBody::default();
+                _rigid_body.set_can_sleep(false);
+                _rigid_body.set_awake(true);
+                _rigid_body
+            };
+            let rigid_body_instance = world.register_body(rigid_body);
+            let angular_velocity = if ((x + y) & 1) == 0 {
+                (((i * 13) & 7 + 2) as f32) * 0.10
+            } else {
+                0_f32
+            };
+            let horizontal = Vector3::new((x as f32 - 1.5) * 2.5, 0_f32, (y as f32 - 1.5) * 2.5);
+            let vertical = if ((x + y) & 1) == 0 {
+                Vector3::zero()
+            } else {
+                Vector3::new(0_f32, height_init[i / 2], 0_f32)
+            };
+            let scale = Vector3::from_fill(0.75);
+            let translation = horizontal + vertical;
+            let rotation = Rotation3::from_angle_x(Radians(0_f32)) * 
+                Rotation3::from_angle_z(Radians(0_f32));
+            let transform = Transform3::new(&scale, &translation, rotation);
+            let angle = 0_f32;
+            let acceleration =  if ((x + y) & 1) == 0 { 0_f32 } else { 9.8 };
+            let speed = 0_f32;
+            let object_physics = Physics::new(
+                angle, 
+                translation, 
+                vertical.y,
+                speed, 
+                angular_velocity, 
+                acceleration
+            );
+            let object = SceneObjectBuilder::new(model.clone(), rigid_body_instance)
+                .with_transform(&transform)
+                .build();
+            objects.push(object);
+            physics.push(object_physics);
 
-        Self { active_scene, a, h, s }
+            i += 1;
+        }}
+        let active_scene = SceneBuilder::new(camera)
+            .with_objects(objects)
+            .build();
 
+        Self { active_scene, physics, }
     }
 }
 
 impl AppState for AppStateTrippyTeapots {
-    fn update(&mut self, _elapsed: f64) {
-        let mut i = 0;
-        for x in 0..4 {
-            for y in 0..4 {
-                /*
-                let scale_mat = Matrix4x4::from_affine_scale(0.75_f32);
-                let trans_mat = Matrix4x4::from_affine_translation(
-                    &Vector3::new((x as f32 - 1.5) * 2.5, 0_f32, (y as f32 - 1.5) * 2.5)
-                );
-                let rot_mat = if ((x + y) & 1) == 0 {
-                    Matrix4x4::from_affine_angle_x(Radians(self.a[i])) * Matrix4x4::from_affine_angle_z(Radians(self.a[i]))
-                } else {
-                    Matrix4x4::from_affine_translation(&Vector3::new(0_f32, self.h[i / 2], 0_f32))
-                };
-                */
-                let scale_mat = Vector3::from_fill(0.75_f32);
-                let trans_mat = Vector3::new((x as f32 - 1.5) * 2.5, 0_f32, (y as f32 - 1.5) * 2.5);
-                let rot_mat = if ((x + y) & 1) == 0 {
-                    Rotation3::from_angle_x(Radians(self.a[i])) * Rotation3::from_angle_z(Radians(self.a[i]))
-                } else {
-                    Rotation3::identity()
-                };
-                let bounce_trans_mat = if ((x + y) & 1) == 0 {
-                    Vector3::zero()
-                } else {
-                    Vector3::new(0_f32, self.h[i / 2], 0_f32)
-                };
-                self.a[i] += (((i * 13) & 7 + 2) as f32) * 0.005;
-                if self.a[i] > std::f32::consts::FRAC_2_PI {
-                    self.a[i] -= std::f32::consts::FRAC_2_PI;
-                }
-                self.s[i] -= 0.01;
-                self.h[i] += self.s[i];
-                if (self.s[i] < 0_f32) && (self.h[i] < 0_f32) {
-                    self.s[i] = 0.2;
-                }
+    fn update(&mut self, elapsed: f64) {
+        for i in 0..16 {
+            let new_transform = {
+                let scale = Vector3::from_fill(0.75_f32);
+                let height = self.physics[i].height;
+                let translation = self.physics[i].position_init + Vector3::new(0_f32, height, 0_f32);
+                let angle = Radians(self.physics[i].angle);
+                let rotation = Rotation3::from_angle_x(angle) * Rotation3::from_angle_z(angle);
+                Transform3::new(&scale, &translation, rotation)
+            };
+            self.active_scene.get_mut_unchecked(i).set_transform(&new_transform);
+        }
 
-                /*
-                let new_transform = trans_mat * rot_mat * scale_mat;
-                */
-                let new_transform = Transform3::new(
-                    &scale_mat, 
-                    &(trans_mat + bounce_trans_mat),
-                    rot_mat
-                );
-                self.active_scene.get_mut_unchecked(i).set_transform(&new_transform);
+        for i in 0..16 {
+            let new_angle = self.physics[i].angle + self.physics[i].angular_velocity * (elapsed as f32);
+            self.physics[i].angle = new_angle;
+            self.physics[i].speed += self.physics[i].acceleration * (elapsed as f32);
+            self.physics[i].height += self.physics[i].direction * self.physics[i].speed * (elapsed as f32);
+            if self.physics[i].height < -3_f32 {
+                self.physics[i].height = (-3_f32) + 0.01;
+                self.physics[i].direction = -self.physics[i].direction;
+                self.physics[i].speed = 0.2;
+            } else if self.physics[i].height > self.physics[i].position_init.y { 
+                self.physics[i].height = self.physics[i].position_init.y - 0.01;
+                self.physics[i].direction = -self.physics[i].direction;
+            } else {
 
-                i += 1;
             }
-        } 
+        }
 
         self.active_scene.rebuild();
     }
