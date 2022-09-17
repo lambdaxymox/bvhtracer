@@ -5,9 +5,6 @@ use cglinalg::{
     Vector3,
     Magnitude,
 };
-use std::rc::{
-    Rc,
-};
 use std::fmt;
 use std::marker;
 

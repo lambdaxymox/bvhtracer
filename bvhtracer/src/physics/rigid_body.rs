@@ -17,38 +17,6 @@ fn _check_inverse_inertia_tensor<S: SimdScalarFloat>(iit_world: &Matrix3x3<S>) {
     assert!(iit_world.is_finite());
 }
 
-// Implementation of Euler-Rodruiguez Formula.
-#[inline]
-fn _calculate_transform_matrix<S: SimdScalarFloat>(
-    transform: &mut Matrix4x4<S>,
-    position: &Vector3<S>,
-    orientation: &Quaternion<S>,
-) {
-    let zero = S::zero();
-    let one = S::one();
-    let two = one + one;
-
-    transform[0][0] = one - two * orientation.v.y * orientation.v.y - two * orientation.v.z * orientation.v.z;
-    transform[0][1] = two * orientation.v.x * orientation.v.y + two * orientation.s * orientation.v.z;
-    transform[0][2] = two * orientation.v.x * orientation.v.z - two * orientation.s * orientation.v.y;
-    transform[0][3] = zero;
-    
-    transform[1][0] = two * orientation.v.x * orientation.v.y - two * orientation.s * orientation.v.z;
-    transform[1][1] = one - two * orientation.v.x * orientation.v.x - two * orientation.v.z * orientation.v.z;
-    transform[1][2] = two * orientation.v.y * orientation.v.z + two * orientation.s * orientation.v.x;
-    transform[1][3] = zero;
-
-    transform[2][0] = two * orientation.v.x * orientation.v.z + two * orientation.s * orientation.v.y;
-    transform[2][1] = two * orientation.v.y * orientation.v.z - two * orientation.s * orientation.v.x;
-    transform[2][2] = one - two * orientation.v.x * orientation.v.x - two * orientation.v.y * orientation.v.y;
-    transform[2][3] = zero;
-
-    transform[3][0] = position.x;
-    transform[3][1] = position.y;
-    transform[3][2] = position.z;
-    transform[3][3] = one;
-}
-
 // Internal function to do an inertia tensor transform by a quaternion.
 // This function implements a 
 // similarity transformation, i.e. Let A be a matrix, and let R be an invertible (non-singular)
@@ -161,9 +129,11 @@ where
 
     pub (crate) fn calculate_derived_data(&mut self) {
         self.orientation = self.orientation.normalize();
-
-        // Calculate the transform matrix for the body.
-        _calculate_transform_matrix(&mut self.transform, &self.position, &self.orientation);
+        let new_transform = Transform3::from_translation_rotation(
+            &self.position, 
+            &self.orientation
+        );
+        new_transform.compute_matrix_mut(&mut self.transform);
 
         // Calculate the inertia tensor in world space.
         _transform_inertia_tensor(

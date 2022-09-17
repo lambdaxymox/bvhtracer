@@ -5,6 +5,7 @@ use cglinalg::{
     Matrix4x4,
     Unit,
     Radians, 
+    Quaternion,
 };
 use std::ops;
 
@@ -181,6 +182,36 @@ where
         A: Into<Radians<S>>
     {
         let matrix = Matrix4x4::from_affine_angle_z(angle);
+
+        Self { matrix, }
+    }
+
+    // Implementation of Euler-Rodruiguez Formula.
+    pub fn from_translation_rotation(translation: &Vector3<S>, rotation: &Quaternion<S>) -> Self {
+        let mut matrix = Matrix4x4::zero();
+        let zero = S::zero();
+        let one = S::one();
+        let two = one + one;
+    
+        matrix[0][0] = one - two * rotation.v.y * rotation.v.y - two * rotation.v.z * rotation.v.z;
+        matrix[0][1] = two * rotation.v.x * rotation.v.y + two * rotation.s * rotation.v.z;
+        matrix[0][2] = two * rotation.v.x * rotation.v.z - two * rotation.s * rotation.v.y;
+        matrix[0][3] = zero;
+        
+        matrix[1][0] = two * rotation.v.x * rotation.v.y - two * rotation.s * rotation.v.z;
+        matrix[1][1] = one - two * rotation.v.x * rotation.v.x - two * rotation.v.z * rotation.v.z;
+        matrix[1][2] = two * rotation.v.y * rotation.v.z + two * rotation.s * rotation.v.x;
+        matrix[1][3] = zero;
+    
+        matrix[2][0] = two * rotation.v.x * rotation.v.z + two * rotation.s * rotation.v.y;
+        matrix[2][1] = two * rotation.v.y * rotation.v.z - two * rotation.s * rotation.v.x;
+        matrix[2][2] = one - two * rotation.v.x * rotation.v.x - two * rotation.v.y * rotation.v.y;
+        matrix[2][3] = zero;
+    
+        matrix[3][0] = translation.x;
+        matrix[3][1] = translation.y;
+        matrix[3][2] = translation.z;
+        matrix[3][3] = one;
 
         Self { matrix, }
     }
