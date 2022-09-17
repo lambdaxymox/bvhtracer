@@ -9,7 +9,6 @@ use cglinalg::{
     SimdScalarFloat,
     Vector3,
 };
-use std::ops;
 
 
 #[derive(Clone, Debug, PartialEq)]

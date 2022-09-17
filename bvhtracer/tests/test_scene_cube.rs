@@ -11,7 +11,6 @@ use bvhtracer::{
     SceneObjectBuilder,
     SceneBuilder,
     BoxSpec,
-    Triangle,
     Normals,
     Ray,
     World,
@@ -22,12 +21,8 @@ use approx::{
     assert_relative_eq,
 };
 use cglinalg::{
-    Vector2,
     Vector3,
-    Matrix4x4,
     Magnitude,
-    Scale3,
-    Translation3,
     Rotation3,
 };
 use std::fs::{

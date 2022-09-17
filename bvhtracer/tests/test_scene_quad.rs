@@ -11,7 +11,6 @@ use bvhtracer::{
     MeshBuilder,
     ModelBuilder,
     PngTextureBufferDecoder,
-    TextureBuffer2D,
     Scene,
     SceneBuilder,
     SceneObjectBuilder,
@@ -26,7 +25,6 @@ use bvhtracer::{
 use cglinalg::{
     Vector2,
     Vector3,
-    Matrix4x4,
     Magnitude,
 };
 use std::fs::{
