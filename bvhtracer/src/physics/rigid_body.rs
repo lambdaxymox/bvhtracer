@@ -370,10 +370,6 @@ where
 
     // world space to body space
     pub fn get_point_in_local_space(&self, point_world: &Vector3<S>) -> Vector3<S> {
-        /*
-        let transform_inverse = self.get_transform().inverse().unwrap();
-        transform_inverse.transform_point(point_world)
-        */
         self.get_transform().inverse_transform_point(point_world)
     }
 
@@ -386,10 +382,6 @@ where
     
     // world space to body space.
     pub fn get_direction_in_local_space(&self, direction_world: &Vector3<S>) -> Vector3<S> {
-        /*
-        let transform_inverse = self.get_transform().inverse().unwrap();
-        transform_inverse.transform_vector(direction_world)
-        */
         self.get_transform().inverse_transform_vector(direction_world)
     }
 
