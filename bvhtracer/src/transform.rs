@@ -25,8 +25,17 @@ where
         matrix[3][0] = translation[0];
         matrix[3][1] = translation[1];
         matrix[3][2] = translation[2];
-        matrix[0][0] *= scale[0];
+
+        matrix[0][0] *= scale[0]; 
+        matrix[0][1] *= scale[0];
+        matrix[0][2] *= scale[0];
+        
+        matrix[1][0] *= scale[1];
         matrix[1][1] *= scale[1];
+        matrix[1][2] *= scale[1];
+        
+        matrix[2][0] *= scale[2];
+        matrix[2][1] *= scale[2];
         matrix[2][2] *= scale[2];
         
         Self { matrix, }
@@ -73,12 +82,14 @@ where
     #[inline]
     pub fn from_scale_translation(scale: &Vector3<S>, translation: &Vector3<S>) -> Self {
         let mut matrix = Matrix4x4::identity();
-        matrix[0][0] = scale[0];
-        matrix[1][1] = scale[1];
-        matrix[2][2] = scale[2];
+        
         matrix[3][0] = translation[0];
         matrix[3][1] = translation[1];
         matrix[3][2] = translation[2];
+
+        matrix[0][0] = scale[0];
+        matrix[1][1] = scale[1];
+        matrix[2][2] = scale[2];
 
         Self { matrix, }
     }
@@ -89,8 +100,17 @@ where
         A: Into<Radians<S>>,
     {
         let mut matrix = Matrix4x4::from_affine_axis_angle(axis, angle);
-        matrix[0][0] *= scale[0];
+        
+        matrix[0][0] *= scale[0]; 
+        matrix[0][1] *= scale[0];
+        matrix[0][2] *= scale[0];
+        
+        matrix[1][0] *= scale[1];
         matrix[1][1] *= scale[1];
+        matrix[1][2] *= scale[1];
+        
+        matrix[2][0] *= scale[2];
+        matrix[2][1] *= scale[2];
         matrix[2][2] *= scale[2];
 
         Self { matrix, }
@@ -115,12 +135,22 @@ where
         A: Into<Radians<S>>,
     {
         let mut matrix = Matrix4x4::from_affine_axis_angle(axis, angle);
-        matrix[0][0] *= scale[0];
-        matrix[1][1] *= scale[1];
-        matrix[2][2] *= scale[2];
+
         matrix[3][0] = translation[0];
         matrix[3][1] = translation[1];
         matrix[3][2] = translation[2];
+
+        matrix[0][0] *= scale[0]; 
+        matrix[0][1] *= scale[0];
+        matrix[0][2] *= scale[0];
+        
+        matrix[1][0] *= scale[1];
+        matrix[1][1] *= scale[1];
+        matrix[1][2] *= scale[1];
+        
+        matrix[2][0] *= scale[2];
+        matrix[2][1] *= scale[2];
+        matrix[2][2] *= scale[2];
 
         Self { matrix, }
     }

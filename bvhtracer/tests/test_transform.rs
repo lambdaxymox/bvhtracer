@@ -252,11 +252,13 @@ fn test_transform_point1() {
     let rotation = Rotation3::from_axis_angle(&axis, angle);
     let translation = Vector3::new(0_f64, 3_f64, 0_f64);
     let transform = Transform3::new(&scale, &translation, rotation);
+    let transform1 = Transform3::from_scale_axis_angle(&scale, &axis, angle);
     let point = Vector3::unit_x();
+    eprintln!("{}", transform1.transform_point(&point));
     let expected = Vector3::new(0_f64, 5_f64, 0_f64);
     let result = transform.transform_point(&point);
 
-    assert_eq!(result, expected);
+    assert_relative_eq!(result, expected, epsilon = 1e-10);
 }
 
 #[test]
@@ -271,7 +273,7 @@ fn test_transform_vector1() {
     let expected = Vector3::new(0_f64, 2_f64, 0_f64);
     let result = transform.transform_vector(&vector);
 
-    assert_eq!(result, expected);
+    assert_relative_eq!(result, expected, epsilon = 1e-10);
 }
 
 #[test]
@@ -317,3 +319,4 @@ fn test_transform_application_order2() {
 
     assert_eq!(result, expected);
 }
+
