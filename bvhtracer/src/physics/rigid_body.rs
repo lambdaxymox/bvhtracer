@@ -254,7 +254,7 @@ where
         self.inverse_mass = inverse_mass;
     }
 
-    pub fn get_inverse_mass(&self) -> S {
+    pub const fn get_inverse_mass(&self) -> S {
         self.inverse_mass
     }
 
@@ -294,11 +294,11 @@ where
         self.inverse_inertia_tensor = inverse_inertia_tensor.clone();
     }
 
-    pub fn get_inverse_inertia_tensor(&self) -> &Matrix3x3<S> {
+    pub const fn get_inverse_inertia_tensor(&self) -> &Matrix3x3<S> {
         &self.inverse_inertia_tensor
     }
 
-    pub fn get_inverse_inertia_tensor_world(&self) -> &Matrix3x3<S> {
+    pub const fn get_inverse_inertia_tensor_world(&self) -> &Matrix3x3<S> {
         &self.inverse_inertia_tensor_world
     }
 
@@ -311,7 +311,7 @@ where
         self.linear_damping = linear_damping;
     }
 
-    pub fn get_linear_damping(&self) -> S {
+    pub const fn get_linear_damping(&self) -> S {
         self.linear_damping
     }
 
@@ -319,7 +319,7 @@ where
         self.angular_damping = angular_damping;
     }
 
-    pub fn get_angular_damping(&self) -> S {
+    pub const fn get_angular_damping(&self) -> S {
         self.angular_damping
     }
 
@@ -327,7 +327,7 @@ where
         self.position = *position;
     }
 
-    pub fn get_position(&self) -> &Vector3<S> {
+    pub const fn get_position(&self) -> &Vector3<S> {
         &self.position
     }
 
@@ -349,7 +349,7 @@ where
         orientation[2][2] = self.transform[2][2];
     }
 
-    pub fn get_orientation(&self) -> &Quaternion<S> {
+    pub const fn get_orientation(&self) -> &Quaternion<S> {
         &self.orientation
     }
 
@@ -367,11 +367,8 @@ where
 
     // body space to world space.
     pub fn get_point_in_world_space(&self, point_body: &Vector3<S>) -> Vector3<S> {
-        eprintln!("point_body = {:?}", point_body);
         let transform = self.get_transform();
-        eprintln!("transform = {:?}", transform);
         let point_world = transform.transform_point(point_body);
-        eprintln!("point_world = {:?}", point_world);
         point_world
     }
     
@@ -391,7 +388,7 @@ where
         self.velocity = *velocity;
     }
 
-    pub fn get_velocity(&self) -> &Vector3<S> {
+    pub const fn get_velocity(&self) -> &Vector3<S> {
         &self.velocity
     }
 
@@ -403,7 +400,7 @@ where
         self.rotation = *rotation;
     }
 
-    pub fn get_rotation(&self) -> &Vector3<S> {
+    pub const fn get_rotation(&self) -> &Vector3<S> {
         &self.rotation
     }
 
@@ -411,7 +408,7 @@ where
         self.rotation += delta_rotation;
     }
 
-    pub fn get_awake(&self) -> bool {
+    pub const fn get_awake(&self) -> bool {
         self.is_awake
     }
 
@@ -428,7 +425,7 @@ where
         }
     }
 
-    pub fn get_can_sleep(&self) -> bool {
+    pub const fn get_can_sleep(&self) -> bool {
         self.can_sleep
     }
 
@@ -478,7 +475,7 @@ where
         self.acceleration = *acceleration;
     }
 
-    pub fn get_acceleration_world(&self) -> Vector3<S> {
+    pub const fn get_acceleration_world(&self) -> Vector3<S> {
         self.acceleration
     }
 }

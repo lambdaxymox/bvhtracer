@@ -25,7 +25,7 @@ impl<S> NullForce<S>
 where
     S: SimdScalarFloat,
 {
-    pub fn new() -> Self { 
+    pub const fn new() -> Self { 
         Self {
             _marker: marker::PhantomData,
         }
@@ -50,7 +50,7 @@ impl<S> Gravity<S>
 where
     S: SimdScalarFloat,
 {
-    pub fn new(gravity: Vector3<S>) -> Self {
+    pub const fn new(gravity: Vector3<S>) -> Self {
         Self { gravity, }
     }
 }
@@ -79,7 +79,7 @@ pub struct Spring<S> {
 }
 
 impl<S> Spring<S> {
-    pub fn new(
+    pub const fn new(
         object: RigidBodyInstance<S>,
         spring_connection_point_body: Vector3<S>,
         object_connection_point_body_object: Vector3<S>,
@@ -109,13 +109,6 @@ where
             .borrow()
             .get_point_in_world_space(&self.object_connection_point);
         let displacement = lws - ows;
-        
-        eprintln!("self.spring_connection_point = {:?}", self.spring_connection_point);
-        eprintln!("self.object_connection_point = {:?}", self.object_connection_point);
-        eprintln!("lws = {:?}", lws);
-        eprintln!("ows = {:?}", ows);
-        eprintln!("displacement = {:?}", displacement);
-        
         let force_magnitude = {
             let displacement_length = displacement.magnitude();
             let spring_displacement_from_rest = S::abs(displacement_length - self.rest_length);

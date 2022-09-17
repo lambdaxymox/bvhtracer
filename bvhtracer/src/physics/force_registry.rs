@@ -18,7 +18,7 @@ pub struct RigidBodyInstance<S> {
 }
 
 impl<S> RigidBodyInstance<S> {
-    pub fn new(body: Rc<RefCell<RigidBody<S>>>) -> Self {
+    pub const fn new(body: Rc<RefCell<RigidBody<S>>>) -> Self {
         Self {
             inner: body,
         }
@@ -45,7 +45,7 @@ pub struct ForceRegistry<S> {
 }
 
 impl<S> ForceRegistry<S> {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             entries: vec![],
         }

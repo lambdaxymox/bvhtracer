@@ -9,7 +9,6 @@ use crate::physics::{
     RigidBodyInstance,
 };
 use cglinalg::{
-    Matrix4x4,
     Vector3,
 };
 
@@ -54,10 +53,8 @@ impl SceneObject {
         let rigid_body = self.rigid_body.rc();
         let borrow = rigid_body.borrow();
         let rigid_body_transform = borrow.get_transform();
-        // eprintln!("old_transform = {:?}", self.get_transform());
         let new_transform = rigid_body_transform * self.transform_init;
         self.set_transform(&new_transform);
-        // eprintln!("new_transform = {:?}", self.get_transform());
     }
 
     pub fn set_transform(&mut self, transform: &Transform3<f32>) {
@@ -110,7 +107,6 @@ impl SceneObjectBuilder {
     }
 
     pub fn with_transform(mut self, transform: &Transform3<f32>) -> Self {
-        let transform_inv = transform.inverse().unwrap();
         let old_bounds = self.model.bounds();
         let mut new_bounds = Aabb::new_empty();
         for i in 0..8 {
