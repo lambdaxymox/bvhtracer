@@ -95,7 +95,7 @@ impl AppStateQuad {
             let position_world = Vector3::new(0_f32, 0_f32, 0_f32);
             _rigid_body.set_rotation(&Vector3::new(0_f32, 0_f32, angular_frequency));
             _rigid_body.set_awake(true);
-            _rigid_body.set_angular_damping(1_f32);
+            _rigid_body.set_angular_drag(1_f32);
             _rigid_body.set_position(&position_world);
             _rigid_body
         };

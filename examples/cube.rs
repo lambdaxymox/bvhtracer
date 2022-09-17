@@ -60,7 +60,7 @@ impl AppStateCube {
             _rigid_body.set_orientation(&Quaternion::unit_z());
             _rigid_body.set_rotation(&Vector3::new(0_f32, 0_f32, angular_frequency));
             _rigid_body.set_awake(true);
-            _rigid_body.set_angular_damping(1_f32);
+            _rigid_body.set_angular_drag(1_f32);
             _rigid_body
         };
         let rigid_body_instance = physics.register_body(rigid_body);

@@ -71,8 +71,8 @@ fn _transform_inertia_tensor<S: SimdScalarFloat>(
 pub struct RigidBody<S> {
     inverse_mass: S,
     inverse_inertia_tensor: Matrix3x3<S>,
-    linear_damping: S,
-    angular_damping: S,
+    linear_drag: S,
+    angular_drag: S,
     position: Vector3<S>,
     orientation: Quaternion<S>,
     velocity: Vector3<S>,
@@ -97,8 +97,8 @@ where
         Self {
             inverse_mass: S::max_value(),
             inverse_inertia_tensor: Matrix3x3::identity(),
-            linear_damping: S::one(),
-            angular_damping: S::one(),
+            linear_drag: S::one(),
+            angular_drag: S::one(),
             position: Vector3::zero(),
             orientation: Quaternion::unit_z(),
             velocity: Vector3::zero(),
@@ -164,8 +164,8 @@ where
         self.rotation += angular_acceleration * duration;
 
         // Impose drag.
-        self.velocity *= S::powf(self.linear_damping, duration);
-        self.rotation *= S::powf(self.angular_damping, duration);
+        self.velocity *= S::powf(self.linear_drag, duration);
+        self.rotation *= S::powf(self.angular_drag, duration);
 
         // Adjust positions
         // Update linear position.
@@ -276,27 +276,27 @@ where
         &self.inverse_inertia_tensor_world
     }
 
-    pub fn set_damping(&mut self, linear_damping: S, angular_damping: S) {
-        self.linear_damping = linear_damping;
-        self.angular_damping = angular_damping;
+    pub fn set_drag(&mut self, linear_drag: S, angular_drag: S) {
+        self.linear_drag = linear_drag;
+        self.angular_drag = angular_drag;
     }
 
-    pub fn set_linear_damping(&mut self, linear_damping: S) {
-        self.linear_damping = linear_damping;
-    }
-
-    #[inline]
-    pub const fn get_linear_damping(&self) -> S {
-        self.linear_damping
-    }
-
-    pub fn set_angular_damping(&mut self, angular_damping: S) {
-        self.angular_damping = angular_damping;
+    pub fn set_linear_drag(&mut self, linear_drag: S) {
+        self.linear_drag = linear_drag;
     }
 
     #[inline]
-    pub const fn get_angular_damping(&self) -> S {
-        self.angular_damping
+    pub const fn get_linear_drag(&self) -> S {
+        self.linear_drag
+    }
+
+    pub fn set_angular_drag(&mut self, angular_drag: S) {
+        self.angular_drag = angular_drag;
+    }
+
+    #[inline]
+    pub const fn get_angular_drag(&self) -> S {
+        self.angular_drag
     }
 
     pub fn set_position(&mut self, position: &Vector3<S>) {

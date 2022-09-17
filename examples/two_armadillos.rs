@@ -59,7 +59,7 @@ impl AppStateTwoArmadillos {
             );
             _rigid_body.set_position(&position);
             _rigid_body.set_orientation(&orientation);
-            _rigid_body.set_angular_damping(1_f32);
+            _rigid_body.set_angular_drag(1_f32);
             _rigid_body.set_can_sleep(false);
             _rigid_body.set_awake(true);
             _rigid_body
@@ -75,7 +75,7 @@ impl AppStateTwoArmadillos {
             _rigid_body.set_position(&position);
             _rigid_body.set_orientation(&orientation);
             _rigid_body.set_rotation(&Vector3::new(0_f32, 0.02_f32, 0_f32));
-            _rigid_body.set_angular_damping(1_f32);
+            _rigid_body.set_angular_drag(1_f32);
             _rigid_body.set_can_sleep(false);
             _rigid_body.set_awake(true);
             _rigid_body
