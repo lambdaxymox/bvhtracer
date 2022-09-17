@@ -254,10 +254,12 @@ where
         self.inverse_mass = inverse_mass;
     }
 
+    #[inline]
     pub const fn get_inverse_mass(&self) -> S {
         self.inverse_mass
     }
 
+    #[inline]
     pub fn has_finite_mass(&self) -> bool {
         self.inverse_mass >= S::zero()
     }
@@ -294,10 +296,12 @@ where
         self.inverse_inertia_tensor = inverse_inertia_tensor.clone();
     }
 
+    #[inline]
     pub const fn get_inverse_inertia_tensor(&self) -> &Matrix3x3<S> {
         &self.inverse_inertia_tensor
     }
 
+    #[inline]
     pub const fn get_inverse_inertia_tensor_world(&self) -> &Matrix3x3<S> {
         &self.inverse_inertia_tensor_world
     }
@@ -311,6 +315,7 @@ where
         self.linear_damping = linear_damping;
     }
 
+    #[inline]
     pub const fn get_linear_damping(&self) -> S {
         self.linear_damping
     }
@@ -319,6 +324,7 @@ where
         self.angular_damping = angular_damping;
     }
 
+    #[inline]
     pub const fn get_angular_damping(&self) -> S {
         self.angular_damping
     }
@@ -327,6 +333,7 @@ where
         self.position = *position;
     }
 
+    #[inline]
     pub const fn get_position(&self) -> &Vector3<S> {
         &self.position
     }
@@ -349,11 +356,13 @@ where
         orientation[2][2] = self.transform[2][2];
     }
 
+    #[inline]
     pub const fn get_orientation(&self) -> &Quaternion<S> {
         &self.orientation
     }
 
-    pub fn get_transform(&self) -> &Transform3<S> {
+    #[inline]
+    pub const fn get_transform(&self) -> &Transform3<S> {
         unsafe {
             &*(self.transform.as_ptr() as *const Transform3<S>)
         }
@@ -361,8 +370,11 @@ where
 
     // world space to body space
     pub fn get_point_in_local_space(&self, point_world: &Vector3<S>) -> Vector3<S> {
+        /*
         let transform_inverse = self.get_transform().inverse().unwrap();
         transform_inverse.transform_point(point_world)
+        */
+        self.get_transform().inverse_transform_point(point_world)
     }
 
     // body space to world space.
@@ -374,20 +386,23 @@ where
     
     // world space to body space.
     pub fn get_direction_in_local_space(&self, direction_world: &Vector3<S>) -> Vector3<S> {
+        /*
         let transform_inverse = self.get_transform().inverse().unwrap();
         transform_inverse.transform_vector(direction_world)
+        */
+        self.get_transform().inverse_transform_vector(direction_world)
     }
 
     // body space to world space.
     pub fn get_direction_in_world_space(&self, direction_body: &Vector3<S>) -> Vector3<S> {
-        let transform = self.get_transform();
-        transform.transform_vector(direction_body)
+        self.get_transform().transform_vector(direction_body)
     }
 
     pub fn set_velocity(&mut self, velocity: &Vector3<S>) {
         self.velocity = *velocity;
     }
 
+    #[inline]
     pub const fn get_velocity(&self) -> &Vector3<S> {
         &self.velocity
     }
@@ -400,6 +415,7 @@ where
         self.rotation = *rotation;
     }
 
+    #[inline]
     pub const fn get_rotation(&self) -> &Vector3<S> {
         &self.rotation
     }
@@ -408,6 +424,7 @@ where
         self.rotation += delta_rotation;
     }
 
+    #[inline]
     pub const fn get_awake(&self) -> bool {
         self.is_awake
     }
@@ -425,6 +442,7 @@ where
         }
     }
 
+    #[inline]
     pub const fn get_can_sleep(&self) -> bool {
         self.can_sleep
     }
@@ -475,6 +493,7 @@ where
         self.acceleration = *acceleration;
     }
 
+    #[inline]
     pub const fn get_acceleration_world(&self) -> Vector3<S> {
         self.acceleration
     }

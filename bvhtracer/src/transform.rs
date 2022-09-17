@@ -33,6 +33,13 @@ where
     }
 
     #[inline]
+    pub fn identity() -> Self {
+        Self {
+            matrix: Matrix4x4::identity(),
+        }
+    }
+
+    #[inline]
     pub fn from_scale(scale: S) -> Self {
         let matrix = Matrix4x4::from_affine_scale(scale);
 
@@ -148,16 +155,15 @@ where
         Self { matrix, }
     }
 
-    pub fn identity() -> Self {
-        Self {
-            matrix: Matrix4x4::identity(),
-        }
-    }
-
     pub fn transform_point(&self, point: &Vector3<S>) -> Vector3<S> {
         let _point = point.extend(S::one());
         let result = self.matrix * _point;
         result.contract()
+    }
+
+    pub fn inverse_transform_point(&self, point: &Vector3<S>) -> Vector3<S> {
+        let transform_inverse = self.inverse().unwrap();
+        transform_inverse.transform_point(point)
     }
 
     pub fn transform_vector(&self, vector: &Vector3<S>) -> Vector3<S> {
@@ -166,13 +172,18 @@ where
         result.contract()
     }
 
-    pub fn to_matrix4x4_mut(&self, out: &mut Matrix4x4<S>) {
+    pub fn inverse_transform_vector(&self, vector: &Vector3<S>) -> Vector3<S> {
+        let transform_inverse = self.inverse().unwrap();
+        transform_inverse.transform_vector(vector)
+    }
+
+    pub fn compute_matrix_mut(&self, out: &mut Matrix4x4<S>) {
         *out = self.matrix;
     }
 
-    pub fn to_matrix4x4(&self) -> Matrix4x4<S> {
+    pub fn compute_matrix(&self) -> Matrix4x4<S> {
         let mut out = Matrix4x4::zero();
-        self.to_matrix4x4_mut(&mut out);
+        self.compute_matrix_mut(&mut out);
 
         out
     }
@@ -183,6 +194,15 @@ where
 
     pub fn get_translation(&self) -> Vector3<S> {
         Vector3::new(self.matrix[3][0], self.matrix[3][1], self.matrix[3][2])
+    }
+}
+
+impl<S> Default for Transform3<S> 
+where
+    S: SimdScalarFloat,
+{
+    fn default() -> Self {
+        Self::identity()
     }
 }
 
