@@ -374,10 +374,10 @@ impl GlWrappingMode {
 impl fmt::Display for GlWrappingMode {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         let st = match *self {
-            GlClampToEdge       => "GL_CLAMP_TO_EDGE",
-            GlClampToBorder     => "GL_CLAMP_TO_BORDER",
-            GlMirroredRepeat    => "GL_MIRRORED_REPEAT",
-            GlRepeat            => "GL_REPEAT",
+            Self::GlClampToEdge       => "GL_CLAMP_TO_EDGE",
+            Self::GlClampToBorder     => "GL_CLAMP_TO_BORDER",
+            Self::GlMirroredRepeat    => "GL_MIRRORED_REPEAT",
+            Self::GlRepeat            => "GL_REPEAT",
             // GlMirrorClampToEdge => "GL_MIRRORED_CLAMP_TO_EDGE",
         };
 
