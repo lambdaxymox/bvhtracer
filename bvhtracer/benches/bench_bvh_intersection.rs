@@ -1,10 +1,3 @@
-extern crate bvhtracer;
-extern crate cglinalg;
-extern crate criterion;
-extern crate rand;
-extern crate rand_isaac;
-
-
 use bvhtracer::{
     MeshBuilder,
     TextureCoordinates,

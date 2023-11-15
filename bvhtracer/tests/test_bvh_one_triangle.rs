@@ -1,5 +1,3 @@
-extern crate bvhtracer;
-
 use bvhtracer::{
     MeshBuilder,
     TextureCoordinates,

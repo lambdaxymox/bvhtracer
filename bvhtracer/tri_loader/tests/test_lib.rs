@@ -1,6 +1,3 @@
-extern crate tri_loader;
-
-
 #[test]
 fn test_load() {
     let result = tri_loader::load("../assets/unity.tri");

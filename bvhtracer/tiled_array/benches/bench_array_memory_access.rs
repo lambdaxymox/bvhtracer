@@ -1,9 +1,3 @@
-extern crate tiled_array;
-extern crate criterion;
-extern crate rand;
-extern crate rand_isaac;
-
-
 use tiled_array::*;
 use criterion::{
     criterion_group,

@@ -1,7 +1,3 @@
-extern crate bvhtracer;
-extern crate cglinalg;
-extern crate approx;
-
 use bvhtracer::{
     Scene,
     Camera,

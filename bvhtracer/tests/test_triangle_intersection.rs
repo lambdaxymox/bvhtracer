@@ -1,6 +1,3 @@
-extern crate bvhtracer;
-extern crate cglinalg;
-
 use bvhtracer::{
     Triangle,
     Ray,
